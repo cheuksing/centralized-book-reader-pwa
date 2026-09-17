@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "name": "小說狂人 (czbooks.net)",
+  "baseUrl": "https://czbooks.net",
+  "adapter": {
+    "type": "html-selectors",
+    "defaultPublicationKind": "book",
+    "search": {
+      "url": "/s/{query}?q={query}",
+      "itemSelector": ".novel-list > .novel-item-wrapper",
+      "fields": {
+        "id": {
+          "selector": ".novel-item-cover-wrapper a",
+          "attribute": "href",
+          "pattern": "/n/([^/?#]+)"
+        },
+        "title": {
+          "selector": ".novel-item-title"
+        },
+        "author": {
+          "selector": ".novel-item-author a"
+        },
+        "updatedAt": {
+          "selector": ".novel-item-date"
+        }
+      }
+    },
+    "publication": {
+      "url": "/n/{publicationId}",
+      "fields": {
+        "title": {
+          "selector": ".novel-detail .title"
+        },
+        "author": {
+          "selector": ".novel-detail .author a"
+        },
+        "description": {
+          "selector": ".novel-detail .description"
+        }
+      },
+      "chapters": {
+        "linkSelector": "#chapter-list a",
+        "idPattern": "/n/[^/]+/([^/?#]+)"
+      }
+    },
+    "chapter": {
+      "url": "/n/{publicationId}/{chapterId}",
+      "contentSelector": ".chapter-detail .content"
+    }
+  }
+}

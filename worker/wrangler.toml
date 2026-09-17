@@ -1,0 +1,6 @@
+name = "bookshelf-reader-worker"
+main = "src/index.ts"
+compatibility_date = "2026-09-16"
+
+# Vite's Cloudflare plugin supplies local bindings from the root shared
+# environment files. Production sets ACCESS_TOKEN as a secret.

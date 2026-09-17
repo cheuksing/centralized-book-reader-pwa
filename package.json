@@ -1,0 +1,34 @@
+{
+  "name": "pwa",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "worker:test": "rm -rf worker/.tmp && tsc -p worker/tsconfig.json --outDir worker/.tmp --noEmit false && node worker/test/miniflare.mjs"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.52",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "rxdb": "^17.5.0",
+    "vite-plugin-pwa": "^1.3.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.10",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "miniflare": "^4.20260329.0",
+    "oxlint": "^1.81.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "vite-tsconfig-paths": "^6.1.1",
+    "wrangler": "^4.132.0"
+  }
+}

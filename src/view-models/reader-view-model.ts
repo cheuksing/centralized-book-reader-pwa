@@ -135,27 +135,37 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     releaseReaderChapters(current.readerChapters)
     const chapterNextCursor = current.chapterCursorPublicationKey === key ? current.chapterNextCursor : undefined
     const resumeLocator = requestedChapterId ? undefined : readerPublication.progress?.locator
-    set({ publicationKey: key, chapters: [], chapterIndex: 0, chapterNextCursor, chapterCursorPublicationKey: chapterNextCursor ? key : undefined, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
+    set({ publicationKey: key, chapters: [], chapterIndex: 0, chapterNextCursor, chapterCursorPublicationKey: key, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
     try {
       let chapters = await getLocalChapters(key)
       if (get().publicationKey !== key) return
       const targetId = requestedChapterId ?? readerPublication.progress?.locator.chapterId
-      if (chapters.length === 0 || (targetId && !chapters.some((chapter) => chapter.chapterId === targetId))) {
-        const source = await getSourceForPublication(key)
-        if (!source) throw new Error('This publication has no cached chapter index.')
-        let cursor = chapters.length === 0 ? undefined : get().chapterNextCursor
-        let synced = await syncPublication(source, readerPublication.publicationId, cursor)
+      const paginationKnown = current.chapterCursorPublicationKey === key
+      let source = chapters.length === 0 || !paginationKnown ? await getSourceForPublication(key) : undefined
+      let cursor = paginationKnown ? get().chapterNextCursor : undefined
+      if (chapters.length === 0 || !paginationKnown) {
+        if (!source) {
+          if (chapters.length === 0) throw new Error('This publication has no cached chapter index.')
+        } else {
+          try {
+            const synced = await syncPublication(source, readerPublication.publicationId)
+            if (get().publicationKey !== key) return
+            chapters = await getLocalChapters(key)
+            cursor = synced.nextCursor
+          } catch (error) {
+            if (chapters.length === 0) throw error
+          }
+        }
+      }
+      while (targetId && !chapters.some((chapter) => chapter.chapterId === targetId) && cursor) {
+        source ??= await getSourceForPublication(key)
+        if (!source) break
+        const synced = await syncPublication(source, readerPublication.publicationId, cursor)
         if (get().publicationKey !== key) return
         chapters = await getLocalChapters(key)
-        cursor = synced.nextCursor
-        while (targetId && !chapters.some((chapter) => chapter.chapterId === targetId) && cursor) {
-          synced = await syncPublication(source, readerPublication.publicationId, cursor)
-          if (get().publicationKey !== key) return
-          chapters = await getLocalChapters(key)
-          cursor = synced.nextCursor
-        }
-        set({ chapterNextCursor: cursor, chapterCursorPublicationKey: key })
+        cursor = synced.nextCursor === cursor ? undefined : synced.nextCursor
       }
+      set({ chapterNextCursor: cursor, chapterCursorPublicationKey: key })
       const targetIndex = targetId ? Math.max(0, chapters.findIndex((chapter) => chapter.chapterId === targetId)) : 0
       const chapterIndex = targetIndex >= 0 ? targetIndex : 0
       const chapter = chapters[chapterIndex]
@@ -182,10 +192,14 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     if (sourceIndex < 0) return undefined
     const targetIndex = sourceIndex + delta
     if (targetIndex < 0) return undefined
-    while (targetIndex >= get().chapters.length && get().chapterNextCursor) {
-      const before = get().chapters.length
+    if (direction === 'previous' ? get().isLoadingPreviousChapter : get().isLoadingNextChapter) return undefined
+    while (targetIndex >= get().chapters.length) {
+      const state = get()
+      if (state.chapterCursorPublicationKey !== publication.key || !state.chapterNextCursor) break
+      const beforeCursor = state.chapterNextCursor
       await get().loadMoreChapters(publication)
-      if (get().chapters.length <= before) break
+      const current = get()
+      if (current.chapterNextCursor === beforeCursor && current.chapters.length <= targetIndex) break
     }
     const target = get().chapters[targetIndex]
     if (!target || get().publicationKey !== publication.key) return undefined
@@ -225,7 +239,8 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
       const source = await getSourceForPublication(publication.key)
       if (!source) throw new Error('This publication source is no longer installed.')
       const synced = await syncPublication(source, publication.publicationId, chapterNextCursor)
-      if (get().publicationKey === publication.key) set({ chapters: await getLocalChapters(publication.key), chapterNextCursor: synced.nextCursor, chapterCursorPublicationKey: publication.key })
+      const nextCursor = synced.nextCursor === chapterNextCursor ? undefined : synced.nextCursor
+      if (get().publicationKey === publication.key) set({ chapters: await getLocalChapters(publication.key), chapterNextCursor: nextCursor, chapterCursorPublicationKey: publication.key })
     } catch (error) {
       if (get().publicationKey === publication.key) set({ error: error instanceof Error ? error.message : 'Could not load more chapters.' })
     } finally {

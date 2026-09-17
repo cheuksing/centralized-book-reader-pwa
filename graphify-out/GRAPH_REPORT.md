@@ -1,16 +1,16 @@
 # Graph Report - pwa  (2026-09-17)
 
 ## Corpus Check
-- 88 files · ~62,762 words
+- 88 files · ~63,176 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 868 nodes · 1144 edges · 76 communities (63 shown, 13 thin omitted)
+- 869 nodes · 1144 edges · 76 communities (63 shown, 13 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `531fa98d`
+- Built from commit: `31460455`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -20,7 +20,7 @@
 - app.tsx
 - What You Must Do When Invoked
 - compilerOptions
-- package.json
+- dependencies
 - generic-json-adapter.ts
 - compilerOptions
 - devDependencies
@@ -91,10 +91,10 @@
 1. `compilerOptions` - 19 edges
 2. `Bookshelf Reader Technical Specification` - 19 edges
 3. `compilerOptions` - 15 edges
-4. `OpfsStorageInstance` - 13 edges
-5. `getDatabase()` - 13 edges
-6. `compilerOptions` - 13 edges
-7. `react` - 12 edges
+4. `react` - 13 edges
+5. `OpfsStorageInstance` - 13 edges
+6. `getDatabase()` - 13 edges
+7. `compilerOptions` - 13 edges
 8. `getDatabase()` - 12 edges
 9. `What You Must Do When Invoked` - 12 edges
 10. `6. User experience` - 11 edges
@@ -104,12 +104,12 @@
   worker/test/miniflare.mjs → package.json
 - `listLibrary()` --references--> `PublicationDocument`  [EXTRACTED]
   src/services/library-service.ts → src/models/database/schemas.ts
-- `deleteChapterCache()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/book-content-service.ts → src/models/database/schemas.ts
-- `downloadChapterNow()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/book-content-service.ts → src/models/database/schemas.ts
 - `getLocalChapters()` --references--> `ChapterDocument`  [EXTRACTED]
   src/services/publication-sync-service.ts → src/models/database/schemas.ts
+- `syncPublicationNow()` --references--> `ChapterDocument`  [EXTRACTED]
+  src/services/publication-sync-service.ts → src/models/database/schemas.ts
+- `deleteChapterCache()` --references--> `ChapterDocument`  [EXTRACTED]
+  src/services/book-content-service.ts → src/models/database/schemas.ts
 
 ## Import Cycles
 - None detected.
@@ -136,9 +136,9 @@ Nodes (24): For /graphify add and --watch, For /graphify query, For the commit h
 Cohesion: 0.06
 Nodes (34): DOM, src, ./src/app/*, ./src/models/*, ./src/services/*, ./src/view-models/*, ./src/views/*, vite/client (+26 more)
 
-### Community 5 - "package.json"
+### Community 5 - "dependencies"
 Cohesion: 0.08
-Nodes (23): dependencies, react, react-dom, rxdb, @sinclair/typebox, vite-plugin-pwa, zustand, name (+15 more)
+Nodes (25): dependencies, react, react-dom, rxdb, @sinclair/typebox, @tanstack/react-virtual, vite-plugin-pwa, zustand (+17 more)
 
 ### Community 6 - "generic-json-adapter.ts"
 Cohesion: 0.22
@@ -153,8 +153,8 @@ Cohesion: 0.07
 Nodes (28): @cloudflare/vite-plugin, miniflare, oxlint, devDependencies, @cloudflare/vite-plugin, miniflare, oxlint, @types/node (+20 more)
 
 ### Community 9 - "book-content-service.ts"
-Cohesion: 0.17
-Nodes (24): ChapterCacheDocument, CacheManifest, CacheManifestResource, cacheResource(), cacheState(), cancelDownload(), createOrMergeCache(), deleteChapterCache() (+16 more)
+Cohesion: 0.16
+Nodes (25): ChapterCacheDocument, ChapterDocument, CacheManifest, CacheManifestResource, cacheResource(), cacheState(), cancelDownload(), createOrMergeCache() (+17 more)
 
 ### Community 10 - "6. User experience"
 Cohesion: 0.18
@@ -205,8 +205,8 @@ Cohesion: 0.17
 Nodes (12): activateReaderDatabaseGeneration(), ActiveReaderInstanceError, createDatabase(), createReaderDatabaseGeneration(), Deferred, getReaderDatabase(), openWithExclusiveLock(), readActiveDatabaseName() (+4 more)
 
 ### Community 24 - "reader-page.tsx"
-Cohesion: 0.20
-Nodes (19): CaretDocument, clamp(), emptySections, findCaret(), findQuoteOffset(), locatorForElement(), offsetForNode(), quoteAt() (+11 more)
+Cohesion: 0.21
+Nodes (18): CaretDocument, clamp(), emptySections, findCaret(), findQuoteOffset(), locatorForElement(), offsetForNode(), quoteAt() (+10 more)
 
 ### Community 25 - "graphify reference: add a URL and watch a folder"
 Cohesion: 0.50
@@ -237,8 +237,8 @@ Cohesion: 0.60
 Nodes (5): bulkInsertOrThrow(), downloadBackup(), getDatabase(), importBackupFile(), validateBackup()
 
 ### Community 40 - "publication-sync-service.ts"
-Cohesion: 0.17
-Nodes (16): ChapterDocument, getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow() (+8 more)
+Cohesion: 0.18
+Nodes (15): getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow(), publicationWrites (+7 more)
 
 ### Community 43 - "Bookshelf Reader Technical Specification"
 Cohesion: 0.20
@@ -349,24 +349,24 @@ Cohesion: 0.60
 Nodes (4): defaultReaderSettings, getReaderSettingsCollection(), loadReaderSettings(), saveReaderSettings()
 
 ## Knowledge Gaps
-- **408 isolated node(s):** `$schema`, `typescript`, `oxc`, `react/rules-of-hooks`, `warn` (+403 more)
+- **409 isolated node(s):** `$schema`, `typescript`, `oxc`, `react/rules-of-hooks`, `warn` (+404 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ChapterDocument` connect `publication-sync-service.ts` to `schemas.ts`, `book-content-service.ts`?**
+- **Why does `ChapterDocument` connect `book-content-service.ts` to `publication-sync-service.ts`, `schemas.ts`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
 - **Why does `react` connect `app.tsx` to `reader-page.tsx`, `plugins`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Why does `PublicationDocument` connect `library-service.ts` to `schemas.ts`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **What connects `$schema`, `typescript`, `oxc` to the rest of the system?**
-  _408 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _409 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `opfs-rx-storage.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.08974358974358974 - nodes in this community are weakly interconnected._
 - **Should `schemas.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.03076923076923077 - nodes in this community are weakly interconnected._
 - **Should `app.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.09302325581395349 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09413067552602436 - nodes in this community are weakly interconnected._

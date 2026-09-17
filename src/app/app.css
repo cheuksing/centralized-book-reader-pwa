@@ -96,7 +96,7 @@
 
 .reader { padding-bottom: calc(48px + env(safe-area-inset-bottom)); }
 .reader-content { padding-bottom: calc(48px + env(safe-area-inset-bottom)); padding-top: max(24px, calc(24px + env(safe-area-inset-top))); }
-.reader-chapter + .reader-chapter { border-top: 1px solid color-mix(in srgb, var(--reader-text) 14%, transparent); margin-top: 4.5rem; padding-top: 4.5rem; }
+.reader-virtual-canvas { position: relative; width: 100%; }.reader-virtual-item { width: 100%; }.reader-chapter-separated { border-top: 1px solid color-mix(in srgb, var(--reader-text) 14%, transparent); margin-top: 4.5rem; padding-top: 4.5rem; }
 .reader-chapter-boundary { height: 1px; margin-top: -1px; pointer-events: none; }
 .reader-chapter-state { min-height: 8rem; }
 .reader-boundary-state { align-items: center; color: color-mix(in srgb, var(--reader-text) 64%, transparent); display: flex; flex-wrap: wrap; font-family: Inter, sans-serif; font-size: .8rem; gap: 10px; justify-content: center; padding: 28px 12px; text-align: center; }

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useAppViewModel } from '@app/app-store'
 import type { ReadingLocator } from '@models/database/schemas'
 import type { Chapter, Publication } from '@models/entities/domain'
@@ -17,6 +18,7 @@ export function ReaderPage() {
   const chapters = useReaderViewModel((state) => state.chapters)
   const chapterIndex = useReaderViewModel((state) => state.chapterIndex)
   const chapterNextCursor = useReaderViewModel((state) => state.chapterNextCursor)
+  const chapterCursorPublicationKey = useReaderViewModel((state) => state.chapterCursorPublicationKey)
   const readerChapters = useReaderViewModel((state) => state.readerChapters)
   const isLoadingPreviousChapter = useReaderViewModel((state) => state.isLoadingPreviousChapter)
   const isLoadingNextChapter = useReaderViewModel((state) => state.isLoadingNextChapter)
@@ -37,6 +39,7 @@ export function ReaderPage() {
   const toggleLineHeight = useReaderViewModel((state) => state.toggleLineHeight)
   const setContentWidth = useReaderViewModel((state) => state.setContentWidth)
   const contentRef = useRef<HTMLElement>(null)
+  const readerCanvasRef = useRef<HTMLDivElement>(null)
   const controlsRef = useRef<HTMLDialogElement>(null)
   const controlsTriggerRef = useRef<HTMLButtonElement>(null)
   const restoringRef = useRef(false)
@@ -44,14 +47,43 @@ export function ReaderPage() {
   const scrollVersionRef = useRef(0)
   const restoredLocatorRef = useRef<string | undefined>(undefined)
   const [controlsOpen, setControlsOpen] = useState(false)
+  const [readerScrollMargin, setReaderScrollMargin] = useState(0)
+  const pendingChapterIdRef = useRef<string | undefined>(undefined)
+  const hasMoreChapters = chapterCursorPublicationKey === publication?.key && Boolean(chapterNextCursor)
+  const getReaderChapterKey = useCallback((index: number) => readerChapters[index]?.chapter.key ?? index, [readerChapters])
+  const readerVirtualizer = useWindowVirtualizer<HTMLDivElement>({
+    count: readerChapters.length,
+    estimateSize: () => 720,
+    getItemKey: getReaderChapterKey,
+    overscan: 2,
+    scrollMargin: readerScrollMargin,
+  })
+  const readerVirtualItems = readerVirtualizer.getVirtualItems()
 
   const chapter = chapters[chapterIndex]
   const activeEntry = chapter ? readerChapters.find((entry) => entry.chapter.key === chapter.key) : undefined
   const sections = activeEntry?.sections ?? emptySections
   const hasContent = readerChapters.some((entry) => entry.sections.length > 0)
-  const chapterCountKnown = !chapterNextCursor
+  const chapterCountKnown = !hasMoreChapters
   const remainingChapters = chapterCountKnown ? Math.max(0, chapters.length - chapterIndex - 1) : undefined
   const activeLoadedIndex = activeEntry ? readerChapters.findIndex((entry) => entry.chapter.key === activeEntry.chapter.key) : -1
+
+  useLayoutEffect(() => {
+    const canvas = readerCanvasRef.current
+    if (!canvas) return
+    const updateScrollMargin = () => setReaderScrollMargin(canvas.getBoundingClientRect().top + window.scrollY)
+    updateScrollMargin()
+    window.addEventListener('resize', updateScrollMargin)
+    return () => window.removeEventListener('resize', updateScrollMargin)
+  }, [isLoading, isLoadingChapter, publication?.key, readerChapters.length])
+  useEffect(() => {
+    const pendingChapterId = pendingChapterIdRef.current
+    if (!pendingChapterId) return
+    const targetIndex = readerChapters.findIndex((entry) => entry.chapter.chapterId === pendingChapterId)
+    if (targetIndex < 0) return
+    pendingChapterIdRef.current = undefined
+    window.requestAnimationFrame(() => readerVirtualizer.scrollToIndex(targetIndex, { align: 'start', behavior: 'auto' }))
+  }, [readerChapters, readerVirtualizer])
 
   useEffect(() => {
     if (!publication) return
@@ -171,6 +203,7 @@ export function ReaderPage() {
     if (!publication) return
     const activeChapterId = chapters[chapterIndex]?.chapterId
     if (chapterId !== activeChapterId) return
+    if (direction === 'next' && chapterId === chapters.at(-1)?.chapterId && !hasMoreChapters) return
     if (direction === 'previous' && !userScrolledRef.current) return
     const root = contentRef.current
     const anchor = direction === 'previous' && root ? Array.from(root.querySelectorAll<HTMLElement>('.reader-chapter')).find((element) => element.dataset.chapterId === chapterId) : undefined
@@ -184,7 +217,7 @@ export function ReaderPage() {
         else scrollToPosition(before.top + root.scrollHeight - before.height)
       }))
     })
-  }, [chapterIndex, chapters, loadAdjacentChapter, publication])
+  }, [chapterIndex, chapters, hasMoreChapters, loadAdjacentChapter, publication])
 
   const closeControls = useCallback(() => {
     setControlsOpen(false)
@@ -196,9 +229,7 @@ export function ReaderPage() {
     const loadedChapterId = await loadAdjacentChapter(publication, direction, chapter.chapterId)
     if (!loadedChapterId) return
     closeControls()
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      if (contentRef.current) scrollToChapter(contentRef.current, loadedChapterId)
-    }))
+    pendingChapterIdRef.current = loadedChapterId
   }, [chapter, closeControls, loadAdjacentChapter, publication])
 
   const handleReaderClick = useCallback((event: MouseEvent<HTMLElement>) => {
@@ -226,18 +257,22 @@ export function ReaderPage() {
   if (!publication) return null
 
   const previousAvailable = chapterIndex > 0
-  const nextAvailable = chapterIndex < chapters.length - 1 || Boolean(chapterNextCursor)
+  const nextAvailable = chapterIndex < chapters.length - 1 || hasMoreChapters
   const chapterPosition = chapter ? `Chapter ${chapterIndex + 1}${chapterCountKnown ? ` of ${chapters.length}` : ''}` : 'Preparing chapter'
   const chapterRemaining = chapter ? chapterCountKnown ? `${remainingChapters} ${remainingChapters === 1 ? 'chapter' : 'chapters'} remaining` : 'More chapters available' : ''
 
   return <main className={`reader reader-${effectiveTheme} reader-${settings.contentWidth}`} style={{ fontSize: `${settings.fontSize}px`, lineHeight: settings.lineHeight }}>
     {isLoading || isLoadingChapter ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : error && !hasContent ? <section className="reader-status"><h1>Could not prepare this chapter</h1><p>{error}</p><button className="primary-button" onClick={() => void openPublication(publication, requestedChapterId)} type="button">Try again</button><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : readerChapters.length > 0 ? <article className="reader-content" onClick={handleReaderClick} ref={contentRef}>
       <button className="visually-hidden reader-controls-trigger" onClick={() => setControlsOpen(true)} ref={controlsTriggerRef} type="button">Open reader controls</button>
-      {readerChapters.map((entry, index) => {
-        const boundaryDirection = index < activeLoadedIndex ? 'previous' : index > activeLoadedIndex ? 'next' : undefined
-        const entryIndex = chapters.findIndex((candidate) => candidate.key === entry.chapter.key)
-        return <ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={chapters.length} countKnown={chapterCountKnown} entry={entry} ensureImage={ensureImage} key={entry.chapter.key} onBoundary={handleChapterBoundary} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} />
-      })}
+      <div className="reader-virtual-canvas" ref={readerCanvasRef} style={{ height: readerVirtualizer.getTotalSize() }}>
+        {readerVirtualItems.map((virtualRow) => {
+          const entry = readerChapters[virtualRow.index]
+          if (!entry) return null
+          const boundaryDirection = virtualRow.index < activeLoadedIndex ? 'previous' : virtualRow.index > activeLoadedIndex ? 'next' : undefined
+          const entryIndex = chapters.findIndex((candidate) => candidate.key === entry.chapter.key)
+          return <div className="reader-virtual-item" data-index={virtualRow.index} key={entry.chapter.key} ref={readerVirtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - readerScrollMargin}px)`, width: '100%' }}><ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={chapters.length} countKnown={chapterCountKnown} entry={entry} ensureImage={ensureImage} separated={virtualRow.index > 0} onBoundary={handleChapterBoundary} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} /></div>
+        })}
+      </div>
     </article> : <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index from publication details to refresh or download content.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section>}
     {error && hasContent && <p className="reader-error" role="alert">{error}</p>}
     {!isLoading && hasContent && <dialog aria-labelledby="reader-controls-title" className="reader-controls-dialog" onCancel={closeControls} onClick={(event) => { if (event.target === event.currentTarget) closeControls() }} onClose={closeControls} ref={controlsRef}>
@@ -257,7 +292,7 @@ export function ReaderPage() {
   </main>
 }
 
-function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, boundaryDirection, publication, ensureImage, onVisible, onBoundary, onRetry }: { entry: ReaderChapterContent; chapterNumber: number; chapterTotal: number; countKnown: boolean; boundaryDirection?: 'previous' | 'next'; publication: Publication; ensureImage: (publication: Publication, chapterKey: string, resourceId: string, priority?: number) => Promise<void>; onVisible: (chapterId: string, index: number, element: HTMLElement, section: ReaderSection, chapterRoot: HTMLElement) => void; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) {
+function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, boundaryDirection, publication, ensureImage, separated, onVisible, onBoundary, onRetry }: { entry: ReaderChapterContent; chapterNumber: number; chapterTotal: number; countKnown: boolean; boundaryDirection?: 'previous' | 'next'; publication: Publication; ensureImage: (publication: Publication, chapterKey: string, resourceId: string, priority?: number) => Promise<void>; separated: boolean; onVisible: (chapterId: string, index: number, element: HTMLElement, section: ReaderSection, chapterRoot: HTMLElement) => void; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) {
   const chapterRoot = useRef<HTMLElement>(null)
   const startBoundary = useRef<HTMLDivElement>(null)
   const endBoundary = useRef<HTMLDivElement>(null)
@@ -279,10 +314,10 @@ function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, bou
 
   if (entry.loading || (entry.error && entry.sections.length === 0)) {
     const direction = boundaryDirection ?? 'next'
-    return <section className="reader-chapter reader-chapter-state"><div className="reader-boundary-state" role={entry.error ? 'alert' : 'status'}>{entry.error ? <><span>Could not load the {direction} chapter.</span><button onClick={() => onRetry(direction, entry.chapter.chapterId)} type="button">Retry</button></> : `Loading the ${direction} chapter…`}</div></section>
+    return <section className={`reader-chapter reader-chapter-state${separated ? ' reader-chapter-separated' : ''}`}><div className="reader-boundary-state" role={entry.error ? 'alert' : 'status'}>{entry.error ? <><span>Could not load the {direction} chapter.</span><button onClick={() => onRetry(direction, entry.chapter.chapterId)} type="button">Retry</button></> : `Loading the ${direction} chapter…`}</div></section>
   }
 
-  return <section className="reader-chapter" data-chapter-id={entry.chapter.chapterId} ref={chapterRoot}>
+  return <section className={`reader-chapter${separated ? ' reader-chapter-separated' : ''}`} data-chapter-id={entry.chapter.chapterId} ref={chapterRoot}>
     <div aria-hidden="true" className="reader-chapter-boundary" ref={startBoundary} />
     <p className="reader-kicker">Chapter {chapterNumber}{countKnown ? ` of ${chapterTotal}` : ''}{entry.chapter.removedFromSource ? ' · cached copy' : ''}</p><h1>{entry.chapter.title}</h1>
     {entry.sections.map((section, sectionIndex) => <ReaderSectionView chapter={entry.chapter} ensureImage={ensureImage} index={sectionIndex} key={`${section.chapterKey}:${section.resourceId}`} onVisible={handleVisible} publication={publication} section={section} />)}
@@ -446,10 +481,6 @@ function scrollToElement(element: HTMLElement): void {
   scrollToPosition(window.scrollY + bounds.top - readingAnchorY())
 }
 
-function scrollToChapter(root: HTMLElement, chapterId: string): void {
-  const chapter = Array.from(root.querySelectorAll<HTMLElement>('.reader-chapter')).find((element) => element.dataset.chapterId === chapterId)
-  if (chapter) scrollToElement(chapter)
-}
 
 function scrollToChapterPercentage(root: HTMLElement, percentage: number): void {
   const bounds = root.getBoundingClientRect()

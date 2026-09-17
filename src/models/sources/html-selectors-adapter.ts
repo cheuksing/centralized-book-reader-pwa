@@ -54,7 +54,7 @@ export class HtmlSelectorsAdapter implements SourceAdapter {
     }
     const start = Number(cursor ?? 0)
     if (!Number.isSafeInteger(start) || start < 0) throw new Error('The chapter index cursor is invalid.')
-    const pageSize = 50
+    const pageSize = 20
     return { chapters: chapters.slice(start, start + pageSize), nextCursor: start + pageSize < chapters.length ? String(start + pageSize) : undefined }
   }
 

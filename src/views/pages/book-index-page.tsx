@@ -2,7 +2,6 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useAppViewModel } from '@app/app-store'
 import { useReaderViewModel } from '@view-models/reader-view-model'
-import { InfiniteScrollSentinel } from '../ui/infinite-scroll-sentinel'
 import { PageHeader } from '../ui/page-header'
 
 export function BookIndexPage() {
@@ -58,7 +57,6 @@ export function BookIndexPage() {
           return <li data-index={virtualRow.index} key={chapter.key} ref={virtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - scrollMargin}px)`, width: '100%' }}><button aria-current={virtualRow.index === chapterIndex ? 'location' : undefined} className={virtualRow.index === chapterIndex ? 'is-current' : ''} disabled={chapter.removedFromSource && !chapter.cache} onClick={() => jumpToChapter(chapter.chapterId)} type="button"><span>{String(virtualRow.index + 1).padStart(2, '0')}</span><strong>{chapter.title}</strong><small>{chapter.removedFromSource ? 'Cached copy' : chapter.cache?.state?.replace('-', ' ') ?? 'Not downloaded'}</small></button></li>
         })}
       </ol>
-      <InfiniteScrollSentinel hasMore={hasMoreChapters} isLoading={isLoadingMoreChapters} label="chapters" onLoadMore={loadMore} />
     </section>
   </main>
 }

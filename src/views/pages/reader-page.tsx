@@ -48,7 +48,7 @@ export function ReaderPage() {
   const restoredLocatorRef = useRef<string | undefined>(undefined)
   const [controlsOpen, setControlsOpen] = useState(false)
   const [readerScrollMargin, setReaderScrollMargin] = useState(0)
-  const pendingChapterIdRef = useRef<string | undefined>(undefined)
+  const [pendingChapterId, setPendingChapterId] = useState<string>()
   const hasMoreChapters = chapterCursorPublicationKey === publication?.key && Boolean(chapterNextCursor)
   const getReaderChapterKey = useCallback((index: number) => readerChapters[index]?.chapter.key ?? index, [readerChapters])
   const readerVirtualizer = useWindowVirtualizer<HTMLDivElement>({
@@ -77,13 +77,16 @@ export function ReaderPage() {
     return () => window.removeEventListener('resize', updateScrollMargin)
   }, [isLoading, isLoadingChapter, publication?.key, readerChapters.length])
   useEffect(() => {
-    const pendingChapterId = pendingChapterIdRef.current
     if (!pendingChapterId) return
     const targetIndex = readerChapters.findIndex((entry) => entry.chapter.chapterId === pendingChapterId)
     if (targetIndex < 0) return
-    pendingChapterIdRef.current = undefined
+    setPendingChapterId(undefined)
     window.requestAnimationFrame(() => readerVirtualizer.scrollToIndex(targetIndex, { align: 'start', behavior: 'auto' }))
-  }, [readerChapters, readerVirtualizer])
+  }, [pendingChapterId, readerChapters, readerVirtualizer])
+
+  useLayoutEffect(() => {
+    if (requestedChapterId) scrollToPosition(0)
+  }, [requestedChapterId])
 
   useEffect(() => {
     if (!publication) return
@@ -229,7 +232,7 @@ export function ReaderPage() {
     const loadedChapterId = await loadAdjacentChapter(publication, direction, chapter.chapterId)
     if (!loadedChapterId) return
     closeControls()
-    pendingChapterIdRef.current = loadedChapterId
+    setPendingChapterId(loadedChapterId)
   }, [chapter, closeControls, loadAdjacentChapter, publication])
 
   const handleReaderClick = useCallback((event: MouseEvent<HTMLElement>) => {

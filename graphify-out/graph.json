@@ -6503,7 +6503,7 @@
       "norm_label": "./src/services/*"
     },
     {
-      "label": "@view/*",
+      "label": "@views/*",
       "file_type": "code",
       "source_file": "tsconfig.app.json",
       "source_location": "L14",
@@ -6511,7 +6511,7 @@
       "id": "tsconfig_app_paths_view",
       "community": 4,
       "community_name": "compilerOptions",
-      "norm_label": "@view/*"
+      "norm_label": "@views/*"
     },
     {
       "label": "./src/views/*",

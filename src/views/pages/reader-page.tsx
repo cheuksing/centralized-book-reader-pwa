@@ -46,6 +46,7 @@ export function ReaderPage() {
   const controlsTriggerRef = useRef<HTMLButtonElement>(null)
   const restoringRef = useRef(false)
   const userScrolledRef = useRef(false)
+  const chapterNavigationRef = useRef(false)
   const scrollVersionRef = useRef(0)
   const restoredLocatorRef = useRef<string | undefined>(undefined)
   const [controlsOpen, setControlsOpen] = useState(false)
@@ -182,7 +183,7 @@ export function ReaderPage() {
       if (frame === undefined) frame = window.requestAnimationFrame(update)
     }
     const onScroll = () => {
-      if (!restoringRef.current) {
+      if (!restoringRef.current && !chapterNavigationRef.current) {
         userScrolledRef.current = true
         scrollVersionRef.current += 1
       }
@@ -203,7 +204,7 @@ export function ReaderPage() {
     const activeChapterId = chapters[chapterIndex]?.chapterId
     if (chapterId !== activeChapterId) return
     if (direction === 'next' && chapterId === chapters.at(-1)?.chapterId && !hasMoreChapters) return
-    if (direction === 'previous' && !userScrolledRef.current) return
+    if (direction === 'previous' && (chapterNavigationRef.current || !userScrolledRef.current)) return
     const root = contentRef.current
     const anchor = direction === 'previous' && root ? Array.from(root.querySelectorAll<HTMLElement>('.reader-chapter')).find((element) => element.dataset.chapterId === chapterId) : undefined
     const before = direction === 'previous' && root ? { anchorTop: anchor?.getBoundingClientRect().top, height: root.scrollHeight, top: window.scrollY, scrollVersion: scrollVersionRef.current } : undefined
@@ -225,9 +226,16 @@ export function ReaderPage() {
 
   const navigateChapter = useCallback(async (direction: 'previous' | 'next') => {
     if (!publication || !chapter) return
+    chapterNavigationRef.current = true
+    userScrolledRef.current = false
     closeControls()
     const selectedChapterId = await selectAdjacentChapter(publication, direction, chapter.chapterId)
-    if (selectedChapterId) scrollToPosition(0)
+    if (!selectedChapterId) {
+      chapterNavigationRef.current = false
+      return
+    }
+    scrollToPosition(0)
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => { chapterNavigationRef.current = false }))
   }, [chapter, closeControls, publication, selectAdjacentChapter])
 
   const queueChapterDownloads = useCallback(async (limit: number | undefined) => {
@@ -346,7 +354,7 @@ function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, bou
     const observer = new IntersectionObserver((entries) => entries.forEach((intersection) => {
       if (!intersection.isIntersecting) return
       onBoundary(intersection.target === start ? 'previous' : 'next', entry.chapter.chapterId)
-    }), { rootMargin: '640px 0px' })
+    }), { rootMargin: '0px 0px 320px 0px' })
     observer.observe(start)
     observer.observe(end)
     return () => observer.disconnect()

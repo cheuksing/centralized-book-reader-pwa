@@ -37,6 +37,7 @@ interface ReaderViewModel {
   initialize: () => Promise<void>
   openPublication: (publication: Publication, requestedChapterId?: string) => Promise<void>
   selectChapter: (publication: Publication, chapterId: string) => Promise<void>
+  selectAdjacentChapter: (publication: Publication, direction: 'previous' | 'next', chapterId: string) => Promise<string | undefined>
   loadAdjacentChapter: (publication: Publication, direction: 'previous' | 'next', chapterId: string) => Promise<string | undefined>
   setChapterNextCursor: (publicationKey: string, cursor?: string) => void
   loadMoreChapters: (publication: Publication) => Promise<void>
@@ -130,6 +131,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     const current = get()
     if (current.publicationKey === key && (current.isLoading || current.isLoadingChapter || current.chapters.length > 0)) {
       if (requestedChapterId && current.chapters[current.chapterIndex]?.chapterId !== requestedChapterId) await get().selectChapter(readerPublication, requestedChapterId)
+      else if (requestedChapterId) set({ resumeLocator: undefined, sectionIndex: 0 })
       return
     }
     releaseReaderChapters(current.readerChapters)
@@ -178,13 +180,35 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     }
   },
   selectChapter: async (publication, chapterId) => {
+    if (get().publicationKey !== publication.key) return
     const index = get().chapters.findIndex((chapter) => chapter.chapterId === chapterId)
     if (index < 0) return
     await flushProgress()
+    if (get().publicationKey !== publication.key) return
     const chapter = get().chapters[index]
     releaseReaderChapters(get().readerChapters)
     set({ chapterIndex: index, readerChapters: [{ chapter, sections: [], loading: true }], sections: [], resumeLocator: undefined, isLoadingChapter: true, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
     await loadChapter(publication, chapter)
+  },
+  selectAdjacentChapter: async (publication, direction, chapterId) => {
+    const delta = direction === 'previous' ? -1 : 1
+    const sourceIndex = get().chapters.findIndex((chapter) => chapter.chapterId === chapterId)
+    if (sourceIndex < 0) return undefined
+    const targetIndex = sourceIndex + delta
+    if (targetIndex < 0) return undefined
+    while (targetIndex >= get().chapters.length) {
+      const state = get()
+      if (state.chapterCursorPublicationKey !== publication.key || !state.chapterNextCursor) return undefined
+      const beforeCursor = state.chapterNextCursor
+      const beforeLength = state.chapters.length
+      await get().loadMoreChapters(publication)
+      const current = get()
+      if (current.chapters.length <= targetIndex && current.chapters.length === beforeLength && current.chapterNextCursor === beforeCursor) return undefined
+    }
+    const target = get().chapters[targetIndex]
+    if (!target || get().publicationKey !== publication.key) return undefined
+    await get().selectChapter(publication, target.chapterId)
+    return target.chapterId
   },
   loadAdjacentChapter: async (publication, direction, chapterId) => {
     const delta = direction === 'previous' ? -1 : 1

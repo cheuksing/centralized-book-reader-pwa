@@ -15,6 +15,7 @@ export function BookDetailsPage() {
   const publication = useAppViewModel((state) => state.activePublication)
   const closeDetails = useAppViewModel((state) => state.closeDetails)
   const startReading = useAppViewModel((state) => state.startReading)
+  const jumpToChapter = useAppViewModel((state) => state.jumpToChapter)
   const updateActivePublication = useAppViewModel((state) => state.updateActivePublication)
   const setChapterNextCursor = useReaderViewModel((state) => state.setChapterNextCursor)
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -96,22 +97,22 @@ export function BookDetailsPage() {
         <SectionHeading eyebrow="Publication index" title={`${chapters.length} chapter${chapters.length === 1 ? '' : 's'}`} trailing={<span className="status-note">{navigator.onLine === false ? 'Cached index' : 'Source order'}</span>} />
         {isLoading && <p className="muted" role="status">Loading current metadata and chapter index…</p>}
         {!isLoading && chapters.length === 0 && <p className="muted">No chapter index is cached yet.</p>}
-        <ol className="chapter-list">{chapters.map((chapter) => <ChapterRow chapter={chapter} key={chapter.key} onAction={runChapterAction} />)}</ol>
+        <ol className="chapter-list">{chapters.map((chapter) => <ChapterRow chapter={chapter} key={chapter.key} onAction={runChapterAction} onOpen={() => jumpToChapter(chapter.chapterId)} />)}</ol>
         <InfiniteScrollSentinel hasMore={Boolean(nextCursor)} isLoading={isLoadingMore} label="chapters" onLoadMore={() => void loadMoreChapters()} />
       </section>
     </main>
   )
 }
 
-function ChapterRow({ chapter, onAction }: { chapter: Chapter; onAction: (action: () => Promise<void>) => Promise<void> }) {
+function ChapterRow({ chapter, onAction, onOpen }: { chapter: Chapter; onAction: (action: () => Promise<void>) => Promise<void>; onOpen: () => void }) {
   const cacheState = chapter.cache?.state ?? 'not-downloaded'
   const jobState = chapter.cache?.state === 'downloading' ? 'downloading' : undefined
   const hasSecondaryActions = !chapter.updateAvailable && (cacheState === 'partial' || Boolean(jobState))
-  const primaryAction = chapter.updateAvailable ? <button className="chapter-primary-action" onClick={() => void onAction(async () => { await deleteChapterCache(chapter.key); await downloadChapter(chapter.key) })} type="button">Update</button> : cacheState === 'available' ? <button className="chapter-primary-action" onClick={() => void onAction(() => deleteChapterCache(chapter.key))} type="button">Delete</button> : hasSecondaryActions ? <button className="chapter-primary-action" onClick={() => void onAction(() => resumeDownload(chapter.key))} type="button">Resume</button> : <button className="chapter-primary-action" onClick={() => void onAction(() => downloadChapter(chapter.key))} type="button">Download</button>
+  const primaryAction = chapter.updateAvailable ? <button className="chapter-primary-action" onClick={() => void onAction(async () => { await deleteChapterCache(chapter.key); await downloadChapter(chapter.key) })} type="button">Update</button> : cacheState === 'available' ? <button className="chapter-primary-action" onClick={() => void onAction(() => deleteChapterCache(chapter.key))} type="button">Delete</button> : hasSecondaryActions ? <button className="chapter-primary-action" onClick={() => void onAction(() => resumeDownload(chapter.key))} type="button">Resume</button> : null
 
   function renderSecondaryActions() {
     return <><button onClick={() => void onAction(() => pauseDownload(chapter.key))} type="button">Pause</button><button onClick={() => void onAction(() => cancelDownload(chapter.key))} type="button">Cancel</button></>
   }
 
-  return <li className="chapter-row"><div className="chapter-copy"><span>{String(chapter.order + 1).padStart(2, '0')}</span><div><strong>{chapter.title}</strong><small>{chapter.removedFromSource ? 'No longer available from source · ' : ''}{chapter.updateAvailable ? 'Update available · ' : ''}{cacheState.replace('-', ' ')}</small></div></div><div className="chapter-actions">{primaryAction}{hasSecondaryActions && <><ActionDisclosure label="More chapter actions"><div className="chapter-secondary-actions chapter-secondary-actions-mobile">{renderSecondaryActions()}</div></ActionDisclosure><div className="chapter-secondary-actions chapter-secondary-actions-desktop">{renderSecondaryActions()}</div></>}</div></li>
+  return <li className="chapter-row"><button className="chapter-copy" onClick={onOpen} type="button"><span className="chapter-copy-number">{String(chapter.order + 1).padStart(2, '0')}</span><span className="chapter-copy-details"><strong>{chapter.title}</strong><small>{chapter.removedFromSource ? 'No longer available from source · ' : ''}{chapter.updateAvailable ? 'Update available · ' : ''}{cacheState.replace('-', ' ')}</small></span></button>{(primaryAction || hasSecondaryActions) && <div className="chapter-actions">{primaryAction}{hasSecondaryActions && <><ActionDisclosure label="More chapter actions"><div className="chapter-secondary-actions chapter-secondary-actions-mobile">{renderSecondaryActions()}</div></ActionDisclosure><div className="chapter-secondary-actions chapter-secondary-actions-desktop">{renderSecondaryActions()}</div></>}</div>}</li>
 }

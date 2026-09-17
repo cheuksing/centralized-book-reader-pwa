@@ -25,7 +25,7 @@ export function BookIndexPage() {
     count: chapters.length,
     estimateSize: () => 72,
     getItemKey: getChapterKey,
-    overscan: 8,
+    overscan: 2,
     scrollMargin,
   })
   const virtualItems = virtualizer.getVirtualItems()
@@ -54,7 +54,7 @@ export function BookIndexPage() {
         {virtualItems.map((virtualRow) => {
           const chapter = chapters[virtualRow.index]
           if (!chapter) return null
-          return <li data-index={virtualRow.index} key={chapter.key} ref={virtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - scrollMargin}px)`, width: '100%' }}><button aria-current={virtualRow.index === chapterIndex ? 'location' : undefined} className={virtualRow.index === chapterIndex ? 'is-current' : ''} disabled={chapter.removedFromSource && !chapter.cache} onClick={() => jumpToChapter(chapter.chapterId)} type="button"><span>{String(virtualRow.index + 1).padStart(2, '0')}</span><strong>{chapter.title}</strong><small>{chapter.removedFromSource ? 'Cached copy' : chapter.cache?.state?.replace('-', ' ') ?? 'Not downloaded'}</small></button></li>
+          return <li data-index={virtualRow.index} key={chapter.key} ref={virtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - scrollMargin}px)`, width: '100%' }}><button aria-current={virtualRow.index === chapterIndex ? 'location' : undefined} className={virtualRow.index === chapterIndex ? 'is-current' : ''} onClick={() => jumpToChapter(chapter.chapterId)} type="button"><span>{String(virtualRow.index + 1).padStart(2, '0')}</span><strong>{chapter.title}</strong><small>{chapter.removedFromSource ? 'Cached copy' : chapter.cache?.state?.replace('-', ' ') ?? 'Not downloaded'}</small></button></li>
         })}
       </ol>
     </section>

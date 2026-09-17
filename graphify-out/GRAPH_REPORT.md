@@ -1,7 +1,7 @@
-# Graph Report - centralized-book-reader-pwa  (2026-09-17)
+# Graph Report - centralized-book-reader-pwa  (2026-09-18)
 
 ## Corpus Check
-- 88 files · ~63,173 words
+- 88 files · ~63,603 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 6 file(s) not represented in the graph (top: (none) 3, .css 2, .toml 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f69b200e`
+- Built from commit: `922aa16b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

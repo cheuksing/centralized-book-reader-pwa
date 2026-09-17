@@ -76,7 +76,7 @@ export function HomePage() {
       {isLoading ? <p className="muted library-message">Opening your local library…</p> : books.length === 0 ? (
         <section className="library-empty">
           <h2>{activeList === 'recent' ? 'Nothing read yet' : activeList === 'bookmarks' ? 'No bookmarks yet' : 'No downloads yet'}</h2>
-          <p>{activeList === 'recent' ? 'Recent entries appear as soon as you enter a reader page.' : activeList === 'bookmarks' ? 'Bookmark a publication from a source or its details page.' : 'Download a chapter from publication details to keep it offline.'}</p>
+          <p>{activeList === 'recent' ? 'Recent entries appear as soon as you enter a reader page.' : activeList === 'bookmarks' ? 'Bookmark a publication from a source or its details page.' : 'Download chapters from reader controls to keep them offline.'}</p>
         </section>
       ) : <section className="library-book-list" aria-label={label} aria-live="polite">{books.map((publication) => <PublicationRow key={publication.key} list={activeList} publication={publication} />)}</section>}
     </>

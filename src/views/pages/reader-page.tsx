@@ -3,7 +3,7 @@ import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useAppViewModel } from '@app/app-store'
 import type { ReadingLocator } from '@models/database/schemas'
 import type { Chapter, Publication } from '@models/entities/domain'
-import type { ReaderSection } from '@services/book-content-service'
+import { downloadChapter, type ReaderSection } from '@services/book-content-service'
 import { useReaderViewModel, type ReaderChapterContent } from '@view-models/reader-view-model'
 
 const emptySections: ReaderSection[] = []
@@ -29,6 +29,8 @@ export function ReaderPage() {
   const error = useReaderViewModel((state) => state.error)
   const openPublication = useReaderViewModel((state) => state.openPublication)
   const loadAdjacentChapter = useReaderViewModel((state) => state.loadAdjacentChapter)
+  const selectAdjacentChapter = useReaderViewModel((state) => state.selectAdjacentChapter)
+  const loadMoreChapters = useReaderViewModel((state) => state.loadMoreChapters)
   const ensureImage = useReaderViewModel((state) => state.ensureImage)
   const updateVisibleSection = useReaderViewModel((state) => state.updateVisibleSection)
   const flushProgress = useReaderViewModel((state) => state.flushProgress)
@@ -48,14 +50,15 @@ export function ReaderPage() {
   const restoredLocatorRef = useRef<string | undefined>(undefined)
   const [controlsOpen, setControlsOpen] = useState(false)
   const [readerScrollMargin, setReaderScrollMargin] = useState(0)
-  const [pendingChapterId, setPendingChapterId] = useState<string>()
+  const [downloadMode, setDownloadMode] = useState<'all' | 'next' | undefined>()
+  const [downloadStatus, setDownloadStatus] = useState<string>()
   const hasMoreChapters = chapterCursorPublicationKey === publication?.key && Boolean(chapterNextCursor)
   const getReaderChapterKey = useCallback((index: number) => readerChapters[index]?.chapter.key ?? index, [readerChapters])
   const readerVirtualizer = useWindowVirtualizer<HTMLDivElement>({
     count: readerChapters.length,
     estimateSize: () => 720,
     getItemKey: getReaderChapterKey,
-    overscan: 2,
+    overscan: 1,
     scrollMargin: readerScrollMargin,
   })
   const readerVirtualItems = readerVirtualizer.getVirtualItems()
@@ -76,13 +79,6 @@ export function ReaderPage() {
     window.addEventListener('resize', updateScrollMargin)
     return () => window.removeEventListener('resize', updateScrollMargin)
   }, [isLoading, isLoadingChapter, publication?.key, readerChapters.length])
-  useEffect(() => {
-    if (!pendingChapterId) return
-    const targetIndex = readerChapters.findIndex((entry) => entry.chapter.chapterId === pendingChapterId)
-    if (targetIndex < 0) return
-    setPendingChapterId(undefined)
-    window.requestAnimationFrame(() => readerVirtualizer.scrollToIndex(targetIndex, { align: 'start', behavior: 'auto' }))
-  }, [pendingChapterId, readerChapters, readerVirtualizer])
 
   useLayoutEffect(() => {
     if (requestedChapterId) scrollToPosition(0)
@@ -229,11 +225,48 @@ export function ReaderPage() {
 
   const navigateChapter = useCallback(async (direction: 'previous' | 'next') => {
     if (!publication || !chapter) return
-    const loadedChapterId = await loadAdjacentChapter(publication, direction, chapter.chapterId)
-    if (!loadedChapterId) return
     closeControls()
-    setPendingChapterId(loadedChapterId)
-  }, [chapter, closeControls, loadAdjacentChapter, publication])
+    const selectedChapterId = await selectAdjacentChapter(publication, direction, chapter.chapterId)
+    if (selectedChapterId) scrollToPosition(0)
+  }, [chapter, closeControls, publication, selectAdjacentChapter])
+
+  const queueChapterDownloads = useCallback(async (limit: number | undefined) => {
+    if (!publication || !chapter || downloadMode) return
+    const sourceChapterKey = chapter.key
+    setDownloadMode(limit === undefined ? 'all' : 'next')
+    setDownloadStatus(undefined)
+    try {
+      const chapterKeys: string[] = []
+      while (true) {
+        const state = useReaderViewModel.getState()
+        const sourceIndex = state.chapters.findIndex((candidate) => candidate.key === sourceChapterKey)
+        if (sourceIndex < 0) break
+        const candidates = state.chapters.slice(sourceIndex + 1, limit === undefined ? undefined : sourceIndex + 1 + limit)
+        const knownKeys = new Set(chapterKeys)
+        candidates.forEach((candidate) => { if (!knownKeys.has(candidate.key)) { knownKeys.add(candidate.key); chapterKeys.push(candidate.key) } })
+        if ((limit !== undefined && chapterKeys.length >= limit) || state.chapterCursorPublicationKey !== publication.key || !state.chapterNextCursor) break
+        const beforeLength = state.chapters.length
+        const beforeCursor = state.chapterNextCursor
+        await loadMoreChapters(publication)
+        const current = useReaderViewModel.getState()
+        if (current.chapters.length === beforeLength && current.chapterNextCursor === beforeCursor) break
+      }
+      const selectedKeys = limit === undefined ? chapterKeys : chapterKeys.slice(0, limit)
+      if (selectedKeys.length === 0) {
+        setDownloadStatus('No remaining chapters to download.')
+        return
+      }
+      const results = await Promise.allSettled(selectedKeys.map((chapterKey) => downloadChapter(chapterKey)))
+      const failed = results.filter((result) => result.status === 'rejected').length
+      const completed = results.length - failed
+      const chapterLabel = completed === 1 ? 'chapter' : 'chapters'
+      setDownloadStatus(failed === 0 ? `Downloaded ${completed} ${chapterLabel}.` : `Downloaded ${completed} ${chapterLabel}; ${failed} failed.`)
+    } catch (failure) {
+      setDownloadStatus(failure instanceof Error ? failure.message : 'Could not start chapter downloads.')
+    } finally {
+      setDownloadMode(undefined)
+    }
+  }, [chapter, downloadMode, loadMoreChapters, publication])
 
   const handleReaderClick = useCallback((event: MouseEvent<HTMLElement>) => {
     const selection = window.getSelection()
@@ -261,6 +294,9 @@ export function ReaderPage() {
 
   const previousAvailable = chapterIndex > 0
   const nextAvailable = chapterIndex < chapters.length - 1 || hasMoreChapters
+  const hasRemainingChapters = Boolean(chapter && (chapterIndex < chapters.length - 1 || hasMoreChapters))
+  const nextDownloadCount = remainingChapters === undefined ? 20 : Math.min(20, remainingChapters)
+  const nextDownloadLabel = nextDownloadCount === 1 ? 'Download 1 chapter' : `Download next ${nextDownloadCount} chapters`
   const chapterPosition = chapter ? `Chapter ${chapterIndex + 1}${chapterCountKnown ? ` of ${chapters.length}` : ''}` : 'Preparing chapter'
   const chapterRemaining = chapter ? chapterCountKnown ? `${remainingChapters} ${remainingChapters === 1 ? 'chapter' : 'chapters'} remaining` : 'More chapters available' : ''
 
@@ -281,8 +317,9 @@ export function ReaderPage() {
     {!isLoading && hasContent && <dialog aria-labelledby="reader-controls-title" className="reader-controls-dialog" onCancel={closeControls} onClick={(event) => { if (event.target === event.currentTarget) closeControls() }} onClose={closeControls} ref={controlsRef}>
       <div className="reader-controls-panel">
         <div className="reader-controls-heading"><div><p className="reader-controls-kicker">Reader controls</p><h2 id="reader-controls-title">{chapter?.title ?? 'Current chapter'}</h2><p className="reader-controls-meta">{chapterPosition} · {chapterRemaining}</p></div><button className="reader-controls-close" onClick={closeControls} type="button">Close</button></div>
-        <div className="reader-chapter-navigation"><button disabled={!previousAvailable || isLoadingPreviousChapter} onClick={() => void navigateChapter('previous')} type="button">← Previous chapter</button><button disabled={!nextAvailable || isLoadingNextChapter || isLoadingMoreChapters} onClick={() => void navigateChapter('next')} type="button">Next chapter →</button></div>
+        <div className="reader-chapter-navigation"><button disabled={!previousAvailable || isLoadingPreviousChapter || isLoadingChapter} onClick={() => void navigateChapter('previous')} type="button">← Previous chapter</button><button disabled={!nextAvailable || isLoadingNextChapter || isLoadingMoreChapters || isLoadingChapter} onClick={() => void navigateChapter('next')} type="button">Next chapter →</button></div>
         <button className="reader-index-button" onClick={openChapterIndex} type="button">Open chapter index</button>
+        <section className="reader-downloads" aria-labelledby="reader-downloads-title"><h3 id="reader-downloads-title">Offline downloads</h3><div className="reader-download-actions"><button disabled={!hasRemainingChapters || Boolean(downloadMode)} onClick={() => void queueChapterDownloads(undefined)} type="button">{downloadMode === 'all' ? 'Downloading…' : 'Download all remaining chapters'}</button><button disabled={!hasRemainingChapters || Boolean(downloadMode)} onClick={() => void queueChapterDownloads(20)} type="button">{downloadMode === 'next' ? 'Downloading…' : nextDownloadLabel}</button></div>{downloadStatus && <p className="reader-download-status" role="status">{downloadStatus}</p>}</section>
         <section className="reader-appearance" aria-labelledby="reader-appearance-title"><h3 id="reader-appearance-title">Appearance</h3><div className="reader-control-panel">
           <label className="reader-control-group"><span>Theme</span><select aria-label="Theme" onChange={(event) => setTheme(event.target.value as typeof settings.theme)} value={settings.theme}><option value="system">System default</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
           <div className="reader-control-group"><span>Font size</span><div className="reader-control-actions"><button aria-label="Decrease font size" disabled={settings.fontSize <= 14} onClick={decreaseFontSize} type="button">A−</button><output>{settings.fontSize}px</output><button aria-label="Increase font size" disabled={settings.fontSize >= 28} onClick={increaseFontSize} type="button">A+</button></div></div>

@@ -11,7 +11,7 @@ import { useReaderViewModel } from '@view-models/reader-view-model'
 import { useAppViewModel } from '@app/app-store'
 import { readerPath } from '@app/routes'
 import type { Chapter, Publication } from '@models/entities/domain'
-import { deleteChapterCache, getChapterOpenability, updateChapterCache } from '@services/book-content-service'
+import { getChapterOpenability, updateChapterCache } from '@services/book-content-service'
 import { togglePublicationBookmark, loadPublicationCover } from '@services/library-service'
 import { getLocalChapters, getSourceForPublication, persistPublication, syncPublication } from '@services/publication-sync-service'
 
@@ -131,10 +131,7 @@ export function BookDetailsPage() {
     const chapter = chapterToUpdate
     setChapterToUpdate(undefined)
     if (!chapter || !online) return
-    void runChapterAction(async () => {
-      await deleteChapterCache(chapter.key)
-      await updateChapterCache(chapter.key)
-    })
+    void runChapterAction(() => updateChapterCache(chapter.key))
   }
 
   return (

@@ -51,6 +51,7 @@ async function getDatabase() {
 }
 
 const resourceOperations = new Map<string, Promise<void>>()
+const chapterUpdateOperations = new Map<string, Promise<void>>()
 const busyChapterKeys = new Set<string>()
 const volatileResources = new Map<string, { blob: Blob; mimeType: string }>()
 const activeCacheMutations = new Set<Promise<unknown>>()
@@ -98,6 +99,16 @@ function withCacheMutation<T>(operation: () => Promise<T>, expectedGeneration = 
 
 function isCacheClearInProgressError(error: unknown): boolean {
   return error instanceof CacheClearInProgressError
+}
+
+export function runKeyedOperation<T>(operations: Map<string, Promise<T>>, key: string, operation: () => Promise<T>): Promise<T> {
+  const existing = operations.get(key)
+  if (existing) return existing
+  const current = Promise.resolve().then(operation).finally(() => {
+    if (operations.get(key) === current) operations.delete(key)
+  })
+  operations.set(key, current)
+  return current
 }
 
 export async function loadChapterContent(publication: PublicationDocument, chapter: ChapterDocument, options: LoadChapterContentOptions = {}): Promise<ReaderSection[]> {
@@ -300,6 +311,7 @@ async function getDatabaseEvictionCandidates(protection: CacheProtection & { bus
   const chapterByKey = new Map(chapters.map((chapter) => [chapter.key, chapter]))
   const busy = new Set(protection.busyChapterKeys)
   busyChapterKeys.forEach((key) => busy.add(key))
+  for (const key of chapterUpdateOperations.keys()) busy.add(key)
   return getEvictionCandidates(caches.map((cache) => ({
     key: cache.key,
     state: cache.state,
@@ -378,16 +390,19 @@ export async function markChapterAccessed(chapterKey: string): Promise<void> {
   }
 }
 
-export async function updateChapterCache(chapterKey: string): Promise<void> {
+export function updateChapterCache(chapterKey: string): Promise<void> {
   const expectedGeneration = cacheClearGeneration
-  try {
-    await withCacheMutation(() => updateChapterCacheNow(chapterKey, expectedGeneration), expectedGeneration)
-  } finally {
-    requestStorageEstimateRefresh()
-  }
+  return runKeyedOperation(chapterUpdateOperations, chapterKey, async () => {
+    try {
+      await withCacheMutation(() => updateChapterCacheNow(chapterKey, expectedGeneration), expectedGeneration)
+    } finally {
+      requestStorageEstimateRefresh()
+    }
+  })
 }
 
 async function updateChapterCacheNow(chapterKey: string, expectedGeneration: number): Promise<void> {
+  await deleteChapterCacheNow(chapterKey)
   const database = await getDatabase()
   const chapter = await database.chapters.findOne(chapterKey).exec()
   if (!chapter) throw new Error('This chapter no longer exists.')

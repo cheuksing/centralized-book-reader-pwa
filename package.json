@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "worker:test": "rm -rf worker/.tmp && tsc -p worker/tsconfig.json --outDir worker/.tmp --noEmit false && node worker/test/miniflare.mjs"
+    "bridge:check": "rm -rf .tmp/userscript-bridge && tsc --ignoreConfig --target es2023 --module nodenext --moduleResolution nodenext --outDir .tmp/userscript-bridge src/services/userscript-bridge.check.ts && node .tmp/userscript-bridge/userscript-bridge.check.js"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.52",
@@ -21,17 +21,14 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.54.10",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "miniflare": "^4.20260329.0",
     "oxlint": "^1.81.0",
     "sass": "^1.104.1",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
-    "vite-tsconfig-paths": "^6.1.1",
-    "wrangler": "^4.132.0"
+    "vite-tsconfig-paths": "^6.1.1"
   }
 }

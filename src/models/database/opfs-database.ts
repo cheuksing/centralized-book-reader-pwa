@@ -157,7 +157,15 @@ async function createDatabase(databaseName: string): Promise<ReaderDatabase> {
   })
 
   await database.addCollections({
-    appSettings: { schema: appSettingsSchema },
+    appSettings: {
+      schema: appSettingsSchema,
+      migrationStrategies: {
+        1: (document) => {
+          const { workerOrigin: _workerOrigin, workerToken: _workerToken, ...settings } = document as Record<string, unknown>
+          return settings
+        },
+      },
+    },
     chapterCaches: { schema: chapterCacheSchema },
     chapters: { schema: chapterSchema },
     downloadJobs: { schema: downloadJobSchema },

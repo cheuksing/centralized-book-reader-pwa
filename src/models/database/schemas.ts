@@ -277,8 +277,7 @@ export type ReaderSettings = Pick<ReaderSettingsDocument, 'theme' | 'fontSize' |
 
 export const AppSettingsDocumentSchema = Type.Object({
   id: Type.Unsafe<'app'>(Type.String({ const: 'app', minLength: 3, maxLength: 3 })),
-  workerOrigin: Type.Optional(Type.String({ maxLength: 2000 })),
-  workerToken: Type.Optional(Type.String({ maxLength: 500 })),
+
   persistentStorageRequested: Type.Boolean(),
   persistentStorageGranted: Type.Optional(Type.Boolean()),
   lastBackupAt: Type.Optional(Type.String({ format: 'date-time', maxLength: 40 })),
@@ -340,6 +339,6 @@ export const publicationBookmarkSchema = rxSchema(PublicationBookmarkDocumentSch
 export const readingHistorySchema = rxSchema(ReadingHistoryDocumentSchema, { title: 'reading history', version: 0, primaryKey: 'id', indexes: [['openedAt', 'publicationKey']] })
 export const readingProgressSchema = rxSchema(ReadingProgressDocumentSchema, { title: 'reading progress', version: 0, primaryKey: 'id', indexes: ['publicationKey', 'updatedAt'] })
 export const readerSettingsSchema = rxSchema(ReaderSettingsDocumentSchema, { title: 'reader settings', version: 0, primaryKey: 'id', indexes: ['scope'] })
-export const appSettingsSchema = rxSchema(AppSettingsDocumentSchema, { title: 'application settings', version: 0, primaryKey: 'id' })
+export const appSettingsSchema = rxSchema(AppSettingsDocumentSchema, { title: 'application settings', version: 1, primaryKey: 'id' })
 export const chapterCacheSchema = rxSchema(ChapterCacheDocumentSchema, { title: 'chapter content cache', version: 1, primaryKey: 'key', indexes: [['publicationId', 'state'], ['state', 'lastAccessedAt'], 'state'], attachments: {} })
 export const downloadJobSchema = rxSchema(DownloadJobDocumentSchema, { title: 'explicit chapter download job', version: 0, primaryKey: 'id', indexes: [['chapterKey', 'state'], 'state'] })

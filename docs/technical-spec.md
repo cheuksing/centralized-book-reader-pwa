@@ -1,7 +1,7 @@
 # Bookshelf Reader Technical Specification
 
 Status: implementation target for the incomplete prototype  
-Last updated: 2026-09-16  
+Last updated: 2026-09-19
 Domain language: [`CONTEXT.md`](../CONTEXT.md)
 
 ## 1. Purpose
@@ -28,7 +28,7 @@ The current implementation is incomplete in ways this specification intentionall
 - The content manifest is one flat resource list rather than publication → chapter → resource.
 - Opening content downloads the whole publication with unbounded `Promise.all` before rendering.
 - Remote images are fetched directly and therefore fail when the server omits CORS headers.
-- The proxy is configured per source and no Worker implementation or credential model exists.
+- Remote access still assumes a per-source proxy instead of the required controller-owned userscript bridge for anonymous public-source requests.
 - Reading history is inferred from progress instead of being an independent 30-item list.
 - Progress is a section index/percentage rather than a content-based locator.
 - Bookmarks live as a flag on metadata rather than as an independent concern.
@@ -50,7 +50,7 @@ The prototype must:
 6. Support explicit chapter downloads outside the reader and viewport-driven read-through caching inside it.
 7. Remain useful offline through Bookmarks, Recent, Downloads, cached chapter indexes, reading progress, and cached content.
 8. Keep publication bookmarks, reading history, reading progress, and cached content independent.
-9. Route all remote requests through one user-configured Cloudflare Worker.
+9. Route all remote requests through a user-installed, controller-owned userscript bridge that permits anonymous public-source requests only.
 10. Remain secure when handling untrusted source definitions, URLs, JSON, HTML, and media.
 11. Run as one active PWA instance at a time.
 
@@ -80,7 +80,7 @@ The supported adapter families are deliberately declarative:
 
 Future adapter families must be listed as roadmap work, not shipped as empty classes, selectable UI options, or speculative schema fields:
 
-- `browser-automation`: JavaScript-rendered sources handled outside the PWA, likely in a Worker or separate service.
+- `browser-automation`: JavaScript-rendered sources handled outside the PWA by a separately designed service.
 - `custom-transform`: transformations only after a sandbox and security model are designed.
 
 ## 5. Product rules
@@ -121,26 +121,18 @@ Acquire a named exclusive Web Lock with `ifAvailable: true` before opening the d
 
 ## 6. User experience
 
-### 6.1 First run and Worker setup
+### 6.1 First run and userscript requirement
 
-A fresh installation cannot browse remote sources until the Worker is configured.
-
-The setup screen collects:
-
-- Worker endpoint URL.
-- Worker access token.
+A fresh installation cannot browse remote sources until the controller-owned userscript is installed, enabled, and available to the PWA. The userscript is distributed and maintained outside this repository; do not add a userscript file here.
 
 Requirements:
 
-- Both values are local-only.
-- Neither value is included in backup export.
-- In production, the Worker endpoint must be an absolute HTTPS origin with no credentials, query, or fragment. Permit an HTTP loopback origin only in explicit development mode for Miniflare.
-- Normalize the configured origin by removing its trailing slash, then construct routes with `new URL('/health', origin)` and `new URL('/proxy', origin)`; never concatenate an unvalidated string.
-- The token is sent only in an authorization header, never in a URL.
-- “Test connection” calls the authenticated Worker health route and must succeed before setup is considered complete.
-- Existing cached content remains readable if Worker settings are later missing or invalid.
+- Tell the user to install the controller-provided Violentmonkey script in Violentmonkey or another compatible desktop-browser userscript manager, grant only its required host permissions, and use the manager's normal update flow or the controller's documented replacement instructions.
+- The PWA performs a non-credentialed bridge capability check before enabling remote browsing. Existing cached content remains readable when the bridge is missing, disabled, or invalid.
+- The bridge may request only public sources anonymously: no cookies, credentials, authorization headers, source API keys, or custom request headers may be read or sent.
+- Browser support is limited to desktop browsers with the required PWA APIs and a compatible userscript manager. Each supported browser/manager pair must be verified and recorded by the controller; Orion is not verified. iOS is unsupported.
 - Explain that browser-local storage is not encrypted against someone with access to the browser profile.
-- Request `navigator.storage.persist()` after successful setup and display whether persistence was granted.
+- Request `navigator.storage.persist()` after the bridge capability check and display whether persistence was granted.
 
 ### 6.2 Source management
 
@@ -154,7 +146,7 @@ Users can:
 - Delete a source.
 - Check an imported definition for updates.
 
-All remote definition imports and tests go through the Worker.
+All remote definition imports and tests go through the userscript bridge.
 
 Definition validation has two layers:
 
@@ -178,7 +170,7 @@ Each source detail page is online-only.
 - Catalog lists are source-defined ordered collections such as latest, popular, completed, recommendations, or genres.
 - Preserve source order and independent cursor pagination.
 - Do not aggregate across sources.
-- Catalog results and their thumbnails are transient; they are not durable offline data merely because they were displayed. Because `<img>` cannot attach the Worker authorization header, fetch each transient thumbnail through the remote fetch module, display it with a temporary Object URL, and revoke it when the result leaves the view.
+- Catalog results and their thumbnails are transient; they are not durable offline data merely because they were displayed. Fetch each transient thumbnail through the userscript bridge, display it with a temporary Object URL, and revoke it when the result leaves the view.
 - Failure of one operation must provide an operation-specific error and retry action.
 - While offline, replace the page with a clear unavailable-offline state.
 
@@ -235,7 +227,7 @@ Provide three independent views:
 
 Offline Bookmarks and Recent remain complete. Mark publications/chapters as available, partially available, or unavailable offline; do not make saved items disappear because the app is offline.
 
-Durably cache a publication cover when the publication enters Bookmarks, Recent, or Downloads. Fetch it through the authenticated remote fetch module, persist it as an OPFS attachment, and display it with a local Object URL; an `<img>` request must never bypass the Worker because it cannot attach the Worker token. Catalog-only thumbnails remain transient. Delete the durable cover only when the publication is absent from all three views.
+Durably cache a publication cover when the publication enters Bookmarks, Recent, or Downloads. Fetch it through the userscript bridge, persist it as an OPFS attachment, and display it with a local Object URL; an `<img>` request must never bypass the bridge because it must preserve the anonymous public-source policy. Catalog-only thumbnails remain transient. Delete the durable cover only when the publication is absent from all three views.
 
 ### 6.7 Bookmarks
 
@@ -441,7 +433,7 @@ Rules for the generic-json shape:
 
 Rules for the html-selectors shape:
 
-- HTML documents are fetched through the authenticated Worker and parsed with the browser's native DOM parser; source JavaScript is never executed by the adapter.
+- HTML documents are fetched through the userscript bridge and parsed with the browser's native DOM parser; source JavaScript is never executed by the adapter.
 - CSS selectors and capture patterns are bounded and invalid selectors/patterns reject the operation.
 - A chapter manifest emits one text resource with a configured content selector; the cache stores extracted text, not the source page chrome or markup.
 
@@ -512,83 +504,46 @@ The adapter normalizes source-specific kinds. Unknown publication kinds default 
 Map failures into typed categories suitable for user messages and retry decisions:
 
 - Offline.
-- Worker not configured.
-- Worker authentication failed.
-- Target rejected by Worker policy.
+- Userscript bridge unavailable or disabled.
+- Request rejected by the anonymous public-source policy.
 - Upstream HTTP failure.
 - Invalid JSON.
 - Invalid source response/missing pointer.
 - Unsupported source capability.
 - Aborted request.
 
-Do not expose the Worker token or full sensitive request headers in errors or logs.
+Do not expose full sensitive request headers or bridge messages in errors or logs.
 
-## 8. Cloudflare Worker
+## 8. Controller-owned userscript bridge
 
 ### 8.1 Responsibility
 
-The Worker is a user-owned authenticated CORS proxy for public source data and content. It is not a source parser, login proxy, cache authority, or open relay.
+The controller distributes and maintains a userscript outside this repository. It bridges the PWA to public source data and content where direct browser requests are blocked by CORS. It is not a source parser, login proxy, cache authority, browser-automation tool, or open relay.
 
-Repository implementation should live in a dedicated `worker/` directory with its own minimal configuration. The PWA communicates with only this Worker for remote source definitions, source JSON, text, HTML, covers, and reader images.
+The PWA communicates with the bridge for remote source definitions, source JSON, text, HTML, covers, and reader images. This repository must not create, copy, or publish the userscript.
 
-### 8.2 Interface
+### 8.2 Interface and anonymous policy
 
-Required routes:
+The controller defines a versioned, non-credentialed message contract between the PWA and userscript. The contract must provide a capability check and an anonymous `GET` request for an absolute HTTPS target URL.
 
-- `GET /health`: authenticated health check returning small JSON.
-- `GET /proxy?url=<encoded HTTPS URL>`: authenticated proxy request.
-- `OPTIONS /*`: CORS preflight.
+The bridge must:
 
-Authentication:
+- Accept only requests from the configured PWA origin and only `GET` requests for absolute `https:` URLs.
+- Reject embedded credentials, custom request headers, cookies, authorization headers, source API keys, and source login flows.
+- Require public sources; it must never read or send browser cookies or other ambient credentials.
+- Restrict target hosts to the userscript's granted host permissions and reject `localhost`, `.localhost`, private/link-local/loopback IP literals, known metadata hostnames, and non-default ports.
+- Revalidate redirect destinations and enforce a small redirect limit.
+- Return only the response status, safe content metadata, and body required by the PWA; never expose secrets or browser state.
 
-- `Authorization: Bearer <access-token>`.
-- Token comes from a Worker secret/environment binding.
-- Missing or invalid token returns `401` without contacting the target.
+The PWA remains responsible for response-size/quota handling and content validation. It must map a missing bridge, a rejected request, and an upstream failure to actionable user errors.
 
-CORS:
+### 8.3 Installation, updates, and browser support
 
-- Allowed PWA origins come from Worker configuration; do not default production to `*`.
-- Return only necessary methods and headers.
-- Development configuration allows the local Vite origin.
+The controller publishes installation and update instructions with the Violentmonkey userscript. Users install it through Violentmonkey or another compatible desktop-browser userscript manager, grant only required host permissions, and update it through the manager's normal update mechanism or the controller's documented replacement flow.
 
-Proxy policy:
+The controller must verify and publish supported desktop browser/manager combinations. Do not claim Orion is verified. iOS is unsupported.
 
-- Accept only `GET` and `OPTIONS`.
-- Accept only absolute `https:` target URLs.
-- Reject embedded credentials, non-default ports, `localhost`, `.localhost`, private/link-local/loopback IP literals, and known metadata hostnames.
-- Handle redirects manually, validate every destination, and enforce a small redirect limit.
-- Do not forward browser cookies, authorization, referrer, origin, or arbitrary client headers upstream.
-- Send a fixed minimal upstream header set such as `Accept` and a project user agent where Cloudflare permits it.
-- Strip `Set-Cookie` and hop-by-hop headers from the upstream response.
-- Preserve useful status, `Content-Type`, `Content-Length`, `ETag`, and `Last-Modified` where safe.
-- Stream the upstream body rather than buffering it in Worker memory.
-- Return explicit JSON errors for policy rejection and proxy failures; never include secrets.
-
-The PWA remains responsible for response-size/quota handling and content validation. The configured Worker origin itself must satisfy the validation rules in section 6.1 before the PWA sends its bearer token.
-
-### 8.3 Miniflare development and tests
-
-Use the Cloudflare Vite plugin for local Worker execution and Miniflare for automated Worker integration tests.
-
-Required development setup:
-
-- A local Worker token supplied through development-only environment configuration, never committed.
-- `vite` runs the Worker through the Cloudflare Vite plugin; tests should instantiate Miniflare directly where deterministic request/response control is useful.
-- Configure the PWA's development Worker URL to the Vite endpoint.
-- Do not depend on public internet services. Use Miniflare's outbound-fetch mocking/service bindings so a public-looking HTTPS fixture host such as `https://fixture.example` resolves to deterministic test responses without weakening the Worker's localhost/private-target rejection.
-
-Minimum automated Worker cases:
-
-1. Health succeeds with the configured token.
-2. Missing and incorrect tokens return `401`.
-3. Allowed origin receives correct CORS headers; disallowed origin does not.
-4. `OPTIONS` preflight returns only allowed methods/headers.
-5. HTTP, localhost, private IP literals, metadata hosts, credentials in URLs, and non-default ports are rejected.
-6. Redirects are revalidated and the redirect limit is enforced.
-7. Upstream JSON, HTML, and binary image bodies are preserved.
-8. Upstream status and safe content headers are preserved.
-9. `Set-Cookie` and unsafe headers are stripped.
-10. Unsupported methods are rejected without an upstream request.
+Automated PWA checks use a mock bridge contract with deterministic JSON, HTML, and binary fixtures. Integration checks cover bridge availability, PWA-origin validation, anonymous-request rejection, redirect validation, safe response handling, and propagation of upstream failures.
 
 ## 9. Persistence model
 
@@ -599,7 +554,7 @@ Use RxDB collections backed by the existing OPFS storage adapter. Exact schema l
 **App settings**
 
 - Singleton ID.
-- Worker URL and local access token.
+- No userscript configuration or persisted capability status; bridge availability is runtime-probed.
 - Persistent-storage request/result.
 - Last backup timestamp.
 - No fixed application cache budget and no automatic-cleanup setting. Remove the existing `cacheBudgetBytes`, `automaticCleanup`, `DEFAULT_CACHE_BUDGET_BYTES`, and `canStartDownload` model; storage estimates may warn or refuse one new explicit download but never trigger eviction.
@@ -695,14 +650,14 @@ Provide failure-injection checks for interrupted document writes, new attachment
 
 All remote calls—including catalog thumbnails and covers—must cross one fetch module that:
 
-- Requires global Worker configuration.
-- Builds `/proxy` requests and authorization headers.
-- Fetches remote images as blobs because native `<img src>` requests cannot attach the Worker token; callers receive temporary Object URLs or persist the blob before display.
+- Requires an available userscript bridge.
+- Sends versioned anonymous bridge requests for absolute HTTPS URLs.
+- Fetches remote images as blobs through the bridge; callers receive temporary Object URLs or persist the blob before display.
 - Applies timeouts/abort signals.
 - Maps errors.
 - Validates expected status/content type at the caller-facing interface.
 
-Adapters and download logic must not call global `fetch` directly. This concentrates Worker policy, authentication, error mapping, and tests in one place.
+Adapters and download logic must not call global `fetch` directly. This concentrates bridge policy, anonymous-request enforcement, error mapping, and tests in one place.
 
 ### 10.2 Explicit chapter download
 
@@ -773,7 +728,7 @@ Required behavior:
 - Keep safe semantic text formatting, headings, paragraphs, lists, tables, code blocks, and links.
 - Resolve relative URLs against the source resource URL before policy checks.
 - Permit only `http:` and `https:` external links.
-- Discover HTML images, normalize their absolute URLs, create deterministic chapter resources, cache them through the Worker, and rewrite `src` to local attachment Object URLs at render time.
+- Discover HTML images, normalize their absolute URLs, create deterministic chapter resources, cache them through the userscript bridge, and rewrite `src` to local attachment Object URLs at render time.
 - Do not preserve remote image fallbacks that would leak network requests while offline.
 - Replace `iframe`, `video`, `audio`, `source`, and known player embeds with ordinary labeled links to their canonical `http(s)` destination when one can be safely extracted; otherwise remove them.
 - External links open outside the reader and indicate that network access may be required.
@@ -822,12 +777,11 @@ Backup format is versioned JSON and includes:
 
 Exclude:
 
-- Worker URL and access token.
 - Cached covers, chapter resources, and attachments.
 - Download jobs and transient errors.
 - Transient catalog/search results.
 
-Import is a full replacement of the metadata covered by the backup, not a merge. Preserve the current Worker URL/token and persistence status because the backup excludes them. Clear existing sources, publications, bookmarks, history, progress, reader preferences, cached covers/content, and download jobs in the restored generation; then load the backup metadata and enforce the 30-entry history limit.
+Import is a full replacement of the metadata covered by the backup, not a merge. Preserve persistence status because the backup excludes it, then re-probe bridge availability after import. Clear existing sources, publications, bookmarks, history, progress, reader preferences, cached covers/content, and download jobs in the restored generation; then load the backup metadata and enforce the 30-entry history limit.
 
 Validate and normalize the entire backup before mutation. Restore into a fresh database/storage generation, activate that generation only after all writes succeed, and retain the previous generation until activation completes. On failure, continue using the previous generation unchanged. After successful activation, remove the old generation asynchronously. Restored content must be downloaded again for offline reading.
 
@@ -837,7 +791,7 @@ Keep interfaces small and put policy behind them.
 
 ### Remote fetch module
 
-Owns Worker configuration, authentication, proxy URL construction, abort/timeout behavior, and network-error mapping. It is the only module that performs remote fetches.
+Owns userscript bridge capability checks, versioned anonymous request construction, abort/timeout behavior, and network-error mapping. It is the only module that performs remote fetches.
 
 ### Source adapter module
 
@@ -869,14 +823,14 @@ Do not create pass-through modules for individual RxDB calls. A module earns its
 
 Each phase must leave the app buildable and include the smallest runnable checks for its non-trivial policy.
 
-### Phase 1 — Worker and onboarding
+### Phase 1 — Userscript bridge integration
 
-- Add Worker implementation/configuration.
-- Add Miniflare local environment and Worker integration tests.
-- Add global Worker settings, secret-free handling, connection test, and required-capability detection.
+- Integrate the controller-provided userscript bridge; do not add its implementation to this repository.
+- Add bridge capability detection and missing/disabled bridge states.
+- Enforce the anonymous public-source policy in the PWA-facing bridge contract.
 - Route source-definition import through the remote fetch module.
 
-Exit criteria: local PWA can authenticate to Miniflare and proxy fixture JSON/image responses; policy-rejected targets never reach fixtures.
+Exit criteria: the local PWA exchanges fixture JSON/image responses with a mock bridge; unavailable bridges and policy-rejected targets produce actionable errors without a direct remote request.
 
 ### Phase 2 — Domain and persistence reset
 
@@ -958,9 +912,9 @@ Add focused automated checks for policy-heavy code:
 - Cache-state transitions and quota failure preservation.
 - HTML sanitizer malicious fixtures and URL rewriting.
 - Backup secret/content exclusion and all-or-nothing validation.
-- Worker policy through Miniflare as listed in section 8.3.
+- Userscript bridge policy through mock contract checks as listed in section 8.3.
 
-Browser integration scenarios must cover at least Chrome and Safari behavior for:
+Browser integration scenarios must cover each controller-verified desktop browser/userscript-manager combination for:
 
 - OPFS attachments and snapshots surviving reload and injected interrupted writes.
 - Service-worker app shell offline.
@@ -970,14 +924,14 @@ Browser integration scenarios must cover at least Chrome and Safari behavior for
 - Object URL creation and cleanup.
 - Suspension/reload of a partial explicit download.
 
-Do not use live third-party sources in deterministic automated tests. Use fixture source definitions and controllable local upstream responses through Miniflare.
+Do not use live third-party sources in deterministic automated tests. Use fixture source definitions and a controllable mock userscript bridge.
 
 ## 17. Acceptance criteria
 
 The prototype is complete when all of the following are demonstrable:
 
-1. A user configures one Worker URL/token and tests it successfully.
-2. The Miniflare test suite proves authentication, CORS, safe proxying, redirects, binary bodies, and target rejection.
+1. A user installs and updates the controller-owned userscript through a compatible desktop-browser userscript manager, then sees the PWA bridge capability check succeed.
+2. The bridge contract checks prove anonymous public-source requests, target rejection, redirect validation, binary bodies, and safe error handling.
 3. A user installs and edits a valid declarative source without code execution.
 4. A source may expose lists, search, both, or neither, and the UI reflects those capabilities.
 5. Two sources may use identical publication/chapter IDs without collisions.
@@ -997,15 +951,15 @@ The prototype is complete when all of the following are demonstrable:
 19. Offline Bookmarks and Recent remain complete with accurate availability badges.
 20. Source browse/search is unavailable offline; cached details/index/reader remain usable.
 21. Storage is never automatically evicted by application policy, and quota failures preserve partial work.
-22. Metadata backup contains no Worker configuration, token, content attachments, or jobs.
+22. Metadata backup contains no userscript bridge state, content attachments, or jobs.
 23. A second PWA tab cannot open the database while the first owns the app lock.
-24. Supported browsers either meet required capabilities or show a clear unsupported-browser screen.
+24. Supported desktop browser/userscript-manager combinations either meet required capabilities or show a clear unsupported-browser screen; iOS is unsupported and Orion is not claimed as verified.
 
 ## 18. Open roadmap, not prototype scope
 
 Track these after the normalized JSON and static HTML flows work with real sources:
 
-- Worker-side or external browser automation for JavaScript-rendered sites.
+- External browser automation for JavaScript-rendered sites.
 - A safe custom-transformation model.
 - Source authentication.
 - POST/body/header endpoint definitions.

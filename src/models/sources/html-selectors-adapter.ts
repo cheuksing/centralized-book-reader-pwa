@@ -1,6 +1,6 @@
 import type { HtmlSelectorsAdapterConfig, SourceDocument } from '@models/database/schemas'
 import { chapterKey, publicationKey, resourceKey } from '@models/entities/keys'
-import { fetchThroughWorker } from '@services/remote-fetch-service'
+import { fetchThroughUserScript } from '@services/remote-fetch-service'
 import { UnsupportedCapabilityError, type CatalogList, type ChapterManifest, type ChapterPage, type ChapterResource, type ChapterSummary, type Publication, type PublicationPage, type SourceAdapter } from '@models/sources/source-adapter'
 import { replaceTemplate, resolveUrl } from '@models/sources/generic-json-adapter'
 
@@ -81,7 +81,7 @@ function adapterConfig(source: SourceDocument): HtmlSelectorsAdapterConfig {
 
 async function requestHtml(source: SourceDocument, template: string, variables: Record<string, string>): Promise<Document> {
   const url = resolveUrl(source, replaceTemplate(template, variables))
-  const response = await fetchThroughWorker(url, { accept: 'text/html, application/xhtml+xml' })
+  const response = await fetchThroughUserScript(url, { accept: 'text/html, application/xhtml+xml' })
   const contentType = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
   if (contentType && contentType !== 'text/html' && contentType !== 'application/xhtml+xml') throw new Error('The remote source did not return HTML.')
   return new DOMParser().parseFromString(await response.text(), 'text/html')

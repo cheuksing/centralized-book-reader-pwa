@@ -2,7 +2,7 @@ import { Value } from '@sinclair/typebox/value'
 import { SourceDefinitionSchema, type SourceDefinition, type SourceDocument } from '@models/database/schemas'
 import type { Source } from '@models/entities/domain'
 import { sourceAdapterFor } from '@models/sources/source-registry'
-import { fetchJsonThroughWorker } from '@services/remote-fetch-service'
+import { fetchJsonThroughUserScript } from '@services/remote-fetch-service'
 
 async function getDatabase() {
   const { getReaderDatabase } = await import('@models/database/opfs-database')
@@ -65,7 +65,7 @@ export async function addSource(definitionInput: unknown, metadata: { manifestUr
 
 export async function importSourceDefinition(manifestUrlInput: string): Promise<Source> {
   const manifestUrl = normaliseHttpsUrl(manifestUrlInput, 'Source definition URL')
-  const definition = await fetchJsonThroughWorker(manifestUrl)
+  const definition = await fetchJsonThroughUserScript(manifestUrl)
   return addSource(definition, { manifestUrl })
 }
 
@@ -145,7 +145,7 @@ export async function testSourceDefinition(definitionInput: unknown, sourceId = 
 
 export async function checkSourceUpdate(source: Source): Promise<{ candidate: SourceDefinition; summary: string[] }> {
   if (!source.manifestUrl) throw new Error('This source has no definition URL to check.')
-  const candidate = parseSourceDefinition(await fetchJsonThroughWorker(source.manifestUrl))
+  const candidate = parseSourceDefinition(await fetchJsonThroughUserScript(source.manifestUrl))
   const summary: string[] = []
   if (candidate.name !== source.name) summary.push(`Name: ${source.name} → ${candidate.name}`)
   if (JSON.stringify(candidate.adapter) !== JSON.stringify(source.adapter)) summary.push('Adapter mappings changed.')

@@ -1,6 +1,6 @@
 import type { GenericJsonAdapterConfig, SourceDocument } from '@models/database/schemas'
 import { chapterKey, publicationKey, resourceKey } from '@models/entities/keys'
-import { fetchJsonThroughWorker } from '@services/remote-fetch-service'
+import { fetchJsonThroughUserScript } from '@services/remote-fetch-service'
 import { UnsupportedCapabilityError, type CatalogList, type ChapterManifest, type ChapterPage, type ChapterResource, type Publication, type PublicationPage, type SourceAdapter } from '@models/sources/source-adapter'
 
 interface JsonObject { [key: string]: JsonValue }
@@ -106,7 +106,7 @@ async function requestPublicationPage(source: SourceDocument, config: GenericJso
 
 async function requestJson(source: SourceDocument, template: string, variables: Record<string, string>): Promise<JsonValue> {
   const resolved = resolveUrl(source, replaceTemplate(template, variables))
-  return (await fetchJsonThroughWorker(resolved)) as JsonValue
+  return (await fetchJsonThroughUserScript(resolved)) as JsonValue
 }
 
 export function replaceTemplate(template: string, variables: Record<string, string>): string {

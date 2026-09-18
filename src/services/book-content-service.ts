@@ -5,7 +5,7 @@ import { publicationKey, resourceKey } from '@models/entities/keys'
 import { sanitiseHtml, renderSanitisedHtml } from '@models/cache/html-sanitizer'
 import { sourceAdapterFor } from '@models/sources/source-registry'
 import { extractHtmlText } from '@models/sources/html-text'
-import { fetchBlobThroughWorker } from '@services/remote-fetch-service'
+import { fetchBlobThroughUserScript } from '@services/remote-fetch-service'
 import { enqueueImage } from '@services/image-coordinator'
 import { removePublicationCoverIfUnused } from '@services/library-service'
 import { notifyStorageFailure, requestStorageEstimateRefresh, subscribeToOfflineCacheClear, subscribeToOfflineCacheClearBarrier, subscribeToOfflineCacheClearFinish, subscribeToOfflineCacheClearStart } from '@services/storage-service'
@@ -582,7 +582,7 @@ interface PreparedResource {
 
 async function prepareFetchedResource(cache: ChapterCacheDocument, resource: CachedResourceDocument): Promise<PreparedResource> {
   const expectedContentTypes = resource.textSelector ? ['text/html', 'application/xhtml+xml'] : resource.kind === 'html' ? ['text/html', 'application/xhtml+xml'] : resource.kind === 'image' ? ['image/'] : ['text/plain', 'text/markdown']
-  const { blob, contentType } = await fetchBlobThroughWorker(resource.url, undefined, expectedContentTypes)
+  const { blob, contentType } = await fetchBlobThroughUserScript(resource.url, undefined, expectedContentTypes)
   let preparedBlob = blob
   let discovered: CachedResourceDocument[] = []
   if (resource.textSelector) {

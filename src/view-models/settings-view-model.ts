@@ -4,16 +4,13 @@ import { interpretStoragePressure, type StoragePressure } from '@models/cache/ca
 import { loadAppSettings } from '@services/app-settings-service'
 import { downloadBackup, importBackupFile } from '@services/backup-service'
 import { defaultReaderSettings, loadReaderSettings, saveReaderSettings } from '@services/reader-settings-service'
-
-import { normalizeWorkerOrigin, saveWorkerConfig, testWorkerConnection, workerConfigFrom, type WorkerConfig } from '@services/remote-fetch-service'
+import { detectUserScript, requestUserScriptAccess, type UserScriptStatus } from '@services/remote-fetch-service'
 import { clearOfflineCache, getCachedStorageSummary, requestPersistentStorageAccess, storageEstimate } from '@services/storage-service'
 
 interface SettingsViewModel {
   settings: ReaderSettings
-  workerOrigin: string
-  workerToken: string
-  workerConfigured: boolean
-  hasLocalData: boolean
+  userScriptStatus: UserScriptStatus
+  userScriptMessage: string
   databaseError?: string
   storageStatus: string
   storagePressure: StoragePressure
@@ -24,9 +21,8 @@ interface SettingsViewModel {
   message: string
   initialized: boolean
   initialize: () => Promise<void>
-  setWorkerOrigin: (value: string) => void
-  setWorkerToken: (value: string) => void
-  testWorker: () => Promise<void>
+  checkUserScript: () => Promise<void>
+  grantUserScriptAccess: () => Promise<void>
   setTheme: (theme: ReaderSettings['theme']) => Promise<void>
   setFontSize: (fontSize: number) => Promise<void>
   setLineHeight: (lineHeight: number) => Promise<void>
@@ -39,39 +35,34 @@ interface SettingsViewModel {
 }
 
 function errorMessage(error: unknown, fallback: string): string { return error instanceof Error ? error.message : fallback }
-
-function isValidStorageUsage(value: number | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0
-}
-
+function isValidStorageUsage(value: number | undefined): value is number { return typeof value === 'number' && Number.isFinite(value) && value >= 0 }
 function storagePressureMessage(pressure: StoragePressure): string {
   if (pressure === 'normal') return 'Storage pressure is normal.'
   if (pressure === 'pause') return 'Automatic preparation paused because storage is low; no cache eviction is performed.'
   if (pressure === 'critical') return 'Storage pressure is critical; bounded recovery may remove eligible cached chapters.'
   return 'Storage pressure is unknown.'
 }
+export function userScriptStatusMessage(status: UserScriptStatus): string {
+  if (status.kind === 'ready') return `Installed and enabled (version ${status.scriptVersion}).`
+  if (status.kind === 'outdated') return `The installed userscript${status.scriptVersion ? ` (version ${status.scriptVersion})` : ''} is incompatible. Update it, reload, then check again.`
+  if (status.kind === 'permission-required') return 'Remote-request access was denied. Open the Violentmonkey Dashboard, select Bookshelf CORS Bridge, review/allow its site or host access in browser extension settings, then return and select Check again. If the manager remembers the denial, reinstall or update the userscript to request access again.'
+  if (status.kind === 'unsupported') return 'This browser cannot use the Bookshelf userscript bridge.'
+  return 'The Bookshelf CORS Bridge is missing or disabled. Install or enable it, reload the page, then check again.'
+}
 
 export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
   let estimateRefresh: Promise<boolean> | undefined
-
+  let initialized = false
+  let permissionListenerRegistered = false
   async function persist(settings: ReaderSettings): Promise<void> {
     set({ settings })
     try { await saveReaderSettings(settings); set({ databaseError: undefined }) } catch (error) { set({ databaseError: errorMessage(error, 'Could not save reader settings.') }) }
   }
 
-  async function currentWorkerConfig(): Promise<WorkerConfig> {
-    const origin = normalizeWorkerOrigin(get().workerOrigin)
-    const token = get().workerToken.trim()
-    if (!token) throw new Error('Worker access token is required.')
-    return { origin, token }
-  }
-
   return {
     settings: defaultReaderSettings,
-    workerOrigin: '',
-    workerToken: '',
-    workerConfigured: false,
-    hasLocalData: false,
+    userScriptStatus: { kind: 'missing' },
+    userScriptMessage: '',
     storageStatus: 'Persistent storage not requested.',
     storagePressure: 'unknown',
     storagePressureStatus: 'Storage pressure is unknown.',
@@ -80,35 +71,30 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
     message: '',
     initialized: false,
     initialize: async () => {
-      if (get().initialized) return
-      set({ initialized: true })
+      if (initialized) return
+      initialized = true
+      if (!permissionListenerRegistered && typeof window !== 'undefined') {
+        permissionListenerRegistered = true
+        window.addEventListener('bookshelf-user-script-permission-denied', () => {
+          const userScriptStatus: UserScriptStatus = { kind: 'permission-required' }
+          set({ userScriptStatus, userScriptMessage: userScriptStatusMessage(userScriptStatus) })
+        })
+      }
       try {
-        const [settings, appSettings] = await Promise.all([loadReaderSettings(), loadAppSettings()])
-        const worker = workerConfigFrom(appSettings)
-        const developmentWorker = import.meta.env.DEV ? { origin: import.meta.env.VITE_WORKER_ORIGIN, token: import.meta.env.VITE_WORKER_TOKEN } : undefined
-        const { getReaderDatabase } = await import('@models/database/opfs-database')
-        const database = await getReaderDatabase()
-        const [publications, caches, history] = await Promise.all([
-          database.publications.find({ selector: {} }).exec(),
-          database.chapterCaches.find({ selector: {} }).exec(),
-          database.readingHistory.find({ selector: {} }).exec(),
-        ])
-        set({ settings, workerOrigin: appSettings.workerOrigin ?? developmentWorker?.origin ?? '', workerToken: appSettings.workerToken ?? developmentWorker?.token ?? '', workerConfigured: Boolean(worker), hasLocalData: publications.length > 0 || caches.length > 0 || history.length > 0, storageStatus: appSettings.persistentStorageGranted === undefined ? 'Persistent storage not requested.' : appSettings.persistentStorageGranted ? 'Persistent storage granted.' : 'Browser did not grant persistent storage.', databaseError: undefined })
+        const [settings, appSettings, userScriptStatus] = await Promise.all([loadReaderSettings(), loadAppSettings(), detectUserScript()])
+        set({ settings, userScriptStatus, storageStatus: appSettings.persistentStorageGranted === undefined ? 'Persistent storage not requested.' : appSettings.persistentStorageGranted ? 'Persistent storage granted.' : 'Browser did not grant persistent storage.', databaseError: undefined, initialized: true })
         void get().refreshEstimate()
       } catch (error) {
-        set({ databaseError: errorMessage(error, 'Could not open local storage.') })
+        set({ databaseError: errorMessage(error, 'Could not open local storage.'), initialized: true })
       }
     },
-    setWorkerOrigin: (workerOrigin) => set({ workerOrigin, workerConfigured: false, message: '' }),
-    setWorkerToken: (workerToken) => set({ workerToken, workerConfigured: false, message: '' }),
-    testWorker: async () => {
-      try {
-        const config = await currentWorkerConfig()
-        await testWorkerConnection(config)
-        await saveWorkerConfig(config.origin, config.token)
-        set({ workerOrigin: config.origin, workerToken: config.token, workerConfigured: true, message: 'Worker connection verified. Remote source browsing is ready.' })
-        await get().requestPersistence()
-      } catch (error) { set({ message: errorMessage(error, 'Could not verify the Worker connection.') }) }
+    checkUserScript: async () => {
+      const userScriptStatus = await detectUserScript()
+      set({ userScriptStatus, userScriptMessage: userScriptStatusMessage(userScriptStatus) })
+    },
+    grantUserScriptAccess: async () => {
+      const userScriptStatus = await requestUserScriptAccess()
+      set({ userScriptStatus, userScriptMessage: userScriptStatusMessage(userScriptStatus) })
     },
     setTheme: async (theme) => persist({ ...get().settings, theme }),
     setFontSize: async (fontSize) => persist({ ...get().settings, fontSize: Math.min(28, Math.max(14, fontSize)) }),
@@ -125,7 +111,6 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
         const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : undefined
         const hasValidUsage = isValidStorageUsage(estimate?.usage)
         const storagePressure = interpretStoragePressure(estimate)
-        const hasValidPressure = storagePressure !== 'unknown'
         set({
           storageEstimate: estimate,
           storagePressure,
@@ -133,13 +118,11 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
           storageEstimateStatus: hasValidUsage ? '' : 'Storage estimate is unavailable.',
           ...(summary ? { cachedBytes: summary.cachedBytes } : { cachedBytes: undefined }),
         })
-        return hasValidPressure
+        return storagePressure !== 'unknown'
       })().catch(() => {
         set({ storageEstimate: undefined, storagePressure: 'unknown', storagePressureStatus: 'Storage pressure is unknown.', storageEstimateStatus: 'Storage estimate is unavailable.', cachedBytes: undefined })
         return false
-      }).finally(() => {
-        estimateRefresh = undefined
-      })
+      }).finally(() => { estimateRefresh = undefined })
       estimateRefresh = operation
       return operation
     },
@@ -155,7 +138,7 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
       }
     },
     exportBackup: async () => {
-      try { await downloadBackup(); set({ message: 'Metadata backup exported. Worker credentials and cached content were excluded.' }) } catch (error) { set({ message: errorMessage(error, 'Could not export this backup.') }) }
+      try { await downloadBackup(); set({ message: 'Metadata backup exported. Cached content and browser storage permissions were excluded.' }) } catch (error) { set({ message: errorMessage(error, 'Could not export this backup.') }) }
     },
     importBackup: async (file) => {
       try {

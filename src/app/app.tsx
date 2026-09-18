@@ -9,7 +9,7 @@ import { HomePage } from '../views/pages/home-page'
 import { ReaderPage } from '../views/pages/reader-page'
 import { SettingsPage } from '../views/pages/settings-page'
 import { SourcesPage } from '../views/pages/sources-page'
-import { WorkerSetupPage } from '../views/pages/worker-setup-page'
+import { UserScriptSetupPage } from '../views/pages/user-script-setup-page'
 import { TabLayout } from '../views/layouts/tab-layout'
 import { useAppViewModel } from '@app/app-store'
 import { decodeRouteParam, tabPath, type Tab } from '@app/routes'
@@ -23,8 +23,7 @@ type PublicationScreen = 'details' | 'reader' | 'index'
 export function App() {
   const initializeSettings = useSettingsViewModel((state) => state.initialize)
   const settingsInitialized = useSettingsViewModel((state) => state.initialized)
-  const hasLocalData = useSettingsViewModel((state) => state.hasLocalData)
-  const workerConfigured = useSettingsViewModel((state) => state.workerConfigured)
+  const userScriptStatus = useSettingsViewModel((state) => state.userScriptStatus)
   const databaseError = useSettingsViewModel((state) => state.databaseError)
   const initializeSources = useSourcesViewModel((state) => state.initialize)
   const initializeReader = useReaderViewModel((state) => state.initialize)
@@ -45,7 +44,7 @@ export function App() {
 
   if (!settingsInitialized) return <main className="blocking-page"><div className="loading-mark">◌</div><h1>Opening Bookshelf</h1><p>Checking local storage and the active app instance…</p></main>
   if (databaseError) return <main className="blocking-page"><h1>Bookshelf cannot open here</h1><p>{databaseError}</p><p className="muted">Close the other Bookshelf tab or use a browser with OPFS and Web Locks support.</p></main>
-  if (!workerConfigured && !hasLocalData) return <WorkerSetupPage />
+  if (userScriptStatus.kind !== 'ready' && userScriptStatus.kind !== 'permission-required') return <UserScriptSetupPage />
 
   return <AppRoutes />
 }

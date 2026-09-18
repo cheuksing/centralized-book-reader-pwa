@@ -21,7 +21,7 @@ function localPublication(publication: RemotePublication): PublicationView {
 export function SourcesPage() {
   const [, navigate] = useLocation()
   const setActivePublication = useAppViewModel((state) => state.setActivePublication)
-  const workerConfigured = useSettingsViewModel((state) => state.workerConfigured)
+  const userScriptReady = useSettingsViewModel((state) => state.userScriptStatus.kind === 'ready')
   const sources = useSourcesViewModel((state) => state.sources)
   const [sourceToRemove, setSourceToRemove] = useState<(typeof sources)[number]>()
   const error = useSourcesViewModel((state) => state.error)
@@ -66,10 +66,10 @@ export function SourcesPage() {
       <PageHeader
         eyebrow="Online catalogues"
         title="Sources"
-        supportingCopy="Install declarative source definitions. Remote requests and images go through your authenticated Worker."
-        action={<button className="round-button" onClick={startAddingSource} type="button" aria-label="Add source">+</button>}
+        supportingCopy="Install declarative source definitions. Remote requests and images go through the Bookshelf CORS Bridge userscript."
+        action={<button className="round-button" disabled={!userScriptReady} onClick={startAddingSource} type="button" aria-label="Add source">+</button>}
       />
-      {!workerConfigured && <p className="database-error" role="alert">Remote browsing is unavailable until a Worker is configured. Local library content remains readable.</p>}
+      {!userScriptReady && <p className="database-error" role="alert">Remote browsing is unavailable until the Bookshelf userscript is installed and enabled. Local library content remains readable.</p>}
       {error && <p className="database-error" role="alert">{error}</p>}
       {browserError && <p className="database-error" role="alert">{browserError}</p>}
 
@@ -78,24 +78,24 @@ export function SourcesPage() {
           title={form.mode === 'edit' ? 'Edit source definition' : 'Install a source'}
           trailing={<button className="text-button" onClick={cancelSourceForm} type="button">Cancel</button>}
         />
-        {form.mode === 'add' && <label>Source definition URL<input autoFocus inputMode="url" onChange={(event) => setManifestUrl(event.target.value)} placeholder="https://source.example/bookshelf-source.json" type="url" value={form.manifestUrl} /><small>Definitions are fetched through the Worker and remain local after installation.</small></label>}
+        {form.mode === 'add' && <label>Source definition URL<input autoFocus inputMode="url" onChange={(event) => setManifestUrl(event.target.value)} placeholder="https://source.example/bookshelf-source.json" type="url" value={form.manifestUrl} /><small>Definitions are fetched through the userscript and remain local after installation.</small></label>}
         {form.mode === 'add' && <p className="form-divider">or paste JSON</p>}
         <label>Source definition JSON<textarea onChange={(event) => setDefinitionText(event.target.value)} rows={20} spellCheck="false" value={form.definitionText} /><small>Only supported version 1 declarative mappings are accepted; no executable source code or custom headers.</small></label>
-        <div className="button-row"><button className="secondary-button" disabled={isSaving} onClick={() => void testSource()} type="button">Test definition</button><button className="primary-button" disabled={isSaving} type="submit">{isSaving ? 'Working…' : form.mode === 'edit' ? 'Save source' : 'Install source'}</button></div>
+        <div className="button-row"><button className="secondary-button" disabled={isSaving || !userScriptReady} onClick={() => void testSource()} type="button">Test definition</button><button className="primary-button" disabled={isSaving || !userScriptReady} type="submit">{isSaving ? 'Working…' : form.mode === 'edit' ? 'Save source' : 'Install source'}</button></div>
         {testStatus && <p className="status-note" role="status">{testStatus}</p>}
       </form>}
 
-      {isLoading ? <p className="muted">Opening installed sources…</p> : sources.length === 0 ? <section className="empty-sources"><h2>No sources yet</h2><p>Install a source definition after configuring your Worker.</p><button className="primary-button" onClick={startAddingSource} type="button">Install a source</button></section> : <section className="source-list" aria-label="Installed sources">
+      {isLoading ? <p className="muted">Opening installed sources…</p> : sources.length === 0 ? <section className="empty-sources"><h2>No sources yet</h2><p>Install a source definition after enabling the Bookshelf userscript.</p><button className="primary-button" disabled={!userScriptReady} onClick={startAddingSource} type="button">Install a source</button></section> : <section className="source-list" aria-label="Installed sources">
         {sources.map((source) => <ContextMenu
           actions={[
             { label: source.enabled ? 'Pause source' : 'Enable source', onSelect: () => { void toggleSource(source.id) } },
             { label: 'Edit definition', onSelect: () => startEditingSource(source) },
-            { disabled: !workerConfigured || !source.manifestUrl, label: 'Check update', onSelect: () => { void checkForUpdate(source) } },
+            { disabled: !userScriptReady || !source.manifestUrl, label: 'Check update', onSelect: () => { void checkForUpdate(source) } },
             { destructive: true, label: 'Remove', onSelect: () => setSourceToRemove(source) },
           ]}
           ariaLabel={`Open ${source.name}`}
           className="source-card"
-          itemDisabled={!workerConfigured || !source.enabled}
+          itemDisabled={!userScriptReady || !source.enabled}
           key={source.id}
           onItemPress={() => void browseSource(source)}
         >
@@ -123,7 +123,7 @@ export function SourcesPage() {
         {hasSearch && <form className="source-search" onSubmit={submitSearch}><input onChange={(event) => setSearchQuery(event.target.value)} placeholder={`Search ${selectedSource.name}`} value={searchQuery} /><button className="primary-button" type="submit">Search</button></form>}
         {hasCatalog && <div className="category-shortcuts" aria-label="Catalog lists">{catalogLists.map((list) => <button className={selectedListId === list.id ? 'is-selected' : ''} key={list.id} onClick={() => void loadList(list.id)} type="button">{list.label}</button>)}</div>}
         {!hasCatalog && !hasSearch && <p className="status-note">This source declares neither catalog lists nor search. Open publications from its direct links or local library.</p>}
-        {browserIsLoading && <p className="muted" role="status">Loading through Worker…</p>}
+        {browserIsLoading && <p className="muted" role="status">Loading through userscript…</p>}
         {publications.map((publication) => <button className="remote-book" key={publication.key} onClick={() => { const local = localPublication(publication); setActivePublication(local); navigate(detailsPath(local.key)) }} type="button"><div><h3>{publication.title}</h3><p>{publication.author ?? 'Unknown author'} · {publication.kind}</p></div><span>Details →</span></button>)}
         <InfiniteScrollSentinel hasMore={Boolean(nextCursor)} isLoading={browserIsLoading} label="books" onLoadMore={() => void loadMore()} />
       </section>}

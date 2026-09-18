@@ -2,7 +2,7 @@ import type { CacheState, ChapterDocument, PublicationBookmarkDocument, Publicat
 import { calculateRemainingCount, countReadyAhead } from '@models/cache/cache-policy'
 import type { Publication } from '@models/entities/domain'
 import { persistPublication } from '@services/publication-sync-service'
-import { fetchBlobThroughWorker } from '@services/remote-fetch-service'
+import { fetchBlobThroughUserScript } from '@services/remote-fetch-service'
 
 async function getDatabase() {
   const { getReaderDatabase } = await import('@models/database/opfs-database')
@@ -157,7 +157,7 @@ export async function ensurePublicationCover(publicationKey: string): Promise<vo
   if (!publication || !publication.coverUrl || publication.coverState === 'available' || publication.coverState === 'failed') return
   try {
     await publication.patch({ coverState: 'downloading' })
-    const { blob, contentType } = await fetchBlobThroughWorker(publication.coverUrl, undefined, ['image/'])
+    const { blob, contentType } = await fetchBlobThroughUserScript(publication.coverUrl, undefined, ['image/'])
     await publication.putAttachment({ id: 'cover', type: contentType ?? (blob.type || 'image/*'), data: blob })
     const latest = await database.publications.findOne(publicationKey).exec()
     if (!latest) throw new Error('The publication disappeared while storing its cover.')

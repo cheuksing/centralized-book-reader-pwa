@@ -5,6 +5,12 @@
         "headless": true,
         "viewport": "1080x1920"
       }
+    },
+    "motion": {
+        "url": "https://mcp.motion.dev"
+    },
+    "motion-plus": {
+        "url": "https://mcp.motion.dev/plus"
     }
   }
 }

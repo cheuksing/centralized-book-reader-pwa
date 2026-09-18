@@ -43,6 +43,8 @@ export function App() {
 }
 
 function AppRoutes() {
+  const [location] = useLocation()
+  const pageKey = location.split('?')[0]
   const [readerMatch] = useRoute('/reader/:publicationKey')
   const [indexMatch] = useRoute('/reader/:publicationKey/index')
   const [detailsMatch] = useRoute('/details/:publicationKey')
@@ -57,15 +59,17 @@ function AppRoutes() {
   }, [clearActivePublication, closeBook, isPublicationRoute, isReaderRoute])
 
   return (
-    <Switch>
-      <Route path="/reader/:publicationKey/index">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="index" />}</Route>
-      <Route path="/reader/:publicationKey">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="reader" />}</Route>
-      <Route path="/details/:publicationKey">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="details" />}</Route>
-      <Route path="/sources"><TabRoute tab="sources"><SourcesPage /></TabRoute></Route>
-      <Route path="/settings"><TabRoute tab="settings"><SettingsPage /></TabRoute></Route>
-      <Route path="/"><TabRoute tab="home"><HomePage /></TabRoute></Route>
-      <Route><NotFoundRoute /></Route>
-    </Switch>
+    <div className="page-transition" key={pageKey}>
+      <Switch>
+        <Route path="/reader/:publicationKey/index">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="index" />}</Route>
+        <Route path="/reader/:publicationKey">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="reader" />}</Route>
+        <Route path="/details/:publicationKey">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="details" />}</Route>
+        <Route path="/sources"><TabRoute tab="sources"><SourcesPage /></TabRoute></Route>
+        <Route path="/settings"><TabRoute tab="settings"><SettingsPage /></TabRoute></Route>
+        <Route path="/"><TabRoute tab="home"><HomePage /></TabRoute></Route>
+        <Route><NotFoundRoute /></Route>
+      </Switch>
+    </div>
   )
 }
 

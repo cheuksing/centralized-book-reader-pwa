@@ -23,6 +23,55 @@
   padding: 10px 4px;
 }
 
+.animated-tab-strip {
+  --tab-count: 3;
+  --tab-highlight-color: #fffdf8;
+  --tab-highlight-index: 0;
+  --tab-highlight-inset-bottom: 4px;
+  --tab-highlight-inset-inline-end: 4px;
+  --tab-highlight-inset-inline-start: 4px;
+  --tab-highlight-inset-top: 4px;
+  --tab-highlight-radius: 8px;
+  --tab-highlight-shadow: 0 2px 8px #17362d12;
+  isolation: isolate;
+  position: relative;
+}
+
+.animated-tab-strip::before {
+  background: var(--tab-highlight-color);
+  border-radius: var(--tab-highlight-radius);
+  bottom: var(--tab-highlight-inset-bottom);
+  box-shadow: var(--tab-highlight-shadow);
+  content: '';
+  left: var(--tab-highlight-inset-inline-start);
+  pointer-events: none;
+  position: absolute;
+  top: var(--tab-highlight-inset-top);
+  transform: translateX(calc(var(--tab-highlight-index) * 100%));
+  transition: transform .28s cubic-bezier(.22, 1, .36, 1);
+  width: calc((100% - var(--tab-highlight-inset-inline-start) - var(--tab-highlight-inset-inline-end)) / var(--tab-count));
+  z-index: 0;
+}
+
+.animated-tab-strip[data-active-tab='bookmarks'] {
+  --tab-highlight-index: 1;
+}
+
+.animated-tab-strip[data-active-tab='downloads'],
+.animated-tab-strip[data-active-tab='settings'] {
+  --tab-highlight-index: 2;
+}
+
+.animated-tab-strip > button {
+  position: relative;
+  transition: color .2s ease, transform .18s ease;
+  z-index: 1;
+}
+
+.animated-tab-strip > button:active:not(:disabled) {
+  transform: scale(.98);
+}
+
 .round-button {
   background: #285a49;
   border: 0;

@@ -9,6 +9,7 @@ import { useHomeViewModel } from '@view-models/home-view-model'
 import { ContextMenu } from '../ui/context-menu'
 import { PageHeader } from '../ui/page-header'
 import { PublicationCover } from '../ui/publication-cover'
+import { ConfirmDialog } from '../ui/confirm-dialog'
 
 type LibraryList = 'recent' | 'bookmarks' | 'downloads'
 
@@ -43,6 +44,7 @@ function PublicationRow({ publication, list }: { publication: Publication; list:
 
 export function HomePage() {
   const [activeList, setActiveList] = useState<LibraryList>('recent')
+  const [confirmingClearRecent, setConfirmingClearRecent] = useState(false)
   const recent = useHomeViewModel((state) => state.recent)
   const bookmarks = useHomeViewModel((state) => state.bookmarks)
   const downloads = useHomeViewModel((state) => state.downloads)
@@ -62,7 +64,6 @@ export function HomePage() {
   const label = activeList === 'recent' ? 'Recent' : activeList === 'bookmarks' ? 'Bookmarks' : 'Downloads'
 
   async function clearRecent() {
-    if (!window.confirm('Clear Recent? Progress, bookmarks, and downloads will remain.')) return
     await clearHistory()
     await refresh()
   }
@@ -74,19 +75,27 @@ export function HomePage() {
         title="Good evening"
         supportingCopy="Bookmarks, Recent, and Downloads stay available even when the network does not."
       />
-      <div className="library-tabs library-tabs-three" role="tablist" aria-label="Library lists">
+      <div className="animated-tab-strip library-tabs library-tabs-three" data-active-tab={activeList} role="tablist" aria-label="Library lists">
         <button aria-selected={activeList === 'recent'} className={activeList === 'recent' ? 'is-active' : ''} onClick={() => setActiveList('recent')} role="tab" type="button">Recent <span>{recent.length}</span></button>
         <button aria-selected={activeList === 'bookmarks'} className={activeList === 'bookmarks' ? 'is-active' : ''} onClick={() => setActiveList('bookmarks')} role="tab" type="button">Bookmarks <span>{bookmarks.length}</span></button>
         <button aria-selected={activeList === 'downloads'} className={activeList === 'downloads' ? 'is-active' : ''} onClick={() => setActiveList('downloads')} role="tab" type="button">Downloads <span>{downloads.length}</span></button>
       </div>
-      {activeList === 'recent' && recent.length > 0 && <button className="text-button history-clear" onClick={() => void clearRecent()} type="button">Clear Recent</button>}
+      {activeList === 'recent' && recent.length > 0 && <button className="text-button history-clear" onClick={() => setConfirmingClearRecent(true)} type="button">Clear Recent</button>}
       {error && <p className="database-error" role="alert">{error}</p>}
-      {isLoading ? <p className="muted library-message">Opening your local library…</p> : books.length === 0 ? (
-        <section className="library-empty">
+      {isLoading ? <p className="muted library-message" key={activeList}>Opening your local library…</p> : books.length === 0 ? (
+        <section className="library-empty" key={activeList}>
           <h2>{activeList === 'recent' ? 'Nothing read yet' : activeList === 'bookmarks' ? 'No bookmarks yet' : 'No downloads yet'}</h2>
           <p>{activeList === 'recent' ? 'Recent entries appear as soon as you enter a reader page.' : activeList === 'bookmarks' ? 'Bookmark a publication from a source or its details page.' : 'Download chapters from reader controls to keep them offline.'}</p>
         </section>
-      ) : <section className="library-book-list" aria-label={label} aria-live="polite">{books.map((publication) => <PublicationRow key={publication.key} list={activeList} publication={publication} />)}</section>}
+      ) : <section className="library-book-list" aria-label={label} aria-live="polite" key={activeList}>{books.map((publication) => <PublicationRow key={publication.key} list={activeList} publication={publication} />)}</section>}
+      <ConfirmDialog
+        confirmLabel="Clear Recent"
+        description="Progress, bookmarks, and downloads will remain."
+        onCancel={() => setConfirmingClearRecent(false)}
+        onConfirm={() => { setConfirmingClearRecent(false); void clearRecent() }}
+        open={confirmingClearRecent}
+        title="Clear Recent?"
+      />
     </>
   )
 }

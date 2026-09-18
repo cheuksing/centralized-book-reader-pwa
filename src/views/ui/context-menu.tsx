@@ -1,7 +1,7 @@
 import './context-menu.scss'
 import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
-import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
+import type { AnimationEvent as ReactAnimationEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 
 const LONG_PRESS_MS = 500
 const MOVE_TOLERANCE = 10
@@ -36,11 +36,13 @@ function menuPosition(position: Position, actionCount: number): Position {
 
 export function ContextMenu({ actions, ariaLabel, children, className, itemDisabled = false, onItemPress }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLElement>(null)
   const longPressTimer = useRef<number | undefined>(undefined)
   const longPressTriggered = useRef(false)
   const pointerOrigin = useRef<Position | undefined>(undefined)
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 })
   const [isOpen, setIsOpen] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
 
   function cancelLongPress() {
     if (longPressTimer.current !== undefined) {
@@ -52,7 +54,19 @@ export function ContextMenu({ actions, ariaLabel, children, className, itemDisab
 
   function openMenu(x: number, y: number) {
     setPosition(menuPosition({ x, y }, actions.length))
+    setIsClosing(false)
     setIsOpen(true)
+  }
+
+  function closeMenu() {
+    setIsClosing(true)
+  }
+
+  function finishClosing(event: ReactAnimationEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget || event.animationName !== 'context-menu-out') return
+    setIsOpen(false)
+    setIsClosing(false)
+    triggerRef.current?.focus()
   }
 
   function handleContextMenu(event: React.MouseEvent<HTMLElement>) {
@@ -110,15 +124,15 @@ export function ContextMenu({ actions, ariaLabel, children, className, itemDisab
     menuRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus()
 
     function closeOnOutsidePointer(event: PointerEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) setIsOpen(false)
+      if (!menuRef.current?.contains(event.target as Node)) closeMenu()
     }
 
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setIsOpen(false)
+      if (event.key === 'Escape') closeMenu()
     }
 
     function closeOnViewportChange() {
-      setIsOpen(false)
+      closeMenu()
     }
 
     document.addEventListener('pointerdown', closeOnOutsidePointer)
@@ -138,10 +152,11 @@ export function ContextMenu({ actions, ariaLabel, children, className, itemDisab
     <>
       <article
         aria-disabled={itemDisabled || undefined}
-        aria-expanded={isOpen}
+        aria-expanded={isOpen && !isClosing}
         aria-haspopup="menu"
         aria-label={ariaLabel}
         className={className}
+        ref={triggerRef}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         onKeyDown={handleKeyDown}
@@ -158,12 +173,13 @@ export function ContextMenu({ actions, ariaLabel, children, className, itemDisab
       {isOpen && createPortal(
         <div
           aria-label={`${ariaLabel} actions`}
-          className="context-menu"
+          className={isClosing ? 'context-menu is-closing' : 'context-menu'}
+          onAnimationEnd={finishClosing}
           ref={menuRef}
           role="menu"
           style={{ left: position.x, top: position.y }}
         >
-          {actions.map((action, index) => <button className={action.destructive ? 'is-destructive' : undefined} disabled={action.disabled} key={`${action.label}-${index}`} onClick={() => { setIsOpen(false); action.onSelect() }} role="menuitem" type="button">{action.label}</button>)}
+          {actions.map((action, index) => <button className={action.destructive ? 'is-destructive' : undefined} disabled={action.disabled} key={`${action.label}-${index}`} onClick={() => { closeMenu(); action.onSelect() }} role="menuitem" type="button">{action.label}</button>)}
         </div>,
         document.body,
       )}

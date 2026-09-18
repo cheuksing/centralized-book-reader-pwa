@@ -19,7 +19,7 @@ export function TabLayout({ activeTab, onTabChange, children }: TabLayoutProps) 
   return (
     <main className="app-shell">
       <div className="content">{children}</div>
-      <nav className="tab-bar" aria-label="Primary navigation">
+      <nav className="animated-tab-strip tab-bar" data-active-tab={activeTab} aria-label="Primary navigation">
         {tabs.map((tab) => (
           <button
             aria-current={activeTab === tab.id ? 'page' : undefined}

@@ -1,8 +1,11 @@
 import './settings-page.scss'
+import { useState } from 'react'
 import { useSettingsViewModel } from '@view-models/settings-view-model'
 import { PageHeader } from '../ui/page-header'
+import { ConfirmDialog } from '../ui/confirm-dialog'
 
 export function SettingsPage() {
+  const [confirmingCacheClear, setConfirmingCacheClear] = useState(false)
   const settings = useSettingsViewModel((state) => state.settings)
   const workerOrigin = useSettingsViewModel((state) => state.workerOrigin)
   const workerToken = useSettingsViewModel((state) => state.workerToken)
@@ -39,8 +42,17 @@ export function SettingsPage() {
       <label>Line spacing <output>{settings.lineHeight.toFixed(2)}</output><input min="1.2" max="2.2" onChange={(event) => void setLineHeight(Number(event.target.value))} step="0.05" type="range" value={settings.lineHeight} /></label>
       <label>Content width<select value={settings.contentWidth} onChange={(event) => void setContentWidth(event.target.value as typeof settings.contentWidth)}><option value="compact">Narrow</option><option value="comfortable">Comfortable</option><option value="wide">Wide</option></select></label>
     </section>
-    <section className="settings-group"><h2>Storage & offline content</h2><p className="muted">Bookshelf never evicts reader content automatically. Explicit downloads can be paused, cancelled, deleted, or retried.</p><div className="button-row"><button className="secondary-button" onClick={() => void requestPersistence()} type="button">Request persistent storage</button><button className="secondary-button" onClick={() => void refreshEstimate()} type="button">Refresh estimate</button></div><p className="status-note">{storageStatus}{storageEstimate?.usage !== undefined && storageEstimate.quota !== undefined ? ` · ${formatBytes(storageEstimate.usage)} used of ${formatBytes(storageEstimate.quota)}` : ''}</p><button className="danger-button" onClick={() => { if (window.confirm('Delete all cached chapter content and active download jobs?')) void clearCache() }} type="button">Clear downloaded content</button></section>
+    <section className="settings-group"><h2>Storage & offline content</h2><p className="muted">Bookshelf never evicts reader content automatically. Explicit downloads can be paused, cancelled, deleted, or retried.</p><div className="button-row"><button className="secondary-button" onClick={() => void requestPersistence()} type="button">Request persistent storage</button><button className="secondary-button" onClick={() => void refreshEstimate()} type="button">Refresh estimate</button></div><p className="status-note">{storageStatus}{storageEstimate?.usage !== undefined && storageEstimate.quota !== undefined ? ` · ${formatBytes(storageEstimate.usage)} used of ${formatBytes(storageEstimate.quota)}` : ''}</p><button className="danger-button" onClick={() => setConfirmingCacheClear(true)} type="button">Clear downloaded content</button></section>
     <section className="settings-group"><h2>Backup & restore</h2><p className="muted">Metadata only: source definitions, publication metadata, bookmarks, Recent, progress, and reader preferences. Worker credentials, persistence status, and attachments are never exported.</p><div className="button-row"><button className="secondary-button" onClick={() => void exportBackup()} type="button">Export metadata</button><label className="secondary-button file-button">Import metadata<input accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file) }} type="file" /></label></div>{message && <p className="status-note" role="status">{message}</p>}</section>
+    <ConfirmDialog
+      confirmLabel="Clear downloaded content"
+      description="This removes cached chapters and active download jobs from this browser."
+      destructive
+      onCancel={() => setConfirmingCacheClear(false)}
+      onConfirm={() => { setConfirmingCacheClear(false); void clearCache() }}
+      open={confirmingCacheClear}
+      title="Delete downloaded content?"
+    />
   </>
 }
 

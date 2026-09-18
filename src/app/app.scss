@@ -1,3 +1,19 @@
+.page-transition {
+  animation: page-enter .32s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .blocking-page {
   align-items: center;
   background: #f7f4ec;

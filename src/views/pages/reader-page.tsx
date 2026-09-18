@@ -1,5 +1,5 @@
 import './reader-page.scss'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type AnimationEvent as ReactAnimationEvent, type MouseEvent } from 'react'
 import { useLocation, useSearchParams } from 'wouter'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useAppViewModel } from '@app/app-store'
@@ -153,9 +153,7 @@ export function ReaderPage() {
   }, [flushProgress])
   useEffect(() => {
     const dialog = controlsRef.current
-    if (!dialog) return
-    if (controlsOpen && !dialog.open) dialog.showModal()
-    if (!controlsOpen && dialog.open) dialog.close()
+    if (controlsOpen && dialog && !dialog.open) dialog.showModal()
   }, [controlsOpen])
 
   const handleVisibleSection = useCallback((chapterId: string, index: number, element: HTMLElement, section: ReaderSection, chapterRoot: HTMLElement) => {
@@ -232,6 +230,10 @@ export function ReaderPage() {
     setSearchParams((current) => { current.delete('controls'); return current }, { replace: true })
     window.requestAnimationFrame(() => controlsTriggerRef.current?.focus())
   }, [setSearchParams])
+  const finishControlsClose = useCallback((event: ReactAnimationEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget || event.animationName !== 'reader-sheet-out' || controlsOpen) return
+    controlsRef.current?.close()
+  }, [controlsOpen])
 
   const navigateChapter = useCallback(async (direction: 'previous' | 'next') => {
     if (!publication || !chapter) return
@@ -331,8 +333,8 @@ export function ReaderPage() {
       </div>
     </article> : <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index from publication details to refresh or download content.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section>}
     {error && hasContent && <p className="reader-error" role="alert">{error}</p>}
-    {!isLoading && hasContent && <dialog aria-labelledby="reader-controls-title" className="reader-controls-dialog" onCancel={closeControls} onClick={(event) => { if (event.target === event.currentTarget) closeControls() }} onClose={closeControls} ref={controlsRef}>
-      <div className="reader-controls-panel">
+    {!isLoading && hasContent && <dialog aria-labelledby="reader-controls-title" className={`reader-controls-dialog${!controlsOpen ? ' is-closing' : ''}`} onCancel={(event) => { event.preventDefault(); closeControls() }} onClick={(event) => { if (event.target === event.currentTarget) closeControls() }} onClose={() => { if (controlsOpen) closeControls() }} ref={controlsRef}>
+      <div className="reader-controls-panel" onAnimationEnd={finishControlsClose}>
         <div className="reader-controls-heading"><div><p className="reader-controls-kicker">Reader controls</p><h2 id="reader-controls-title">{chapter?.title ?? 'Current chapter'}</h2><p className="reader-controls-meta">{chapterPosition} · {chapterRemaining}</p></div><button className="reader-controls-close" onClick={closeControls} type="button">Close</button></div>
         <div className="reader-chapter-navigation"><button disabled={!previousAvailable || isLoadingPreviousChapter || isLoadingChapter} onClick={() => void navigateChapter('previous')} type="button">← Previous chapter</button><button disabled={!nextAvailable || isLoadingNextChapter || isLoadingMoreChapters || isLoadingChapter} onClick={() => void navigateChapter('next')} type="button">Next chapter →</button></div>
         <button className="reader-index-button" onClick={openChapterIndex} type="button">Open chapter index</button>

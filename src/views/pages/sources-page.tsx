@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useLocation } from 'wouter'
 import { useAppViewModel } from '@app/app-store'
 import { detailsPath } from '@app/routes'
@@ -12,6 +12,7 @@ import { ContextMenu } from '../ui/context-menu'
 import { InfiniteScrollSentinel } from '../ui/infinite-scroll-sentinel'
 import { PageHeader } from '../ui/page-header'
 import { SectionHeading } from '../ui/section-heading'
+import { ConfirmDialog } from '../ui/confirm-dialog'
 
 function localPublication(publication: RemotePublication): PublicationView {
   return { ...publication, createdAt: new Date().toISOString(), coverState: 'missing', bookmarked: false, availability: 'unavailable' }
@@ -22,6 +23,7 @@ export function SourcesPage() {
   const setActivePublication = useAppViewModel((state) => state.setActivePublication)
   const workerConfigured = useSettingsViewModel((state) => state.workerConfigured)
   const sources = useSourcesViewModel((state) => state.sources)
+  const [sourceToRemove, setSourceToRemove] = useState<(typeof sources)[number]>()
   const error = useSourcesViewModel((state) => state.error)
   const isLoading = useSourcesViewModel((state) => state.isLoading)
   const isSaving = useSourcesViewModel((state) => state.isSaving)
@@ -89,7 +91,7 @@ export function SourcesPage() {
             { label: source.enabled ? 'Pause source' : 'Enable source', onSelect: () => { void toggleSource(source.id) } },
             { label: 'Edit definition', onSelect: () => startEditingSource(source) },
             { disabled: !workerConfigured || !source.manifestUrl, label: 'Check update', onSelect: () => { void checkForUpdate(source) } },
-            { destructive: true, label: 'Remove', onSelect: () => { if (window.confirm(`Remove ${source.name} and its local library records and cached chapters?`)) void removeSource(source.id) } },
+            { destructive: true, label: 'Remove', onSelect: () => setSourceToRemove(source) },
           ]}
           ariaLabel={`Open ${source.name}`}
           className="source-card"
@@ -101,6 +103,16 @@ export function SourcesPage() {
           <div className="source-details"><h2>{source.name}</h2><p>{source.adapter.type === 'html-selectors' ? 'HTML selectors' : 'Generic JSON'} · {source.enabled ? 'Enabled' : 'Paused'}{source.customized ? ' · Customized' : ''}</p></div>
         </ContextMenu>)}
       </section>}
+
+      <ConfirmDialog
+        confirmLabel="Remove source"
+        description={sourceToRemove ? `Remove ${sourceToRemove.name} and its local library records and cached chapters?` : ''}
+        destructive
+        onCancel={() => setSourceToRemove(undefined)}
+        onConfirm={() => { const source = sourceToRemove; setSourceToRemove(undefined); if (source) void removeSource(source.id) }}
+        open={Boolean(sourceToRemove)}
+        title="Remove source?"
+      />
 
       {selectedSource && <section className="source-browser" aria-label={`${selectedSource.name} browser`}>
         <SectionHeading

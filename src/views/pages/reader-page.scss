@@ -207,6 +207,70 @@
   transform: translateX(-50%);
 }
 
+@keyframes reader-modal-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reader-modal-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes reader-backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reader-backdrop-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes reader-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reader-sheet-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+}
+
 .reader-pagination {
   border-top: 1px solid color-mix(in srgb, var(--reader-text) 15%, transparent);
   display: grid;
@@ -242,6 +306,31 @@
   padding: 0;
   position: fixed;
   width: 100%;
+
+  &[open] {
+    animation: reader-modal-in .24s ease both;
+
+    &::backdrop {
+      animation: reader-backdrop-in .24s ease both;
+    }
+
+    .reader-controls-panel {
+      animation: reader-sheet-in .3s cubic-bezier(.22, 1, .36, 1) both;
+    }
+  }
+
+  &.is-closing {
+    animation: reader-modal-out .18s ease both;
+    pointer-events: none;
+
+    &::backdrop {
+      animation: reader-backdrop-out .18s ease both;
+    }
+
+    .reader-controls-panel {
+      animation: reader-sheet-out .18s ease both;
+    }
+  }
 
   &::backdrop {
     background: rgb(23 54 45 / .18);

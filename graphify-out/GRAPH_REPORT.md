@@ -1,16 +1,16 @@
 # Graph Report - pwa  (2026-09-18)
 
 ## Corpus Check
-- 90 files · ~64,727 words
+- 101 files · ~68,917 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 890 nodes · 1167 edges · 76 communities (62 shown, 14 thin omitted)
+- 964 nodes · 1251 edges · 86 communities (72 shown, 14 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4b03a31f`
+- Built from commit: `7f2c836a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -37,11 +37,12 @@
 - Subagent-Driven Development
 - reader-view-model.ts
 - opfs-database.ts
-- plugins
+- reader-page.tsx
 - graphify reference: add a URL and watch a folder
 - graphify reference: commit hook and native AGENTS.md integration
 - graphify reference: incremental update and cluster-only
 - backup.ts
+- motion/SKILL.md
 - sources-view-model.ts
 - html-text.ts
 - graphify reference: GitHub clone and cross-repo merge
@@ -86,12 +87,20 @@
 - sdd-workspace
 - task-brief
 - routes.ts
+- Performance
+- Codex: Documentation, examples & Motion UI search
+- Exit Animations
+- Motion for React
+- Usage
+- Motion for Vue
+- Motion (Vanilla JS / HTML / TypeScript)
+- Transition preview
 
 ## God Nodes (most connected - your core abstractions)
 1. `compilerOptions` - 19 edges
 2. `Bookshelf Reader Technical Specification` - 19 edges
-3. `compilerOptions` - 15 edges
-4. `react` - 14 edges
+3. `react` - 16 edges
+4. `compilerOptions` - 15 edges
 5. `OpfsStorageInstance` - 13 edges
 6. `getDatabase()` - 13 edges
 7. `compilerOptions` - 13 edges
@@ -104,17 +113,17 @@
   worker/test/miniflare.mjs → package.json
 - `listLibrary()` --references--> `PublicationDocument`  [EXTRACTED]
   src/services/library-service.ts → src/models/database/schemas.ts
-- `deleteChapterCache()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/book-content-service.ts → src/models/database/schemas.ts
-- `downloadChapterNow()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/book-content-service.ts → src/models/database/schemas.ts
 - `getLocalChapters()` --references--> `ChapterDocument`  [EXTRACTED]
   src/services/publication-sync-service.ts → src/models/database/schemas.ts
+- `syncPublicationNow()` --references--> `ChapterDocument`  [EXTRACTED]
+  src/services/publication-sync-service.ts → src/models/database/schemas.ts
+- `deleteChapterCache()` --references--> `ChapterDocument`  [EXTRACTED]
+  src/services/book-content-service.ts → src/models/database/schemas.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (76 total, 14 thin omitted)
+## Communities (86 total, 14 thin omitted)
 
 ### Community 0 - "opfs-rx-storage.ts"
 Cohesion: 0.09
@@ -126,7 +135,7 @@ Nodes (63): AppSettingsDocument, AppSettingsDocumentSchema, appSettingsSchema, C
 
 ### Community 2 - "app.tsx"
 Cohesion: 0.05
-Nodes (49): react, PublicationScreen, Tab, TabLayout(), TabLayoutProps, tabs, BookDetailsPage(), BookIndexPage() (+41 more)
+Nodes (41): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema, oxc, react, typescript (+33 more)
 
 ### Community 3 - "What You Must Do When Invoked"
 Cohesion: 0.08
@@ -153,8 +162,8 @@ Cohesion: 0.06
 Nodes (30): @cloudflare/vite-plugin, miniflare, oxlint, devDependencies, @cloudflare/vite-plugin, miniflare, oxlint, sass (+22 more)
 
 ### Community 9 - "book-content-service.ts"
-Cohesion: 0.17
-Nodes (24): ChapterCacheDocument, CacheManifest, CacheManifestResource, cacheResource(), cacheState(), cancelDownload(), createOrMergeCache(), deleteChapterCache() (+16 more)
+Cohesion: 0.16
+Nodes (25): ChapterCacheDocument, ChapterDocument, CacheManifest, CacheManifestResource, cacheResource(), cacheState(), cancelDownload(), createOrMergeCache() (+17 more)
 
 ### Community 10 - "6. User experience"
 Cohesion: 0.18
@@ -204,9 +213,9 @@ Nodes (11): chapterPercentage(), flushProgress(), initialSettings, loadChapter()
 Cohesion: 0.17
 Nodes (12): activateReaderDatabaseGeneration(), ActiveReaderInstanceError, createDatabase(), createReaderDatabaseGeneration(), Deferred, getReaderDatabase(), openWithExclusiveLock(), readActiveDatabaseName() (+4 more)
 
-### Community 24 - "plugins"
-Cohesion: 0.22
-Nodes (8): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema, oxc, typescript, warn
+### Community 24 - "reader-page.tsx"
+Cohesion: 0.21
+Nodes (18): CaretDocument, clamp(), emptySections, findCaret(), findQuoteOffset(), locatorForElement(), offsetForNode(), quoteAt() (+10 more)
 
 ### Community 25 - "graphify reference: add a URL and watch a folder"
 Cohesion: 0.50
@@ -219,6 +228,10 @@ Nodes (3): For git commit hook, For native AGENTS.md integration, graphify refer
 ### Community 27 - "graphify reference: incremental update and cluster-only"
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
+
+### Community 29 - "motion/SKILL.md"
+Cohesion: 0.18
+Nodes (8): Fetch the methodology first, If the read is refused, MotionScore performance audit, Runtime audits, If the Motion MCP server is unavailable, Motion, Tiers, Upgrading Motion
 
 ### Community 30 - "sources-view-model.ts"
 Cohesion: 0.29
@@ -233,8 +246,8 @@ Cohesion: 0.60
 Nodes (5): bulkInsertOrThrow(), downloadBackup(), getDatabase(), importBackupFile(), validateBackup()
 
 ### Community 40 - "publication-sync-service.ts"
-Cohesion: 0.17
-Nodes (16): ChapterDocument, getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow() (+8 more)
+Cohesion: 0.18
+Nodes (15): getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow(), publicationWrites (+7 more)
 
 ### Community 43 - "Bookshelf Reader Technical Specification"
 Cohesion: 0.20
@@ -344,25 +357,57 @@ Nodes (4): defaultReaderSettings, getReaderSettingsCollection(), loadReaderSetti
 Cohesion: 0.33
 Nodes (3): indexPath(), readerPath(), Tab
 
+### Community 77 - "Performance"
+Cohesion: 0.20
+Nodes (10): Animating via `transform` vs independent transforms, Animation best practices, API best practice, Design, Execution speed, MotionValues, Performance, Platform-specific rules (+2 more)
+
+### Community 78 - "Codex: Documentation, examples & Motion UI search"
+Cohesion: 0.25
+Nodes (8): 1. Search, 2. Return type, 2a. Fetching source, 3. Implement, Codex: Documentation, examples & Motion UI search, Search by concept, not by the word "animation", Two servers, When source is unavailable
+
+### Community 79 - "Exit Animations"
+Cohesion: 0.29
+Nodes (6): Adding Animations, Animating Base UI with Motion for React, Exit Animations, Full Example, Self-Managing Components, Standard Approach
+
+### Community 80 - "Motion for React"
+Cohesion: 0.29
+Nodes (7): API guidance, Importing, Motion for React, MotionValues, Radix Integration, React Patterns, `useTransform`
+
+### Community 81 - "Usage"
+Cohesion: 0.29
+Nodes (7): Choosing values, Examples, Generate a CSS spring or bounce, Only for CSS, Reading the result, The one thing that is easy to get wrong, Usage
+
+### Community 82 - "Motion for Vue"
+Cohesion: 0.33
+Nodes (6): API guidance, Component Integration, Importing, Motion for Vue, Patterns, `useTransform`
+
+### Community 84 - "Motion (Vanilla JS / HTML / TypeScript)"
+Cohesion: 0.40
+Nodes (5): `animate`, API guidance, Easing, Importing, Motion (Vanilla JS / HTML / TypeScript)
+
+### Community 85 - "Transition preview"
+Cohesion: 0.50
+Nodes (4): Rendered curve images, The visual editor (Motion+), Transition preview, Without the editor
+
 ## Knowledge Gaps
-- **413 isolated node(s):** `$schema`, `typescript`, `oxc`, `react/rules-of-hooks`, `warn` (+408 more)
+- **458 isolated node(s):** `$schema`, `typescript`, `oxc`, `react/rules-of-hooks`, `warn` (+453 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **14 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `app.tsx` to `plugins`, `index.ts`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `ChapterDocument` connect `publication-sync-service.ts` to `schemas.ts`, `book-content-service.ts`?**
+- **Why does `react` connect `app.tsx` to `index.ts`, `reader-page.tsx`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
+- **Why does `ChapterDocument` connect `book-content-service.ts` to `publication-sync-service.ts`, `schemas.ts`?**
+  _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Why does `PublicationDocument` connect `library-service.ts` to `schemas.ts`?**
   _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **What connects `$schema`, `typescript`, `oxc` to the rest of the system?**
-  _413 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _458 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `opfs-rx-storage.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.08974358974358974 - nodes in this community are weakly interconnected._
 - **Should `schemas.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.03076923076923077 - nodes in this community are weakly interconnected._
 - **Should `app.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.05225225225225225 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05454545454545454 - nodes in this community are weakly interconnected._

@@ -1,4 +1,7 @@
 .library-tabs {
+  --tab-count: 2;
+  --tab-highlight-color: #fffdf8;
+  --tab-highlight-shadow: 0 2px 8px #17362d12;
   background: #e5e8e0;
   border-radius: 11px;
   display: grid;
@@ -17,8 +20,8 @@
     padding: 10px;
 
     &.is-active {
-      background: #fffdf8;
-      box-shadow: 0 2px 8px #17362d12;
+      background: transparent;
+      box-shadow: none;
       color: #234f3e;
     }
   }
@@ -32,7 +35,25 @@
   }
 
   &.library-tabs-three {
+    --tab-count: 3;
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.library-book-list,
+.library-empty {
+  animation: library-panel-enter .24s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes library-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

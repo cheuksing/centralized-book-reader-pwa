@@ -30,6 +30,7 @@ const readyAhead = countReadyAhead(
   ],
 )
 assert(readyAhead === 2, 'ready-ahead must only count later available chapters from the same publication')
+assert(countReadyAhead(undefined, [{ sourceId: 'source', publicationId: 'publication', order: 3, cacheState: 'available' }]) === 0, 'ready-ahead must be omitted when there is no current chapter')
 
 const evictionCandidates = [
   { key: 'never-opened', state: 'available', createdAt: '2024-01-01T00:00:00.000Z' },

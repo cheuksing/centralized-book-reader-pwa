@@ -10,6 +10,9 @@ export const resourceKindSchema = Type.Unsafe<'text' | 'html' | 'image' | 'exter
 export const cacheStateSchema = Type.Unsafe<'not-downloaded' | 'queued' | 'downloading' | 'partial' | 'available' | 'failed'>(Type.String({
   enum: ['not-downloaded', 'queued', 'downloading', 'partial', 'available', 'failed'], maxLength: 14,
 }))
+export const chapterIndexKnowledgeSchema = Type.Unsafe<'complete' | 'has-more' | 'unknown'>(Type.String({
+  enum: ['complete', 'has-more', 'unknown'], maxLength: 8,
+}))
 export const resourceStateSchema = Type.Unsafe<'pending' | 'downloading' | 'available' | 'failed'>(Type.String({
   enum: ['pending', 'downloading', 'available', 'failed'], maxLength: 11,
 }))
@@ -181,6 +184,8 @@ export const PublicationDocumentSchema = Type.Object({
   description: Type.Optional(Type.String()),
   coverUrl: Type.Optional(Type.String({ format: 'uri', maxLength: 2000 })),
   kind: publicationKindSchema,
+  chapterIndexKnowledge: Type.Optional(chapterIndexKnowledgeSchema),
+  knownChapterCount: Type.Optional(Type.Integer({ minimum: 0, maximum: 1_000_000_000, multipleOf: 1 })),
   updatedAt: Type.Optional(Type.String({ maxLength: 40 })),
   createdAt: Type.String({ format: 'date-time', maxLength: 40 }),
   coverState: Type.Unsafe<'missing' | 'downloading' | 'available' | 'failed'>(Type.String({ enum: ['missing', 'downloading', 'available', 'failed'] })),

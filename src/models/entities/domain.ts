@@ -1,3 +1,4 @@
+import type { RemainingCount } from '@models/cache/cache-policy'
 import type {
   AppSettingsDocument,
   ChapterCacheDocument,
@@ -19,7 +20,8 @@ export type { CacheEvictionCandidate, CacheEvictionProtection, ChapterIndexKnowl
 export interface CurrentChapter {
   title: string
   number: number
-  remaining: number
+  remaining?: RemainingCount
+  readyAhead?: number
 }
 
 export type Publication = PublicationDocument & {

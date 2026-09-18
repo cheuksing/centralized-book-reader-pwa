@@ -6,7 +6,6 @@ interface HomeViewModel {
   publications: Publication[]
   bookmarks: Publication[]
   recent: Publication[]
-  downloads: Publication[]
   error?: string
   isLoading: boolean
   initialize: () => Promise<() => void>
@@ -15,8 +14,8 @@ interface HomeViewModel {
 }
 
 function errorMessage(error: unknown, fallback: string): string { return error instanceof Error ? error.message : fallback }
-function emptySnapshot(): LibrarySnapshot { return { publications: [], bookmarks: [], recent: [], downloads: [] } }
-function setSnapshot(snapshot: LibrarySnapshot): Pick<HomeViewModel, 'publications' | 'bookmarks' | 'recent' | 'downloads'> { return { publications: snapshot.publications, bookmarks: snapshot.bookmarks, recent: snapshot.recent, downloads: snapshot.downloads } }
+function emptySnapshot(): LibrarySnapshot { return { publications: [], bookmarks: [], recent: [] } }
+function setSnapshot(snapshot: LibrarySnapshot): Pick<HomeViewModel, 'publications' | 'bookmarks' | 'recent'> { return { publications: snapshot.publications, bookmarks: snapshot.bookmarks, recent: snapshot.recent } }
 
 export const useHomeViewModel = create<HomeViewModel>((set) => ({
   ...setSnapshot(emptySnapshot()),

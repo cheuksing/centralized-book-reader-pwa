@@ -10,8 +10,8 @@ interface TabLayoutProps {
 }
 
 const tabs: Array<{ id: Tab; label: string; icon: string }> = [
-  { id: 'home', label: 'Home', icon: '⌂' },
-  { id: 'sources', label: 'Sources', icon: '◫' },
+  { id: 'home', label: 'Library', icon: '⌂' },
+  { id: 'sources', label: 'Browse', icon: '◫' },
   { id: 'settings', label: 'Settings', icon: '⚙' },
 ]
 

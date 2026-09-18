@@ -25,19 +25,6 @@
       color: #234f3e;
     }
   }
-
-  span {
-    background: #d9e4dc;
-    border-radius: 99px;
-    font-size: .7rem;
-    margin-left: 4px;
-    padding: 2px 6px;
-  }
-
-  &.library-tabs-three {
-    --tab-count: 3;
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 .library-panel {
@@ -59,11 +46,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.history-clear {
-  display: block;
-  margin: -4px 0 8px auto;
 }
 
 .library-message {
@@ -140,29 +122,9 @@
     display: block;
     margin-top: 4px;
   }
-}
 
-.download-badge {
-  border-radius: 5px;
-  color: #596962;
-  display: inline-block;
-  font-size: .66rem;
-  font-weight: 700;
-  margin-top: 7px;
-  padding: 2px 5px;
-  text-transform: capitalize;
-
-  &.state-available {
-    background: #dcefe4;
+  .ready-ahead {
     color: #28704e;
-  }
-
-  &.state-partial {
-    background: #f2e9cc;
-    color: #8a651b;
-  }
-
-  &.state-not-cached {
-    background: #eae8e1;
+    font-weight: 700;
   }
 }

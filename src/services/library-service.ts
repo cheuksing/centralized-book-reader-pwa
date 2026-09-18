@@ -1,4 +1,5 @@
-import type { ChapterDocument, PublicationBookmarkDocument, PublicationDocument, ReadingLocator } from '@models/database/schemas'
+import type { CacheState, ChapterDocument, PublicationBookmarkDocument, PublicationDocument, ReadingLocator } from '@models/database/schemas'
+import { calculateRemainingCount, countReadyAhead } from '@models/cache/cache-policy'
 import type { Publication } from '@models/entities/domain'
 import { persistPublication } from '@services/publication-sync-service'
 import { fetchBlobThroughWorker } from '@services/remote-fetch-service'
@@ -12,7 +13,6 @@ export interface LibrarySnapshot {
   publications: Publication[]
   bookmarks: Publication[]
   recent: Publication[]
-  downloads: Publication[]
 }
 
 export async function listLibrary(): Promise<LibrarySnapshot> {
@@ -44,12 +44,15 @@ export async function listLibrary(): Promise<LibrarySnapshot> {
     current.partial ||= cache.state === 'partial' || cache.state === 'downloading' || cache.state === 'failed'
     cachesByPublication.set(key, current)
   })
-  const publications = publicationDocuments.map((document) => toPublication(document.toJSON(), bookmarks.has(document.key), history.get(document.key), progress.get(document.key), cachesByPublication.get(document.key), chaptersByPublication.get(document.key) ?? []))
+  const cacheStateByChapterKey = new Map(cacheDocuments.map((document) => {
+    const value = document.toJSON()
+    return [value.key, value.state] as const
+  }))
+  const publications = publicationDocuments.map((document) => toPublication(document.toJSON(), bookmarks.has(document.key), history.get(document.key), progress.get(document.key), cachesByPublication.get(document.key), chaptersByPublication.get(document.key) ?? [], cacheStateByChapterKey))
   return {
     publications,
     bookmarks: publications.filter((publication) => publication.bookmarked),
     recent: publications.filter((publication) => publication.historyOpenedAt).sort((left, right) => right.historyOpenedAt!.localeCompare(left.historyOpenedAt!)),
-    downloads: publications.filter((publication) => cachesByPublication.has(publication.key)),
   }
 }
 
@@ -210,15 +213,31 @@ async function prunePublication(publicationKey: string): Promise<void> {
   if (publication) await publication.remove()
 }
 
-function toPublication(document: PublicationDocument, bookmarked: boolean, historyOpenedAt: string | undefined, progressDocument: { locator: ReadingLocator; updatedAt: string } | undefined, cache: { available: boolean; partial: boolean } | undefined, chapters: ChapterDocument[]): Publication {
-  const currentChapterIndex = progressDocument ? chapters.findIndex((chapter) => chapter.chapterId === progressDocument.locator.chapterId) : -1
-  const currentChapter = currentChapterIndex >= 0 ? { title: chapters[currentChapterIndex].title, number: currentChapterIndex + 1, remaining: chapters.length - currentChapterIndex - 1 } : undefined
+function toPublication(document: PublicationDocument, bookmarked: boolean, historyOpenedAt: string | undefined, progressDocument: { locator: ReadingLocator; updatedAt: string } | undefined, cache: { available: boolean; partial: boolean } | undefined, chapters: ChapterDocument[], cacheStateByChapterKey: ReadonlyMap<string, CacheState>): Publication {
+  const currentChapter = progressDocument ? chapters.find((chapter) => chapter.chapterId === progressDocument.locator.chapterId) : undefined
+  const currentChapterIndex = currentChapter ? chapters.indexOf(currentChapter) : -1
+  const remaining = calculateRemainingCount({
+    knownRemaining: document.knownChapterCount === undefined ? Number.NaN : document.knownChapterCount - currentChapterIndex - 1,
+    indexKnowledge: document.chapterIndexKnowledge ?? 'unknown',
+  })
+  const readyAhead = countReadyAhead(currentChapter, chapters.map((chapter) => ({
+    sourceId: chapter.sourceId,
+    publicationId: chapter.publicationId,
+    order: chapter.order,
+    cacheState: cacheStateByChapterKey.get(chapter.key),
+  })))
+  const currentChapterProjection = currentChapter ? {
+    title: currentChapter.title,
+    number: currentChapterIndex + 1,
+    ...(remaining.kind === 'omitted' ? {} : { remaining }),
+    ...(readyAhead > 0 ? { readyAhead } : {}),
+  } : undefined
   return {
     ...document,
     bookmarked,
     historyOpenedAt,
     progress: progressDocument ? { locator: progressDocument.locator, updatedAt: progressDocument.updatedAt } : undefined,
-    currentChapter,
+    currentChapter: currentChapterProjection,
     availability: cache?.available ? 'available' : cache?.partial ? 'partial' : 'unavailable',
   }
 }

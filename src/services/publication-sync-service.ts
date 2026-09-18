@@ -72,9 +72,15 @@ async function syncPublicationNow(source: SourceDocument, publicationId: string,
       await oldChapter.patch({ removedFromSource: Boolean(cache && cache.resources.some((resource) => resource.state === 'available')), updatedAt: now })
     }
   }
-  await upsertPublication(database, publicationDocument)
   await Promise.all(chapterDocuments.map((chapter) => upsertChapter(database, chapter)))
-  return { publication: publicationDocument, chapters: chapterDocuments, nextCursor: chapterPage.nextCursor }
+  const knownChapterCount = (await database.chapters.find({ selector: { sourceId: source.id, publicationId } }).exec()).filter((chapter) => !chapter.get('removedFromSource')).length
+  const syncedPublication: PublicationDocument = {
+    ...publicationDocument,
+    chapterIndexKnowledge: chapterPage.nextCursor ? 'has-more' : 'complete',
+    knownChapterCount,
+  }
+  await upsertPublication(database, syncedPublication)
+  return { publication: syncedPublication, chapters: chapterDocuments, nextCursor: chapterPage.nextCursor }
 }
 
 export function persistPublication(publication: Publication | PublicationDocument): Promise<PublicationDocument> {

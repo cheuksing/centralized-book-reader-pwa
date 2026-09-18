@@ -17,6 +17,8 @@ export function BookIndexPage() {
   const chapters = useReaderViewModel((state) => state.chapters)
   const chapterIndex = useReaderViewModel((state) => state.chapterIndex)
   const readerPublicationKey = useReaderViewModel((state) => state.publicationKey)
+  const readerChapterIndexKnowledge = useReaderViewModel((state) => state.chapterIndexKnowledge)
+  const readerKnownChapterCount = useReaderViewModel((state) => state.knownChapterCount)
   const chapterNextCursor = useReaderViewModel((state) => state.chapterNextCursor)
   const chapterCursorPublicationKey = useReaderViewModel((state) => state.chapterCursorPublicationKey)
   const openPublication = useReaderViewModel((state) => state.openPublication)
@@ -88,9 +90,12 @@ export function BookIndexPage() {
   if (!publication) return null
   const closeIndex = () => navigate(readerPath(publication.key), { replace: true })
   const jumpToChapter = (chapterId: string) => navigate(readerPath(publication.key, chapterId))
-  const chapterCountLabel = publication.knownChapterCount === undefined || publication.chapterIndexKnowledge === undefined || publication.chapterIndexKnowledge === 'unknown'
+  const readerMetadataAvailable = readerPublicationKey === publication.key && (readerKnownChapterCount !== undefined || readerChapterIndexKnowledge !== undefined)
+  const knownChapterCount = readerMetadataAvailable ? readerKnownChapterCount : publication.knownChapterCount
+  const chapterIndexKnowledge = readerMetadataAvailable ? readerChapterIndexKnowledge : publication.chapterIndexKnowledge
+  const chapterCountLabel = knownChapterCount === undefined || chapterIndexKnowledge === undefined || chapterIndexKnowledge === 'unknown'
     ? undefined
-    : `${publication.knownChapterCount}${publication.chapterIndexKnowledge === 'has-more' ? '+' : ''} chapters`
+    : `${knownChapterCount}${chapterIndexKnowledge === 'has-more' ? '+' : ''} chapters`
   const resumeChapter = publication.progress ? chapters.find((chapter) => chapter.chapterId === publication.progress?.locator.chapterId) : undefined
   const resumeUnavailable = Boolean(!online && resumeChapter && !getChapterOpenability(resumeChapter, resumeChapter.cache, online).canOpen)
 

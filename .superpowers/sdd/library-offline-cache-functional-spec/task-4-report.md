@@ -164,3 +164,140 @@ Graphify reported that SCSS/config files were skipped by the code AST classifier
 - No browser-level OPFS/RxDB/UI interaction test was added because the project has no installed component-test harness. The focused policy checks, TypeScript build, lint, diagnostics, and diff check pass.
 - The compatibility `downloadChapter`/`deleteChapterCache` path remains for explicit confirmed revision replacement. It can be removed in the final cleanup only after an equivalent non-job revision-replacement service contract exists; removing it here would discard the required update/data-safety behavior.
 - `navigator.onLine` remains a connectivity hint; actual request failures continue to be handled by the existing service error paths.
+
+## Round 1 fixes
+
+### Implementation summary
+
+- Gated the reader chapter-boundary observer and retry callback on connectivity, and added the same browser connectivity guard at the reader view-model pagination seam before any source lookup or sync. The reader's cursor metadata remains truthful while offline, but boundary pagination cannot turn an offline end-of-index observation into a network error.
+- Rendered `Chapter unavailable offline` with `Open chapter index` for an adjacent chapter whose cached content is unreadable offline instead of offering a retry action.
+- Propagated `chapterIndexKnowledge` and `knownChapterCount` from each authoritative `syncPublication` result through reader state, including initial, target-page, and pagination syncs. `BookIndexPage` now prefers that metadata for the active reader publication and falls back to the app publication only when reader metadata is absent; totals are not derived from loaded rows.
+- Added `min-height: 44px` to the details chapter action and gave each visible `Update` button the accessible name `Update ${chapter.title}`.
+
+### Files changed
+
+- `src/view-models/reader-view-model.ts` — connectivity guard and synchronized index metadata state.
+- `src/views/pages/reader-page.tsx` — connectivity-gated boundaries and unavailable-offline/index guidance.
+- `src/views/pages/book-index-page.tsx` — reader-synchronized chapter count metadata.
+- `src/views/pages/book-details-page.scss` — 44px chapter action target.
+- `src/views/pages/book-details-page.tsx` — chapter-specific update accessible name.
+- No new executable check file was needed; the existing policy checks below remained the smallest relevant checks and no dependency was added.
+
+### Tests and validation
+
+#### Existing focused executable checks
+
+Test files:
+
+- `src/services/cache-preparation.check.ts`
+- `src/models/cache/cache-policy.check.ts`
+
+Command:
+
+```text
+node_modules/.bin/esbuild src/services/cache-preparation.check.ts --bundle --platform=node --format=esm --outfile=dist/cache-preparation.check.mjs --tsconfig=tsconfig.app.json && node dist/cache-preparation.check.mjs && node_modules/.bin/esbuild src/models/cache/cache-policy.check.ts --bundle --platform=node --format=esm --outfile=dist/cache-policy.check.mjs --tsconfig=tsconfig.app.json && node dist/cache-policy.check.mjs
+```
+
+Output:
+
+```text
+dist/cache-preparation.check.mjs  11.1kb
+cache preparation checks passed
+dist/cache-policy.check.mjs  6.7kb
+cache policy checks passed
+```
+
+#### Build
+
+Command:
+
+```text
+npm run build
+```
+
+Output summary:
+
+```text
+> pwa@0.0.0 build
+> tsc -b && vite build
+✓ 1026 modules transformed.
+✓ built in 416ms
+PWA v1.3.0
+precache 13 entries (817.15 KiB)
+files generated
+```
+
+The command also printed the existing `vite-tsconfig-paths` advisory and exited successfully.
+
+#### Lint
+
+Command:
+
+```text
+npm run lint
+```
+
+Output:
+
+```text
+> pwa@0.0.0 lint
+> oxlint
+Found 0 warnings and 0 errors.
+Finished in 134ms on 58 files with 116 rules using 32 threads.
+```
+
+#### Changed-file diagnostics
+
+The project diagnostics tool was run for each changed TypeScript file:
+
+- `src/view-models/reader-view-model.ts`
+- `src/views/pages/reader-page.tsx`
+- `src/views/pages/book-index-page.tsx`
+- `src/views/pages/book-details-page.tsx`
+
+Output for each file:
+
+```text
+Diagnostics successfully refreshed.
+File doesn't have errors or warnings!
+```
+
+#### Diff and graph checks
+
+Command:
+
+```text
+git --no-pager diff --check -- src/view-models/reader-view-model.ts src/views/pages/reader-page.tsx src/views/pages/book-index-page.tsx src/views/pages/book-details-page.scss src/views/pages/book-details-page.tsx
+```
+
+Output: no output; exit code `0`.
+
+Command:
+
+```text
+graphify update .
+```
+
+Output summary:
+
+```text
+AST extraction: 63/63 uncached files (100%) [32 workers]
+Rebuilt: 1234 nodes, 1681 edges, 112 communities
+graph.json, graph.html and GRAPH_REPORT.md updated in graphify-out
+Code graph updated.
+```
+
+Graphify also reported 27 unsupported-extension files skipped and that saved community labels need a future refresh; generated Graphify files were not staged.
+
+### Self-review
+
+- Offline boundary observations and retry actions cannot invoke adjacent loading; the root view-model pagination guard also covers direct callers. The explicit Next control remains disabled offline while loaded cached chapters remain readable.
+- An unavailable adjacent chapter now has alert semantics, contextual offline text, and an index action rather than a retryable network affordance.
+- Reader metadata is copied from the sync service's authoritative publication result for every sync path and reset with the reader, so the index does not infer exact or `+` totals from a partial local row list.
+- The details touch target and update-button names are scoped to the exact reviewer findings. Existing cache-policy behavior, removed-source readability, revision confirmation, and online uncached openability remain unchanged.
+- The pre-existing `package-lock.json`, progress file, and Graphify working-tree changes were not staged.
+
+### Concerns
+
+- The reviewer's minor exact-error-string coupling concern remains intentionally deferred for a later cleanup round.
+- No browser-level component interaction harness exists in the project, so presentation changes were validated by TypeScript/build/lint plus the existing executable policy checks rather than a new dependency-backed UI test.

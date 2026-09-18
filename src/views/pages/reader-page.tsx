@@ -203,7 +203,7 @@ export function ReaderPage() {
   }, [isLoading, isLoadingChapter, publication, readerChapters, settings, updateVisibleSection])
 
   const handleChapterBoundary = useCallback((direction: 'previous' | 'next', chapterId: string) => {
-    if (!publication) return
+    if (!publication || !online) return
     const activeChapterId = chapters[chapterIndex]?.chapterId
     if (chapterId !== activeChapterId) return
     if (direction === 'next' && chapterId === chapters.at(-1)?.chapterId && !hasMoreChapters) return
@@ -220,7 +220,7 @@ export function ReaderPage() {
         else scrollToPosition(before.top + root.scrollHeight - before.height)
       }))
     })
-  }, [chapterIndex, chapters, hasMoreChapters, loadAdjacentChapter, publication])
+  }, [chapterIndex, chapters, hasMoreChapters, loadAdjacentChapter, online, publication])
 
   const openControls = useCallback(() => {
     setSearchParams((current) => { current.set('controls', '1'); return current })
@@ -267,8 +267,8 @@ export function ReaderPage() {
     if (publication) navigate(indexPath(publication.key), { replace: true })
   }, [closeControls, navigate, publication])
   const retryBoundary = useCallback((direction: 'previous' | 'next', chapterId: string) => {
-    if (publication) void loadAdjacentChapter(publication, direction, chapterId)
-  }, [loadAdjacentChapter, publication])
+    if (publication && online) void loadAdjacentChapter(publication, direction, chapterId)
+  }, [loadAdjacentChapter, online, publication])
 
   const effectiveTheme = useMemo(() => settings.theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : settings.theme === 'system' ? 'light' : settings.theme, [settings.theme])
   const unavailableOffline = error === 'This chapter is unavailable offline.'
@@ -289,7 +289,7 @@ export function ReaderPage() {
           if (!entry) return null
           const boundaryDirection = virtualRow.index < activeLoadedIndex ? 'previous' : virtualRow.index > activeLoadedIndex ? 'next' : undefined
           const entryIndex = chapters.findIndex((candidate) => candidate.key === entry.chapter.key)
-          return <div className="reader-virtual-item" data-index={virtualRow.index} key={entry.chapter.key} ref={readerVirtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - readerScrollMargin}px)`, width: '100%' }}><ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={chapters.length} countKnown={chapterCountKnown} entry={entry} ensureImage={ensureImage} separated={virtualRow.index > 0} onBoundary={handleChapterBoundary} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} /></div>
+          return <div className="reader-virtual-item" data-index={virtualRow.index} key={entry.chapter.key} ref={readerVirtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - readerScrollMargin}px)`, width: '100%' }}><ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={chapters.length} countKnown={chapterCountKnown} entry={entry} ensureImage={ensureImage} separated={virtualRow.index > 0} onBoundary={handleChapterBoundary} onOpenIndex={openChapterIndex} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} /></div>
         })}
       </div>
     </article> : <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index to choose available content.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section>}
@@ -312,7 +312,7 @@ export function ReaderPage() {
   </main>
 }
 
-function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, boundaryDirection, publication, ensureImage, separated, onVisible, onBoundary, onRetry }: { entry: ReaderChapterContent; chapterNumber: number; chapterTotal: number; countKnown: boolean; boundaryDirection?: 'previous' | 'next'; publication: Publication; ensureImage: (publication: Publication, chapterKey: string, resourceId: string, priority?: number) => Promise<void>; separated: boolean; onVisible: (chapterId: string, index: number, element: HTMLElement, section: ReaderSection, chapterRoot: HTMLElement) => void; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) {
+function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, boundaryDirection, publication, ensureImage, separated, onVisible, onBoundary, onOpenIndex, onRetry }: { entry: ReaderChapterContent; chapterNumber: number; chapterTotal: number; countKnown: boolean; boundaryDirection?: 'previous' | 'next'; publication: Publication; ensureImage: (publication: Publication, chapterKey: string, resourceId: string, priority?: number) => Promise<void>; separated: boolean; onVisible: (chapterId: string, index: number, element: HTMLElement, section: ReaderSection, chapterRoot: HTMLElement) => void; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onOpenIndex: () => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) {
   const chapterRoot = useRef<HTMLElement>(null)
   const startBoundary = useRef<HTMLDivElement>(null)
   const endBoundary = useRef<HTMLDivElement>(null)
@@ -334,7 +334,8 @@ function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, bou
 
   if (entry.loading || (entry.error && entry.sections.length === 0)) {
     const direction = boundaryDirection ?? 'next'
-    return <section className={`reader-chapter reader-chapter-state${separated ? ' reader-chapter-separated' : ''}`}><div className="reader-boundary-state" role={entry.error ? 'alert' : 'status'}>{entry.error ? <><span>Could not load the {direction} chapter.</span><button onClick={() => onRetry(direction, entry.chapter.chapterId)} type="button">Retry</button></> : `Loading the ${direction} chapter…`}</div></section>
+    const unavailableOffline = entry.error === 'This chapter is unavailable offline.'
+    return <section className={`reader-chapter reader-chapter-state${separated ? ' reader-chapter-separated' : ''}`}><div className="reader-boundary-state" role={entry.error ? 'alert' : 'status'}>{entry.error ? unavailableOffline ? <><span>Chapter unavailable offline</span><button onClick={onOpenIndex} type="button">Open chapter index</button></> : <><span>Could not load the {direction} chapter.</span><button onClick={() => onRetry(direction, entry.chapter.chapterId)} type="button">Retry</button></> : `Loading the ${direction} chapter…`}</div></section>
   }
 
   return <section className={`reader-chapter${separated ? ' reader-chapter-separated' : ''}`} data-chapter-id={entry.chapter.chapterId} ref={chapterRoot}>

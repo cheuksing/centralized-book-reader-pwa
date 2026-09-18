@@ -20,6 +20,8 @@ export interface ReaderChapterContent {
 interface ReaderViewModel {
   settings: ReaderSettings
   publicationKey?: string
+  chapterIndexKnowledge?: Publication['chapterIndexKnowledge']
+  knownChapterCount?: Publication['knownChapterCount']
   chapters: Chapter[]
   chapterIndex: number
   chapterNextCursor?: string
@@ -142,6 +144,8 @@ function updateReaderChapter(readerChapters: ReaderChapterContent[], chapterKey:
 export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   settings: initialSettings,
   publicationKey: undefined,
+  chapterIndexKnowledge: undefined,
+  knownChapterCount: undefined,
   chapters: [],
   chapterIndex: 0,
   isLoadingMoreChapters: false,
@@ -174,7 +178,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     resetReadingIntent()
     const chapterNextCursor = current.chapterCursorPublicationKey === key ? current.chapterNextCursor : undefined
     const resumeLocator = requestedChapterId ? undefined : readerPublication.progress?.locator
-    set({ publicationKey: key, chapters: [], chapterIndex: 0, chapterNextCursor, chapterCursorPublicationKey: key, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
+    set({ publicationKey: key, chapterIndexKnowledge: readerPublication.chapterIndexKnowledge, knownChapterCount: readerPublication.knownChapterCount, chapters: [], chapterIndex: 0, chapterNextCursor, chapterCursorPublicationKey: key, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
     try {
       let chapters = await getLocalChapters(key)
       if (get().publicationKey !== key) return
@@ -189,6 +193,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
           try {
             const synced = await syncPublication(source, readerPublication.publicationId)
             if (get().publicationKey !== key) return
+            set({ chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount })
             chapters = await getLocalChapters(key)
             cursor = synced.nextCursor
           } catch (error) {
@@ -201,6 +206,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
         if (!source) break
         const synced = await syncPublication(source, readerPublication.publicationId, cursor)
         if (get().publicationKey !== key) return
+        set({ chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount })
         chapters = await getLocalChapters(key)
         cursor = synced.nextCursor === cursor ? undefined : synced.nextCursor
       }
@@ -295,6 +301,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   },
   setChapterNextCursor: (chapterCursorPublicationKey, chapterNextCursor) => set({ chapterCursorPublicationKey, chapterNextCursor }),
   loadMoreChapters: async (publication) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const { chapterNextCursor, chapterCursorPublicationKey, isLoadingMoreChapters } = get()
     if (!chapterNextCursor || chapterCursorPublicationKey !== publication.key || isLoadingMoreChapters) return
     set({ isLoadingMoreChapters: true, error: undefined })
@@ -303,7 +310,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
       if (!source) throw new Error('This publication source is no longer installed.')
       const synced = await syncPublication(source, publication.publicationId, chapterNextCursor)
       const nextCursor = synced.nextCursor === chapterNextCursor ? undefined : synced.nextCursor
-      if (get().publicationKey === publication.key) set({ chapters: await getLocalChapters(publication.key), chapterNextCursor: nextCursor, chapterCursorPublicationKey: publication.key })
+      if (get().publicationKey === publication.key) set({ chapters: await getLocalChapters(publication.key), chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount, chapterNextCursor: nextCursor, chapterCursorPublicationKey: publication.key })
     } catch (error) {
       if (get().publicationKey === publication.key) set({ error: error instanceof Error ? error.message : 'Could not load more chapters.' })
     } finally {
@@ -347,7 +354,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     resetReadingIntent()
     void flushProgress().catch(() => undefined)
     releaseReaderChapters(get().readerChapters)
-    set({ publicationKey: undefined, chapters: [], chapterNextCursor: undefined, chapterCursorPublicationKey: undefined, isLoadingMoreChapters: false, readerChapters: [], isLoadingPreviousChapter: false, isLoadingNextChapter: false, sections: [], chapterIndex: 0, sectionIndex: 0, resumeLocator: undefined, isLoading: false, isLoadingChapter: false, error: undefined })
+    set({ publicationKey: undefined, chapterIndexKnowledge: undefined, knownChapterCount: undefined, chapters: [], chapterNextCursor: undefined, chapterCursorPublicationKey: undefined, isLoadingMoreChapters: false, readerChapters: [], isLoadingPreviousChapter: false, isLoadingNextChapter: false, sections: [], chapterIndex: 0, sectionIndex: 0, resumeLocator: undefined, isLoading: false, isLoadingChapter: false, error: undefined })
   },
   flushProgress,
   setTheme: (theme) => {

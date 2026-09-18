@@ -1,17 +1,17 @@
 # Graph Report - centralized-book-reader-pwa  (2026-09-18)
 
 ## Corpus Check
-- 88 files · ~63,603 words
+- 88 files · ~63,712 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 6 file(s) not represented in the graph (top: (none) 3, .css 2, .toml 1)
 
 ## Summary
-- 859 nodes · 1164 edges · 73 communities (59 shown, 14 thin omitted)
+- 859 nodes · 1166 edges · 73 communities (59 shown, 14 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 8 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `922aa16b`
+- Built from commit: `e4751fe9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -115,7 +115,7 @@ Cohesion: 0.03
 Nodes (66): AppSettingsDocument, AppSettingsDocumentSchema, appSettingsSchema, CachedResourceDocument, CachedResourceSchema, CacheState, cacheStateSchema, catalogSchema (+58 more)
 
 ### Community 2 - "app.tsx"
-Cohesion: 0.07
+Cohesion: 0.08
 Nodes (27): react, Tab, TabLayout(), TabLayoutProps, tabs, BookDetailsPage(), ChapterRow(), BookIndexPage() (+19 more)
 
 ### Community 3 - "What You Must Do When Invoked"
@@ -363,4 +363,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `schemas.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.029411764705882353 - nodes in this community are weakly interconnected._
 - **Should `app.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.07346938775510205 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07510204081632653 - nodes in this community are weakly interconnected._

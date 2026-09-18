@@ -1,3 +1,4 @@
+import './settings-page.scss'
 import { useSettingsViewModel } from '@view-models/settings-view-model'
 import { PageHeader } from '../ui/page-header'
 

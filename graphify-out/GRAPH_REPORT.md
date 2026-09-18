@@ -1,16 +1,16 @@
 # Graph Report - pwa  (2026-09-18)
 
 ## Corpus Check
-- 90 files · ~64,695 words
+- 90 files · ~64,727 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 888 nodes · 1165 edges · 76 communities (62 shown, 14 thin omitted)
+- 890 nodes · 1167 edges · 76 communities (62 shown, 14 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `414481c7`
+- Built from commit: `4b03a31f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -37,7 +37,7 @@
 - Subagent-Driven Development
 - reader-view-model.ts
 - opfs-database.ts
-- reader-page.tsx
+- plugins
 - graphify reference: add a URL and watch a folder
 - graphify reference: commit hook and native AGENTS.md integration
 - graphify reference: incremental update and cluster-only
@@ -126,7 +126,7 @@ Nodes (63): AppSettingsDocument, AppSettingsDocumentSchema, appSettingsSchema, C
 
 ### Community 2 - "app.tsx"
 Cohesion: 0.05
-Nodes (39): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema, oxc, react, typescript (+31 more)
+Nodes (49): react, PublicationScreen, Tab, TabLayout(), TabLayoutProps, tabs, BookDetailsPage(), BookIndexPage() (+41 more)
 
 ### Community 3 - "What You Must Do When Invoked"
 Cohesion: 0.08
@@ -149,8 +149,8 @@ Cohesion: 0.10
 Nodes (19): node, vite.config.ts, compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection (+11 more)
 
 ### Community 8 - "devDependencies"
-Cohesion: 0.07
-Nodes (28): @cloudflare/vite-plugin, miniflare, oxlint, devDependencies, @cloudflare/vite-plugin, miniflare, oxlint, @types/node (+20 more)
+Cohesion: 0.06
+Nodes (30): @cloudflare/vite-plugin, miniflare, oxlint, devDependencies, @cloudflare/vite-plugin, miniflare, oxlint, sass (+22 more)
 
 ### Community 9 - "book-content-service.ts"
 Cohesion: 0.17
@@ -204,9 +204,9 @@ Nodes (11): chapterPercentage(), flushProgress(), initialSettings, loadChapter()
 Cohesion: 0.17
 Nodes (12): activateReaderDatabaseGeneration(), ActiveReaderInstanceError, createDatabase(), createReaderDatabaseGeneration(), Deferred, getReaderDatabase(), openWithExclusiveLock(), readActiveDatabaseName() (+4 more)
 
-### Community 24 - "reader-page.tsx"
-Cohesion: 0.21
-Nodes (18): CaretDocument, clamp(), emptySections, findCaret(), findQuoteOffset(), locatorForElement(), offsetForNode(), quoteAt() (+10 more)
+### Community 24 - "plugins"
+Cohesion: 0.22
+Nodes (8): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema, oxc, typescript, warn
 
 ### Community 25 - "graphify reference: add a URL and watch a folder"
 Cohesion: 0.50
@@ -345,24 +345,24 @@ Cohesion: 0.33
 Nodes (3): indexPath(), readerPath(), Tab
 
 ## Knowledge Gaps
-- **412 isolated node(s):** `$schema`, `typescript`, `oxc`, `react/rules-of-hooks`, `warn` (+407 more)
+- **413 isolated node(s):** `$schema`, `typescript`, `oxc`, `react/rules-of-hooks`, `warn` (+408 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **14 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `app.tsx` to `index.ts`, `reader-page.tsx`?**
+- **Why does `react` connect `app.tsx` to `plugins`, `index.ts`?**
   _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **Why does `ChapterDocument` connect `publication-sync-service.ts` to `schemas.ts`, `book-content-service.ts`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
 - **Why does `PublicationDocument` connect `library-service.ts` to `schemas.ts`?**
   _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **What connects `$schema`, `typescript`, `oxc` to the rest of the system?**
-  _412 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _413 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `opfs-rx-storage.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.08974358974358974 - nodes in this community are weakly interconnected._
 - **Should `schemas.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.03076923076923077 - nodes in this community are weakly interconnected._
 - **Should `app.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.05478750640040963 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05225225225225225 - nodes in this community are weakly interconnected._

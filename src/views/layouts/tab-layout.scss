@@ -1,0 +1,60 @@
+.app-shell {
+  background: #f7f4ec;
+  min-height: 100dvh;
+  padding-bottom: calc(82px + env(safe-area-inset-bottom));
+}
+
+.content {
+  padding: max(24px, calc(24px + env(safe-area-inset-top))) max(16px, calc(16px + env(safe-area-inset-right))) 24px max(16px, calc(16px + env(safe-area-inset-left)));
+}
+
+.tab-bar {
+  background: #17362d;
+  bottom: 0;
+  display: flex;
+  left: 50%;
+  max-width: 720px;
+  padding: 8px max(15px, calc(15px + env(safe-area-inset-right))) calc(8px + env(safe-area-inset-bottom)) max(15px, calc(15px + env(safe-area-inset-left)));
+  position: fixed;
+  transform: translateX(-50%);
+  width: 100%;
+  z-index: 1;
+}
+
+.tab {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: #c6d1ca;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  font-size: .7rem;
+  gap: 2px;
+  justify-content: center;
+  min-height: 44px;
+  padding: 7px;
+
+  span:first-child {
+    font-size: 1.18rem;
+    line-height: 1;
+  }
+
+  &.is-active {
+    background: #2c5448;
+    color: #fff;
+  }
+}
+
+@media (min-width: 721px) {
+  .app-shell {
+    box-shadow: 0 0 45px #192c2414;
+    margin-inline: auto;
+    max-width: 720px;
+  }
+
+  .content {
+    padding: max(44px, calc(44px + env(safe-area-inset-top))) max(38px, calc(38px + env(safe-area-inset-right))) 30px max(38px, calc(38px + env(safe-area-inset-left)));
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import './book-details-page.scss'
 import { useLocation } from 'wouter'
 import { ActionDisclosure } from '../ui/action-disclosure'
 import { InfiniteScrollSentinel } from '../ui/infinite-scroll-sentinel'

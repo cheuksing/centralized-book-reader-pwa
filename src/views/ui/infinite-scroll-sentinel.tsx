@@ -1,3 +1,4 @@
+import './infinite-scroll-sentinel.scss'
 import { useEffect, useRef } from 'react'
 
 interface InfiniteScrollSentinelProps {

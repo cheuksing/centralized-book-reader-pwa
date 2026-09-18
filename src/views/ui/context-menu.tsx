@@ -1,3 +1,4 @@
+import './context-menu.scss'
 import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react'

@@ -1,0 +1,471 @@
+.reader {
+  --reader-bg: #fbfaf5;
+  --reader-text: #29332e;
+  background: var(--reader-bg);
+  color: var(--reader-text);
+  min-height: 100dvh;
+  padding-bottom: calc(48px + env(safe-area-inset-bottom));
+  transition: background .2s, color .2s;
+}
+
+.reader-dark {
+  --reader-bg: #17211d;
+  --reader-text: #e5e7df;
+}
+
+.reader-content {
+  margin: 0 auto;
+  min-width: 0;
+  padding: max(24px, calc(24px + env(safe-area-inset-top))) max(25px, calc(25px + env(safe-area-inset-right))) calc(48px + env(safe-area-inset-bottom)) max(25px, calc(25px + env(safe-area-inset-left)));
+
+  h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2.25em;
+    font-weight: 500;
+    letter-spacing: -.055em;
+    line-height: 1.02;
+    margin: 8px 0 38px;
+    overflow-wrap: anywhere;
+  }
+
+  p {
+    font-family: Georgia, 'Times New Roman', serif;
+    margin: 0 0 1.25em;
+  }
+}
+
+.reader-compact .reader-content {
+  max-width: 620px;
+}
+
+.reader-comfortable .reader-content {
+  max-width: 760px;
+}
+
+.reader-wide .reader-content {
+  max-width: 960px;
+}
+
+.reader-kicker {
+  color: color-mix(in srgb, var(--reader-text) 58%, transparent);
+  font-family: Inter, sans-serif !important;
+  font-size: .68em;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.reader-virtual-canvas,
+.reader-virtual-item {
+  position: relative;
+  width: 100%;
+}
+
+.reader-chapter-separated {
+  border-top: 1px solid color-mix(in srgb, var(--reader-text) 14%, transparent);
+  margin-top: 4.5rem;
+  padding-top: 4.5rem;
+}
+
+.reader-chapter-boundary {
+  height: 1px;
+  margin-top: -1px;
+  pointer-events: none;
+}
+
+.reader-chapter-state {
+  min-height: 8rem;
+}
+
+.reader-boundary-state {
+  align-items: center;
+  color: color-mix(in srgb, var(--reader-text) 64%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: Inter, sans-serif;
+  font-size: .8rem;
+  gap: 10px;
+  justify-content: center;
+  padding: 28px 12px;
+  text-align: center;
+
+  button {
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--reader-text) 24%, transparent);
+    border-radius: 8px;
+    color: inherit;
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+}
+
+.reader-resource {
+  margin: 0 0 2em;
+  min-width: 0;
+
+  h2 {
+    font-family: Georgia, serif;
+    font-size: 1.25em;
+    font-weight: 500;
+    margin: 0 0 .8em;
+  }
+}
+
+.reader-image {
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.cached-html {
+  font-family: Georgia, serif;
+  overflow-wrap: anywhere;
+
+  img {
+    height: auto;
+    max-width: 100%;
+  }
+}
+
+.cached-text {
+  font-family: Georgia, serif;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.image-placeholder {
+  align-items: center;
+  background: color-mix(in srgb, var(--reader-text) 7%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--reader-text) 25%, transparent);
+  border-radius: 10px;
+  color: color-mix(in srgb, var(--reader-text) 64%, transparent);
+  display: flex;
+  justify-content: center;
+  min-height: 120px;
+  padding: 20px;
+  text-align: center;
+}
+
+.external-resource {
+  border: 1px solid color-mix(in srgb, var(--reader-text) 22%, transparent);
+  border-radius: 9px;
+  color: inherit;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 11px 13px;
+}
+
+.unsupported-resource {
+  background: color-mix(in srgb, #bd8c23 13%, transparent);
+  border-radius: 9px;
+  color: inherit;
+  padding: 11px 13px;
+}
+
+.reader-status {
+  margin: 0 auto;
+  max-width: 500px;
+  padding: 20vh 28px 30px;
+  text-align: center;
+
+  h1 {
+    font-family: Georgia, serif;
+    font-size: 2rem;
+    font-weight: 500;
+    margin: 12px 0;
+  }
+
+  p {
+    color: color-mix(in srgb, var(--reader-text) 65%, transparent);
+    font-size: .9rem;
+    line-height: 1.55;
+  }
+}
+
+.reader-status-exit,
+.reader-exit-button {
+  background: transparent;
+  border: 0;
+  color: color-mix(in srgb, var(--reader-text) 62%, transparent);
+  font-size: .8rem;
+  margin-top: 14px;
+  min-height: 44px;
+  padding: 8px 0;
+}
+
+.reader-error {
+  background: #843b2d;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  color: #fff;
+  font-size: .75rem;
+  left: 50%;
+  max-width: 90%;
+  padding: 8px 12px;
+  position: fixed;
+  transform: translateX(-50%);
+}
+
+.reader-pagination {
+  border-top: 1px solid color-mix(in srgb, var(--reader-text) 15%, transparent);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 50px;
+  padding-top: 18px;
+
+  button {
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--reader-text) 20%, transparent);
+    border-radius: 8px;
+    color: inherit;
+    font-size: .72rem;
+    min-height: 44px;
+    min-width: 0;
+    padding: 9px 5px;
+
+    &:disabled {
+      opacity: .35;
+    }
+  }
+}
+
+.reader-controls-dialog {
+  background: transparent;
+  border: 0;
+  bottom: 0;
+  color: var(--reader-text);
+  max-height: min(90dvh, 680px);
+  max-width: 720px;
+  overflow: auto;
+  padding: 0;
+  position: fixed;
+  width: 100%;
+
+  &::backdrop {
+    background: rgb(23 54 45 / .18);
+  }
+}
+
+.reader-controls-panel {
+  background: color-mix(in srgb, var(--reader-bg) 96%, #788e84);
+  border: 1px solid color-mix(in srgb, var(--reader-text) 15%, transparent);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -12px 40px rgb(23 54 45 / .12);
+  padding: 16px max(16px, calc(16px + env(safe-area-inset-right))) calc(18px + env(safe-area-inset-bottom)) max(16px, calc(16px + env(safe-area-inset-left)));
+}
+
+.reader-controls-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+
+  h2 {
+    font-family: Georgia, serif;
+    font-size: 1.35rem;
+    font-weight: 500;
+    line-height: 1.1;
+    margin: 0;
+  }
+}
+
+.reader-controls-kicker {
+  color: color-mix(in srgb, var(--reader-text) 58%, transparent);
+  font-family: Inter, sans-serif !important;
+  font-size: .68rem !important;
+  font-weight: 800;
+  letter-spacing: .08em;
+  margin: 0 0 4px !important;
+  text-transform: uppercase;
+}
+
+.reader-controls-meta {
+  color: color-mix(in srgb, var(--reader-text) 62%, transparent);
+  font-family: Inter, sans-serif !important;
+  font-size: .76rem !important;
+  margin: 6px 0 0 !important;
+}
+
+.reader-controls-close {
+  background: transparent;
+  border: 0;
+  color: color-mix(in srgb, var(--reader-text) 68%, transparent);
+  min-height: 44px;
+  padding: 8px 2px;
+}
+
+.reader-chapter-navigation {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+
+  button,
+  .reader-index-button {
+    background: color-mix(in srgb, var(--reader-text) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--reader-text) 20%, transparent);
+    border-radius: 8px;
+    color: var(--reader-text);
+    min-height: 44px;
+    padding: 10px 8px;
+  }
+
+  button:disabled {
+    opacity: .4;
+  }
+}
+
+.reader-index-button {
+  background: color-mix(in srgb, var(--reader-text) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--reader-text) 20%, transparent);
+  border-radius: 8px;
+  color: var(--reader-text);
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 10px 8px;
+  width: 100%;
+}
+
+.reader-downloads,
+.reader-appearance {
+  border-top: 1px solid color-mix(in srgb, var(--reader-text) 13%, transparent);
+  margin-top: 18px;
+  padding-top: 14px;
+
+  h3 {
+    font-size: .8rem;
+    margin: 0;
+  }
+}
+
+.reader-download-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+
+  button {
+    background: color-mix(in srgb, var(--reader-text) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--reader-text) 20%, transparent);
+    border-radius: 8px;
+    color: var(--reader-text);
+    min-height: 44px;
+    padding: 10px 8px;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: .4;
+    }
+  }
+}
+
+.reader-download-status {
+  color: color-mix(in srgb, var(--reader-text) 64%, transparent);
+  font-family: Inter, sans-serif !important;
+  font-size: .76rem !important;
+  line-height: 1.4;
+  margin: 9px 0 0 !important;
+}
+
+.reader-control-panel {
+  border-top: 1px solid color-mix(in srgb, var(--reader-text) 13%, transparent);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 10px 12px 12px;
+
+  > .reader-control-group:last-child {
+    grid-column: 1 / -1;
+  }
+
+  button,
+  select {
+    background: color-mix(in srgb, var(--reader-text) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--reader-text) 20%, transparent);
+    border-radius: 8px;
+    color: var(--reader-text);
+    padding: 9px 10px;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: .4;
+  }
+}
+
+.reader-appearance .reader-control-panel {
+  border: 0;
+  padding: 10px 0 0;
+}
+
+.reader-control-group {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+
+  > span {
+    color: color-mix(in srgb, var(--reader-text) 62%, transparent);
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
+  }
+
+  button,
+  select {
+    min-height: 44px;
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+.reader-control-actions {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  output {
+    color: color-mix(in srgb, var(--reader-text) 68%, transparent);
+    font-size: .8rem;
+    text-align: center;
+  }
+}
+
+.reader-controls-trigger {
+  top: 0;
+}
+
+@media (min-width: 521px) {
+  .reader-controls-dialog {
+    bottom: 24px;
+    border-radius: 18px;
+    max-height: min(90dvh, 680px);
+    width: min(calc(100% - 32px), 680px);
+  }
+
+  .reader-controls-panel {
+    border-bottom: 1px solid color-mix(in srgb, var(--reader-text) 15%, transparent);
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  .reader-chapter-navigation button {
+    font-size: .76rem;
+  }
+
+  .reader-download-actions,
+  .reader-pagination {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reader-pagination button {
+    padding: 11px 12px;
+    width: 100%;
+  }
+}

@@ -1,0 +1,138 @@
+.library-tabs {
+  background: #e5e8e0;
+  border-radius: 11px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 0 12px;
+  padding: 4px;
+
+  button {
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: #627068;
+    font-size: .85rem;
+    font-weight: 750;
+    min-height: 44px;
+    padding: 10px;
+
+    &.is-active {
+      background: #fffdf8;
+      box-shadow: 0 2px 8px #17362d12;
+      color: #234f3e;
+    }
+  }
+
+  span {
+    background: #d9e4dc;
+    border-radius: 99px;
+    font-size: .7rem;
+    margin-left: 4px;
+    padding: 2px 6px;
+  }
+
+  &.library-tabs-three {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.history-clear {
+  display: block;
+  margin: -4px 0 8px auto;
+}
+
+.library-message {
+  margin: 24px 0;
+}
+
+.library-empty {
+  background: #edf0e8;
+  border-radius: 14px;
+  margin-top: 18px;
+  padding: 24px;
+  text-align: center;
+
+  h2 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    margin: 0 0 7px;
+  }
+
+  p {
+    color: #68776f;
+    font-size: .85rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+.book-row {
+  align-items: center;
+  border-bottom: 1px solid #e3e0d8;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  min-height: 104px;
+  min-width: 0;
+  padding: 12px 0;
+  touch-action: manipulation;
+
+  &:focus-visible {
+    outline: 3px solid #78ae93;
+    outline-offset: 4px;
+  }
+}
+
+.book-details {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    font-size: 1rem;
+    margin: 0 0 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  p,
+  small {
+    color: #738079;
+    font-size: .79rem;
+    margin: 0;
+  }
+
+  p {
+    overflow-wrap: anywhere;
+  }
+
+  small {
+    display: block;
+    margin-top: 4px;
+  }
+}
+
+.download-badge {
+  border-radius: 5px;
+  color: #596962;
+  display: inline-block;
+  font-size: .66rem;
+  font-weight: 700;
+  margin-top: 7px;
+  padding: 2px 5px;
+  text-transform: capitalize;
+
+  &.state-available {
+    background: #dcefe4;
+    color: #28704e;
+  }
+
+  &.state-partial {
+    background: #f2e9cc;
+    color: #8a651b;
+  }
+
+  &.state-not-cached {
+    background: #eae8e1;
+  }
+}

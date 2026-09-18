@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import './home-page.scss'
 import { useLocation } from 'wouter'
 import { useAppViewModel } from '@app/app-store'
 import { indexPath, readerPath } from '@app/routes'

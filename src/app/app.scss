@@ -1,0 +1,28 @@
+.blocking-page {
+  align-items: center;
+  background: #f7f4ec;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 28px;
+  text-align: center;
+
+  h1 {
+    font-family: Georgia, serif;
+    font-size: 2rem;
+    font-weight: 500;
+    margin: 16px 0 8px;
+  }
+
+  p {
+    color: #68736e;
+    line-height: 1.5;
+    margin: 0;
+    max-width: 420px;
+  }
+
+  .muted {
+    margin: 12px 0 0;
+  }
+}

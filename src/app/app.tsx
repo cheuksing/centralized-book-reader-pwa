@@ -15,7 +15,7 @@ import { useAppViewModel } from '@app/app-store'
 import { decodeRouteParam, tabPath, type Tab } from '@app/routes'
 import { getLibraryPublication } from '@services/library-service'
 import { resumeExplicitDownloads } from '@services/book-content-service'
-import './app.css'
+import './app.scss'
 
 type PublicationScreen = 'details' | 'reader' | 'index'
 

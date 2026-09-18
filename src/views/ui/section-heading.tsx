@@ -1,3 +1,4 @@
+import './section-heading.scss'
 import type { ReactNode } from 'react'
 
 export interface SectionHeadingProps {

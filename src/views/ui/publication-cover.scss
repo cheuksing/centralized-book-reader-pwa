@@ -1,0 +1,46 @@
+.cover,
+.detail-cover {
+  align-items: center;
+  background: #d8bf82;
+  border-radius: 8px 3px 3px 8px;
+  box-shadow: 3px 4px 10px #21342c2e;
+  color: #17362d;
+  display: flex;
+  font-family: Georgia, serif;
+  font-weight: bold;
+  justify-content: center;
+}
+
+.cover {
+  flex: 0 0 57px;
+  font-size: 1.2rem;
+  height: 77px;
+}
+
+.detail-cover {
+  border-radius: 14px 5px 5px 14px;
+  box-shadow: 8px 11px 25px #21342c30;
+  font-size: 2.8rem;
+  height: 220px;
+  margin: 10px auto 40px;
+  width: 158px;
+}
+
+.cover-article {
+  background: #c8d9d0;
+}
+
+.cover-comic {
+  background: #c8b4a5;
+  font-family: inherit;
+}
+
+.detail-cover-image {
+  border-radius: 14px 5px 5px 14px;
+  box-shadow: 8px 11px 25px #21342c30;
+  display: block;
+  height: 220px;
+  margin: 10px auto 40px;
+  object-fit: cover;
+  width: 158px;
+}

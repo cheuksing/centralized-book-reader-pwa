@@ -1,3 +1,4 @@
+import './page-header.scss'
 import type { ReactNode } from 'react'
 
 export interface PageHeaderProps {

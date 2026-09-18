@@ -1,3 +1,4 @@
+import './reader-page.scss'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { useLocation, useSearchParams } from 'wouter'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'

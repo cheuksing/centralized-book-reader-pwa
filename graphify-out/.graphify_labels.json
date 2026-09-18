@@ -23,7 +23,7 @@
   "21": "cache-policy.ts",
   "22": "reader-view-model.ts",
   "23": "opfs-database.ts",
-  "24": "reader-page.tsx",
+  "24": "plugins",
   "25": "graphify reference: add a URL and watch a folder",
   "26": "graphify reference: commit hook and native AGENTS.md integration",
   "27": "graphify reference: incremental update and cluster-only",

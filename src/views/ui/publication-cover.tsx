@@ -1,3 +1,5 @@
+import './publication-cover.scss'
+
 export type PublicationKind = 'book' | 'article' | 'comic'
 export type PublicationCoverSize = 'list' | 'detail'
 

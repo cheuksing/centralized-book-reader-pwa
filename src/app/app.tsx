@@ -14,7 +14,6 @@ import { TabLayout } from '../views/layouts/tab-layout'
 import { useAppViewModel } from '@app/app-store'
 import { decodeRouteParam, tabPath, type Tab } from '@app/routes'
 import { getLibraryPublication } from '@services/library-service'
-import { resumeExplicitDownloads } from '@services/book-content-service'
 import './app.scss'
 
 type PublicationScreen = 'details' | 'reader' | 'index'
@@ -32,7 +31,6 @@ export function App() {
     void initializeSettings()
     void initializeReader()
     void initializeSources()
-    void resumeExplicitDownloads()
   }, [initializeReader, initializeSettings, initializeSources])
 
   if (!settingsInitialized) return <main className="blocking-page"><div className="loading-mark">◌</div><h1>Opening Bookshelf</h1><p>Checking local storage and the active app instance…</p></main>

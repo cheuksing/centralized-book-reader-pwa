@@ -83,32 +83,6 @@ export async function toggleSource(id: string): Promise<void> {
   if (source) await source.patch({ enabled: !source.enabled })
 }
 
-export interface SourceRetentionCounts {
-  bookmarks: number
-  history: number
-  progress: number
-  downloadedChapters: number
-  storageBytes: number
-}
-
-export async function getSourceRetentionCounts(id: string): Promise<SourceRetentionCounts> {
-  const database = await getDatabase()
-  const publications = await database.publications.find({ selector: { sourceId: id } }).exec()
-  const publicationKeys = new Set(publications.map((document) => document.key))
-  const [bookmarks, history, progress, caches] = await Promise.all([
-    database.publicationBookmarks.find({ selector: {} }).exec(),
-    database.readingHistory.find({ selector: {} }).exec(),
-    database.readingProgress.find({ selector: {} }).exec(),
-    database.chapterCaches.find({ selector: { sourceId: id } }).exec(),
-  ])
-  return {
-    bookmarks: bookmarks.filter((entry) => publicationKeys.has(entry.publicationKey)).length,
-    history: history.filter((entry) => publicationKeys.has(entry.publicationKey)).length,
-    progress: progress.filter((entry) => publicationKeys.has(entry.publicationKey)).length,
-    downloadedChapters: caches.filter((entry) => entry.state === 'available' || entry.state === 'partial').length,
-    storageBytes: caches.reduce((sum, cache) => sum + cache.receivedBytes, 0),
-  }
-}
 
 export async function removeSource(id: string): Promise<void> {
   const database = await getDatabase()

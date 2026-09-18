@@ -58,7 +58,6 @@
   --tab-highlight-index: 1;
 }
 
-.animated-tab-strip[data-active-tab='downloads'],
 .animated-tab-strip[data-active-tab='settings'] {
   --tab-highlight-index: 2;
 }

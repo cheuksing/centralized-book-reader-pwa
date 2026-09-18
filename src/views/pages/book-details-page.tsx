@@ -11,7 +11,7 @@ import { useReaderViewModel } from '@view-models/reader-view-model'
 import { useAppViewModel } from '@app/app-store'
 import { readerPath } from '@app/routes'
 import type { Chapter, Publication } from '@models/entities/domain'
-import { deleteChapterCache, downloadChapter, getChapterOpenability } from '@services/book-content-service'
+import { deleteChapterCache, getChapterOpenability, updateChapterCache } from '@services/book-content-service'
 import { togglePublicationBookmark, loadPublicationCover } from '@services/library-service'
 import { getLocalChapters, getSourceForPublication, persistPublication, syncPublication } from '@services/publication-sync-service'
 
@@ -133,7 +133,7 @@ export function BookDetailsPage() {
     if (!chapter || !online) return
     void runChapterAction(async () => {
       await deleteChapterCache(chapter.key)
-      await downloadChapter(chapter.key)
+      await updateChapterCache(chapter.key)
     })
   }
 
@@ -158,7 +158,7 @@ export function BookDetailsPage() {
       </section>
       <ConfirmDialog
         confirmLabel="Update chapter"
-        description="The current cached revision will be removed. If the new download fails, the old revision cannot be restored."
+        description="The current cached revision will be removed. If the replacement cannot be saved, the old revision cannot be restored."
         destructive
         onCancel={() => setChapterToUpdate(undefined)}
         onConfirm={confirmChapterUpdate}

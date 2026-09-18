@@ -51,7 +51,6 @@ async function getDatabase() {
 }
 
 const resourceOperations = new Map<string, Promise<void>>()
-const downloadOperations = new Map<string, Promise<void>>()
 const busyChapterKeys = new Set<string>()
 const volatileResources = new Map<string, { blob: Blob; mimeType: string }>()
 const activeCacheMutations = new Set<Promise<unknown>>()
@@ -63,7 +62,7 @@ subscribeToOfflineCacheClearFinish(() => { cacheClearInProgress = false; cacheCl
 let nextPreparingChapterKey: string | undefined
 let preparationOperation: Promise<ChapterPreparationResult> | undefined
 subscribeToOfflineCacheClearBarrier(async () => {
-  const operations = [preparationOperation, ...activeCacheMutations, ...resourceOperations.values(), ...downloadOperations.values()].filter((operation): operation is Promise<unknown> => Boolean(operation))
+  const operations = [preparationOperation, ...activeCacheMutations, ...resourceOperations.values()].filter((operation): operation is Promise<unknown> => Boolean(operation))
   await Promise.allSettled(operations)
 })
 
@@ -379,87 +378,40 @@ export async function markChapterAccessed(chapterKey: string): Promise<void> {
   }
 }
 
-// Compatibility surface for the pre-Task-4 screens; automatic preparation never calls this or writes downloadJobs.
-export function downloadChapter(chapterKey: string): Promise<void> {
-  const existing = downloadOperations.get(chapterKey)
-  if (existing) return existing
-
-  const operation = downloadChapterNow(chapterKey).finally(() => {
-    if (downloadOperations.get(chapterKey) === operation) downloadOperations.delete(chapterKey)
-  })
-  downloadOperations.set(chapterKey, operation)
-  return operation
+export async function updateChapterCache(chapterKey: string): Promise<void> {
+  const expectedGeneration = cacheClearGeneration
+  try {
+    await withCacheMutation(() => updateChapterCacheNow(chapterKey, expectedGeneration), expectedGeneration)
+  } finally {
+    requestStorageEstimateRefresh()
+  }
 }
 
-async function downloadChapterNow(chapterKey: string): Promise<void> {
-  return withCacheMutation(() => downloadChapterNowInternal(chapterKey))
-}
-
-async function downloadChapterNowInternal(chapterKey: string): Promise<void> {
+async function updateChapterCacheNow(chapterKey: string, expectedGeneration: number): Promise<void> {
   const database = await getDatabase()
   const chapter = await database.chapters.findOne(chapterKey).exec()
   if (!chapter) throw new Error('This chapter no longer exists.')
   const source = await database.sources.findOne(chapter.sourceId).exec()
   if (!source) throw new Error('The source for this chapter is no longer installed.')
   const manifest = await sourceAdapterFor(source.toJSON()).getChapterManifest(source.toJSON(), chapter.publicationId, chapter.chapterId)
-  await createOrMergeCache(chapter.toJSON(), manifest)
-  const job = await upsertDownloadJob(chapterKey)
-  await job.patch({ state: 'downloading', lastError: undefined, updatedAt: new Date().toISOString() })
+  await createOrMergeCache(chapter.toJSON(), manifest, {}, expectedGeneration)
   try {
     while (true) {
       const cache = await database.chapterCaches.findOne(chapterKey).exec()
       if (!cache) throw new Error('Could not create the chapter cache.')
       const resources = cache.resources.filter((candidate) => candidate.cacheable && candidate.state !== 'available')
       if (resources.length === 0) break
-      for (const resource of resources) {
-        const currentJob = await database.downloadJobs.findOne(chapterKey).exec()
-        if (currentJob?.state === 'paused' || currentJob?.state === 'cancelled') return
-        await ensureResourceCached(chapterKey, resource.sourceResourceId, resource.kind === 'image' ? 0 : 10)
-        const latestCache = await database.chapterCaches.findOne(chapterKey).exec()
-        const latestJob = await database.downloadJobs.findOne(chapterKey).exec()
-        if (latestJob && latestCache) {
-          const available = latestCache.resources.filter((candidate) => candidate.cacheable && candidate.state === 'available').map((candidate) => candidate.sourceResourceId)
-          const pending = latestCache.resources.filter((candidate) => candidate.cacheable && candidate.state !== 'available').map((candidate) => candidate.sourceResourceId)
-          await latestJob.patch({ completedResourceIds: available, pendingResourceIds: pending, failedResourceIds: latestCache.resources.filter((candidate) => candidate.state === 'failed').map((candidate) => candidate.sourceResourceId), updatedAt: new Date().toISOString() })
-        }
-      }
+      for (const resource of resources) await ensureResourceCached(chapterKey, resource.sourceResourceId, resource.kind === 'image' ? 0 : 10)
     }
     const finalCache = await database.chapterCaches.findOne(chapterKey).exec()
-    if (!finalCache) throw new Error('The chapter cache disappeared after downloading.')
-    const finalJob = await database.downloadJobs.findOne(chapterKey).exec()
-    if (finalJob?.state === 'paused' || finalJob?.state === 'cancelled') return
+    if (!finalCache) throw new Error('The chapter cache disappeared while updating.')
     await finalCache.patch({ state: 'available', sourceRevision: manifest.sourceRevision, updatedAt: new Date().toISOString() })
-    if (finalJob) await finalJob.patch({ state: 'completed', pendingResourceIds: [], failedResourceIds: [], updatedAt: new Date().toISOString() })
     await chapter.patch({ updateAvailable: false, removedFromSource: false })
   } catch (error) {
     const failedCache = await database.chapterCaches.findOne(chapterKey).exec()
     if (failedCache) await failedCache.patch({ state: 'failed', updatedAt: new Date().toISOString() })
-    const failedJob = await database.downloadJobs.findOne(chapterKey).exec()
-    if (failedJob) await failedJob.patch({ state: 'failed', lastError: error instanceof Error ? error.message : 'Download failed.', updatedAt: new Date().toISOString() })
     throw error
   }
-}
-
-export async function pauseDownload(chapterKey: string): Promise<void> {
-  await withCacheMutation(async () => {
-    const database = await getDatabase()
-    const job = await database.downloadJobs.findOne(chapterKey).exec()
-    if (job) await job.patch({ state: 'paused', updatedAt: new Date().toISOString() })
-  })
-}
-
-export async function resumeDownload(chapterKey: string): Promise<void> {
-  await downloadChapter(chapterKey)
-}
-
-export async function cancelDownload(chapterKey: string): Promise<void> {
-  await withCacheMutation(async () => {
-    const database = await getDatabase()
-    const job = await database.downloadJobs.findOne(chapterKey).exec()
-    if (job) await job.patch({ state: 'cancelled', updatedAt: new Date().toISOString() })
-    const cache = await database.chapterCaches.findOne(chapterKey).exec()
-    if (cache) await cache.patch({ state: cache.resources.some((resource) => resource.state === 'available') ? 'partial' : 'not-downloaded', updatedAt: new Date().toISOString() })
-  })
 }
 
 export async function deleteChapterCache(chapterKey: string): Promise<void> {
@@ -488,11 +440,6 @@ async function deleteChapterCacheNow(chapterKey: string): Promise<void> {
   if (publicationKeyValue) await removePublicationCoverIfUnused(publicationKeyValue)
 }
 
-export async function resumeExplicitDownloads(): Promise<void> {
-  const database = await getDatabase()
-  const jobs = await database.downloadJobs.find({ selector: { state: { $in: ['queued', 'downloading', 'failed'] } } }).exec()
-  for (const job of jobs) void downloadChapter(job.chapterKey).catch(() => undefined)
-}
 
 export function releaseBookContent(sections: ReaderSection[]): void {
   const urls = new Set(sections.map((section) => section.objectUrl).filter((url): url is string => Boolean(url)))
@@ -704,17 +651,6 @@ async function readSections(cache: ChapterCacheDocument, document: RxDocument<Ch
   return sections
 }
 
-async function upsertDownloadJob(chapterKey: string) {
-  const database = await getDatabase()
-  const existing = await database.downloadJobs.findOne(chapterKey).exec()
-  const cache = await database.chapterCaches.findOne(chapterKey).exec()
-  const pending = cache?.resources.filter((resource) => resource.cacheable && resource.state !== 'available').map((resource) => resource.sourceResourceId) ?? []
-  if (existing) {
-    await existing.patch({ pendingResourceIds: pending, failedResourceIds: [], requestedMode: 'explicit', updatedAt: new Date().toISOString() })
-    return existing
-  }
-  return database.downloadJobs.insert({ id: chapterKey, chapterKey, requestedMode: 'explicit', state: 'queued', completedResourceIds: [], pendingResourceIds: pending, failedResourceIds: [], receivedBytes: cache?.receivedBytes ?? 0, updatedAt: new Date().toISOString() })
-}
 
 function mergeResources(current: CachedResourceDocument[], additions: CachedResourceDocument[]): CachedResourceDocument[] {
   const byId = new Map(current.map((resource) => [resource.id, resource]))

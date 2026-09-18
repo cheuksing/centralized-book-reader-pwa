@@ -13,7 +13,6 @@ export type { CachedStorageRecord, CachedStorageSummary } from './storage-policy
 
 export interface ClearOfflineCacheResult {
   removedChapterCount: number
-  removedJobCount: number
   removedFromSourceCount: number
 }
 
@@ -78,7 +77,6 @@ async function clearOfflineCacheNow(): Promise<ClearOfflineCacheResult> {
     const chapterByKey = new Map(chapters.map((chapter) => [chapter.key, chapter]))
     const removedFromSourceCount = caches.filter((cache) => chapterByKey.get(cache.key)?.removedFromSource).length
     let removedChapterCount = 0
-    let removedJobCount = 0
 
     for (const cache of caches) {
       try {
@@ -92,14 +90,13 @@ async function clearOfflineCacheNow(): Promise<ClearOfflineCacheResult> {
     for (const job of jobs) {
       try {
         await job.remove()
-        removedJobCount += 1
       } catch (error) {
-        throw new Error(`Could not remove a cached chapter job: ${errorMessage(error, 'storage removal failed.')}`)
+        throw new Error(`Could not remove associated cache metadata: ${errorMessage(error, 'storage removal failed.')}`)
       }
     }
 
     notifyOfflineCacheCleared()
-    return { removedChapterCount, removedJobCount, removedFromSourceCount }
+    return { removedChapterCount, removedFromSourceCount }
   } finally {
     notifyOfflineCacheClearFinished()
   }

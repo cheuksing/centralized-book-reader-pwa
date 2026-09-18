@@ -3,7 +3,6 @@ import type {
   AppSettingsDocument,
   ChapterCacheDocument,
   ChapterDocument,
-  DownloadJobDocument,
   PublicationBookmarkDocument,
   PublicationDocument,
   ReadingHistoryDocument,
@@ -14,7 +13,7 @@ import type {
 } from '@models/database/schemas'
 
 export type { ReadingLocator, ReadingImageLocator, ReadingTextLocator } from '@models/database/schemas'
-export type { PublicationKind, ResourceKind, CacheState, DownloadState } from '@models/database/schemas'
+export type { PublicationKind, ResourceKind, CacheState } from '@models/database/schemas'
 export type { CacheEvictionCandidate, CacheEvictionProtection, ChapterIndexKnowledge, ReadyAheadChapter, RemainingCount, RemainingCountInput, StorageEstimateInput, StoragePressure } from '@models/cache/cache-policy'
 
 export interface CurrentChapter {
@@ -38,7 +37,6 @@ export type ReadingProgress = Omit<ReadingProgressDocument, 'id' | 'publicationK
 export type Source = SourceDocument
 export type ReaderSettings = ReaderSettingsValue
 export type AppSettings = AppSettingsDocument
-export type DownloadJob = DownloadJobDocument
 export type PublicationBookmark = PublicationBookmarkDocument
 export type ReadingHistory = ReadingHistoryDocument
 

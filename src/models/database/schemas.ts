@@ -22,7 +22,6 @@ export const downloadJobStateSchema = Type.Unsafe<'queued' | 'downloading' | 'pa
 export type PublicationKind = Static<typeof publicationKindSchema>
 export type ResourceKind = Static<typeof resourceKindSchema>
 export type CacheState = Static<typeof cacheStateSchema>
-export type DownloadState = Static<typeof downloadJobStateSchema>
 
 const JsonPointerSchema = Type.String({ pattern: '^(|/.*)$', maxLength: 500 })
 const HtmlSelectorSchema = Type.String({ minLength: 1, maxLength: 500 })

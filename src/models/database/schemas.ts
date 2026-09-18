@@ -304,7 +304,9 @@ export const ChapterCacheDocumentSchema = Type.Object({
   state: cacheStateSchema,
   resources: Type.Array(CachedResourceSchema),
   receivedBytes: Type.Number({ minimum: 0 }),
+  createdAt: Type.String({ format: 'date-time', maxLength: 40 }),
   updatedAt: Type.String({ format: 'date-time', maxLength: 40 }),
+  lastAccessedAt: Type.Optional(Type.String({ format: 'date-time', maxLength: 40 })),
 }, { additionalProperties: false })
 export type ChapterCacheDocument = Static<typeof ChapterCacheDocumentSchema>
 
@@ -335,5 +337,5 @@ export const readingHistorySchema = rxSchema(ReadingHistoryDocumentSchema, { tit
 export const readingProgressSchema = rxSchema(ReadingProgressDocumentSchema, { title: 'reading progress', version: 0, primaryKey: 'id', indexes: ['publicationKey', 'updatedAt'] })
 export const readerSettingsSchema = rxSchema(ReaderSettingsDocumentSchema, { title: 'reader settings', version: 0, primaryKey: 'id', indexes: ['scope'] })
 export const appSettingsSchema = rxSchema(AppSettingsDocumentSchema, { title: 'application settings', version: 0, primaryKey: 'id' })
-export const chapterCacheSchema = rxSchema(ChapterCacheDocumentSchema, { title: 'chapter content cache', version: 0, primaryKey: 'key', indexes: [['publicationId', 'state'], 'state'], attachments: {} })
+export const chapterCacheSchema = rxSchema(ChapterCacheDocumentSchema, { title: 'chapter content cache', version: 1, primaryKey: 'key', indexes: [['publicationId', 'state'], ['state', 'lastAccessedAt'], 'state'], attachments: {} })
 export const downloadJobSchema = rxSchema(DownloadJobDocumentSchema, { title: 'explicit chapter download job', version: 0, primaryKey: 'id', indexes: [['chapterKey', 'state'], 'state'] })

@@ -203,6 +203,7 @@ async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManif
     state: cacheState(resources),
     resources,
     receivedBytes: 0,
+    createdAt: now,
     updatedAt: now,
   })
 }

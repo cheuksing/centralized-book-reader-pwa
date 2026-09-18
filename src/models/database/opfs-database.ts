@@ -75,8 +75,9 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve, reject }
 }
 
-const DEFAULT_DATABASE_NAME = 'bookshelf-prototype-v8'
+const DEFAULT_DATABASE_NAME = 'bookshelf-prototype-v9'
 const ACTIVE_DATABASE_FILE = 'bookshelf-active-generation.json'
+const ACTIVE_DATABASE_POINTER_VERSION = 2
 let databasePromise: Promise<ReaderDatabase> | undefined
 let releaseLock: (() => void) | undefined
 
@@ -174,8 +175,9 @@ async function readActiveDatabaseName(): Promise<string> {
     const root = await navigator.storage.getDirectory()
     const handle = await root.getFileHandle(ACTIVE_DATABASE_FILE)
     const value: unknown = JSON.parse(await (await handle.getFile()).text())
+    const version = value && typeof value === 'object' ? (value as { version?: unknown }).version : undefined
     const name = value && typeof value === 'object' ? (value as { databaseName?: unknown }).databaseName : undefined
-    if (typeof name === 'string' && /^bookshelf-prototype-[a-z0-9-]+$/.test(name)) return name
+    if (version === ACTIVE_DATABASE_POINTER_VERSION && typeof name === 'string' && /^bookshelf-prototype-[a-z0-9-]+$/.test(name)) return name
   } catch {
     // Use the default generation when the pointer is absent or incomplete.
   }
@@ -184,7 +186,7 @@ async function readActiveDatabaseName(): Promise<string> {
 
 async function writeActiveDatabaseName(databaseName: string): Promise<void> {
   const root = await navigator.storage.getDirectory()
-  const content = JSON.stringify({ version: 1, databaseName })
+  const content = JSON.stringify({ version: ACTIVE_DATABASE_POINTER_VERSION, databaseName })
   const temporaryName = `.${ACTIVE_DATABASE_FILE}.${crypto.randomUUID()}.tmp`
   const temporary = await root.getFileHandle(temporaryName, { create: true })
   const temporaryWritable = await temporary.createWritable()

@@ -14,6 +14,7 @@ import type {
 
 export type { ReadingLocator, ReadingImageLocator, ReadingTextLocator } from '@models/database/schemas'
 export type { PublicationKind, ResourceKind, CacheState, DownloadState } from '@models/database/schemas'
+export type { CacheEvictionCandidate, CacheEvictionProtection, ChapterIndexKnowledge, ReadyAheadChapter, RemainingCount, RemainingCountInput, StorageEstimateInput, StoragePressure } from '@models/cache/cache-policy'
 
 export interface CurrentChapter {
   title: string

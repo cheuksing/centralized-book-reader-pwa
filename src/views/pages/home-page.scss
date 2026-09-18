@@ -40,6 +40,10 @@
   }
 }
 
+.library-panel {
+  touch-action: pan-y;
+}
+
 .library-book-list,
 .library-empty {
   animation: library-panel-enter .24s cubic-bezier(.22, 1, .36, 1) both;
@@ -85,6 +89,11 @@
     line-height: 1.5;
     margin: 0;
   }
+}
+
+.library-book-list-virtual {
+  position: relative;
+  width: 100%;
 }
 
 .book-row {

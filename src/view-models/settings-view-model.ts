@@ -21,8 +21,6 @@ interface SettingsViewModel {
   storageEstimate?: StorageEstimate
   storageEstimateStatus: string
   cachedBytes?: number
-  cachedChapterCount: number
-  removedFromSourceCount?: number
   message: string
   initialized: boolean
   initialize: () => Promise<void>
@@ -78,7 +76,7 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
     storagePressure: 'unknown',
     storagePressureStatus: 'Storage pressure is unknown.',
     storageEstimateStatus: 'Storage estimate is unavailable.',
-    cachedChapterCount: 0,
+
     message: '',
     initialized: false,
     initialize: async () => {
@@ -133,11 +131,11 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
           storagePressure,
           storagePressureStatus: storagePressureMessage(storagePressure),
           storageEstimateStatus: hasValidUsage ? '' : 'Storage estimate is unavailable.',
-          ...(summary ? { cachedBytes: summary.cachedBytes, cachedChapterCount: summary.cachedChapterCount, removedFromSourceCount: summary.removedFromSourceCount } : { cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined }),
+          ...(summary ? { cachedBytes: summary.cachedBytes } : { cachedBytes: undefined }),
         })
         return hasValidPressure
       })().catch(() => {
-        set({ storageEstimate: undefined, storagePressure: 'unknown', storagePressureStatus: 'Storage pressure is unknown.', storageEstimateStatus: 'Storage estimate is unavailable.', cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined })
+        set({ storageEstimate: undefined, storagePressure: 'unknown', storagePressureStatus: 'Storage pressure is unknown.', storageEstimateStatus: 'Storage estimate is unavailable.', cachedBytes: undefined })
         return false
       }).finally(() => {
         estimateRefresh = undefined
@@ -150,7 +148,7 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
       try {
         await clearOfflineCache()
         await get().refreshEstimate()
-        set({ message: 'Offline cache cleared. Cached chapter content was removed; saved publications, reading history, and reading position remain.' })
+        set({ message: 'Offline cache cleared.' })
       } catch (error) {
         await get().refreshEstimate()
         set({ message: `Could not clear offline cache: ${errorMessage(error, 'storage removal failed.')}` })

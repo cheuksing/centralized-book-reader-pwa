@@ -1,23 +1,24 @@
-# Graph Report - pwa  (2026-09-18)
+# Graph Report - centralized-book-reader-pwa  (2026-09-19)
 
 ## Corpus Check
-- 103 files · ~73,849 words
+- 123 files · ~93,880 words
 - Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 27 file(s) not represented in the graph (top: .scss 17, .diff 5, (none) 3)
 
 ## Summary
-- 1036 nodes · 1339 edges · 95 communities (81 shown, 14 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
+- 1350 nodes · 1859 edges · 113 communities (95 shown, 18 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 13 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `45848e93`
+- Built from commit: `74d7f15e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - opfs-rx-storage.ts
 - schemas.ts
-- app.tsx
+- book-details-page.tsx
 - What You Must Do When Invoked
 - compilerOptions
 - dependencies
@@ -49,11 +50,13 @@
 - graphify reference: GitHub clone and cross-repo merge
 - graphify reference: transcribe video and audio
 - source-registry.ts
-- backup-service.ts
+- @models/database/opfs-database
 - tsconfig.json
 - Ponytail, lazy senior dev mode
 - extraction-spec.md
+- storage-service.ts
 - publication-sync-service.ts
+- package.json
 - Bookshelf Reader Technical Specification
 - Ponytail
 - Ponytail Help
@@ -77,13 +80,13 @@
 - image-coordinator.ts
 - Bookshelf Reader Worker
 - keys.ts
-- app-store.ts
-- home-view-model.ts
+- Task 3 implementation report
+- Checks and commands
 - Workflow Patterns
-- app-settings-service.ts
-- reader-settings-service.ts
-- settings-view-model.ts
-- source-browser-view-model.ts
+- cache-preparation.ts
+- ContextMenu
+- app.tsx
+- home-page.tsx
 - review-package
 - sdd-workspace
 - task-brief
@@ -97,7 +100,7 @@
 - Motion (Vanilla JS / HTML / TypeScript)
 - Transition preview
 - Library and Offline Cache Functional Specification
-- plugins
+- .oxlintrc.json
 - 14. LRU eviction
 - 6. Library screen
 - 11. Automatic offline preparation
@@ -105,75 +108,93 @@
 - 13. Storage estimation
 - 15. Settings: Offline storage
 - 5. Information architecture
+- domain.ts
+- Task 5 implementation report
+- BookDetailsPage
+- Library and Offline Cache implementation plan
+- settings-page.tsx
+- miniflare.mjs
+- SDD ledger — plan: docs/library-offline-cache-functional-spec.md
+- scripts
+- Task 1 implementation report
+- action-disclosure.tsx
+- task-1-brief.md
+- task-2-brief.md
+- task-3-brief.md
+- task-4-brief.md
+- cache-preparation.check.ts
+- Task 4 implementation report
+- Implementation plan
+- Final review fix wave report
 
 ## God Nodes (most connected - your core abstractions)
 1. `Library and Offline Cache Functional Specification` - 23 edges
 2. `compilerOptions` - 19 edges
 3. `Bookshelf Reader Technical Specification` - 19 edges
-4. `react` - 16 edges
-5. `compilerOptions` - 15 edges
-6. `OpfsStorageInstance` - 13 edges
-7. `getDatabase()` - 13 edges
-8. `compilerOptions` - 13 edges
-9. `getDatabase()` - 12 edges
-10. `What You Must Do When Invoked` - 12 edges
+4. `react` - 17 edges
+5. `loadChapterContentNow()` - 15 edges
+6. `ContextMenu()` - 15 edges
+7. `compilerOptions` - 15 edges
+8. `OpfsStorageInstance` - 14 edges
+9. `prepareUpcomingChaptersNow()` - 14 edges
+10. `withQuotaRecovery()` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `request()` --references--> `miniflare`  [EXTRACTED]
-  worker/test/miniflare.mjs → package.json
-- `listLibrary()` --references--> `PublicationDocument`  [EXTRACTED]
-  src/services/library-service.ts → src/models/database/schemas.ts
-- `deleteChapterCache()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/book-content-service.ts → src/models/database/schemas.ts
-- `downloadChapterNow()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/book-content-service.ts → src/models/database/schemas.ts
-- `getLocalChapters()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/publication-sync-service.ts → src/models/database/schemas.ts
+- `prepareUpcomingChaptersNow()` --calls--> `getUpcomingChapterKeys()`  [EXTRACTED]
+  src/services/book-content-service.ts → src/services/cache-preparation.ts
+- `BookDetailsPage()` --calls--> `useOnlineStatus()`  [EXTRACTED]
+  src/views/pages/book-details-page.tsx → src/views/ui/use-online-status.ts
+- `ReaderPage()` --calls--> `useOnlineStatus()`  [EXTRACTED]
+  src/views/pages/reader-page.tsx → src/views/ui/use-online-status.ts
+- `PreparationGateInput` --references--> `StoragePressure`  [EXTRACTED]
+  src/services/cache-preparation.ts → src/models/cache/cache-policy.ts
+- `BoundedEvictionOptions` --references--> `StorageEstimateInput`  [EXTRACTED]
+  src/services/cache-preparation.ts → src/models/cache/cache-policy.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (95 total, 14 thin omitted)
+## Communities (113 total, 18 thin omitted)
 
 ### Community 0 - "opfs-rx-storage.ts"
 Cohesion: 0.09
-Nodes (19): attachmentKey(), documentId(), DocumentRecord, documentWithoutAttachmentBlobs(), fileSafeName(), getRxStorageOPFS(), hasAttachmentBlob(), hydrateDocument() (+11 more)
+Nodes (20): rxdb, attachmentKey(), documentId(), DocumentRecord, documentWithoutAttachmentBlobs(), fileSafeName(), getRxStorageOPFS(), hasAttachmentBlob() (+12 more)
 
 ### Community 1 - "schemas.ts"
 Cohesion: 0.03
-Nodes (63): AppSettingsDocument, AppSettingsDocumentSchema, appSettingsSchema, CachedResourceDocument, CachedResourceSchema, CacheState, cacheStateSchema, catalogSchema (+55 more)
+Nodes (62): AppSettingsDocument, AppSettingsDocumentSchema, appSettingsSchema, CachedResourceSchema, CacheState, cacheStateSchema, catalogSchema, ChapterCacheDocumentSchema (+54 more)
 
-### Community 2 - "app.tsx"
-Cohesion: 0.07
-Nodes (34): react, PublicationScreen, Tab, TabLayout(), TabLayoutProps, tabs, BookDetailsPage(), BookIndexPage() (+26 more)
+### Community 2 - "book-details-page.tsx"
+Cohesion: 0.16
+Nodes (13): react, wouter, IndexMetadata, BookIndexPage(), localPublication(), SourcesPage(), ConfirmDialog(), ConfirmDialogProps (+5 more)
 
 ### Community 3 - "What You Must Do When Invoked"
 Cohesion: 0.08
 Nodes (24): For /graphify add and --watch, For /graphify query, For the commit hook and native AGENTS.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+16 more)
 
 ### Community 4 - "compilerOptions"
-Cohesion: 0.06
-Nodes (34): DOM, src, ./src/app/*, ./src/models/*, ./src/services/*, ./src/view-models/*, ./src/views/*, vite/client (+26 more)
+Cohesion: 0.08
+Nodes (25): compilerOptions, allowArbitraryExtensions, allowImportingTsExtensions, erasableSyntaxOnly, jsx, lib, module, moduleDetection (+17 more)
 
 ### Community 5 - "dependencies"
-Cohesion: 0.07
-Nodes (27): dependencies, react, react-dom, rxdb, @sinclair/typebox, @tanstack/react-virtual, vite-plugin-pwa, wouter (+19 more)
+Cohesion: 0.22
+Nodes (9): dependencies, react, react-dom, rxdb, @sinclair/typebox, @tanstack/react-virtual, vite-plugin-pwa, wouter (+1 more)
 
 ### Community 6 - "generic-json-adapter.ts"
-Cohesion: 0.22
+Cohesion: 0.21
 Nodes (20): adapterConfig(), GenericJsonAdapter, JsonObject, JsonValue, normalizeKind(), normalizeResourceKind(), optionalString(), optionalUrl() (+12 more)
 
 ### Community 7 - "compilerOptions"
-Cohesion: 0.10
-Nodes (19): node, vite.config.ts, compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection (+11 more)
+Cohesion: 0.12
+Nodes (16): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection, noEmit, noFallthroughCasesInSwitch (+8 more)
 
 ### Community 8 - "devDependencies"
-Cohesion: 0.06
-Nodes (30): @cloudflare/vite-plugin, miniflare, oxlint, devDependencies, @cloudflare/vite-plugin, miniflare, oxlint, sass (+22 more)
+Cohesion: 0.15
+Nodes (13): devDependencies, @cloudflare/vite-plugin, miniflare, oxlint, sass, @types/node, @types/react, @types/react-dom (+5 more)
 
 ### Community 9 - "book-content-service.ts"
-Cohesion: 0.17
-Nodes (24): ChapterCacheDocument, CacheManifest, CacheManifestResource, cacheResource(), cacheState(), cancelDownload(), createOrMergeCache(), deleteChapterCache() (+16 more)
+Cohesion: 0.06
+Nodes (72): activeCacheMutations, busyChapterKeys, CacheClearInProgressError, cachedBytesForResources(), CacheManifest, CacheManifestResource, CacheProtection, cacheResource() (+64 more)
 
 ### Community 10 - "6. User experience"
 Cohesion: 0.18
@@ -184,16 +205,16 @@ Cohesion: 0.12
 Nodes (9): CatalogList, ChapterManifest, ChapterPage, ChapterResource, ChapterSummary, Publication, PublicationPage, SourceAdapter (+1 more)
 
 ### Community 12 - "sources-service.ts"
-Cohesion: 0.12
-Nodes (26): AppSettings, Chapter, CurrentChapter, DownloadJob, Publication, PublicationBookmark, ReaderBackup, ReaderSettings (+18 more)
+Cohesion: 0.30
+Nodes (13): addSource(), checkSourceUpdate(), getDatabase(), getSource(), importSourceDefinition(), normaliseHttpsUrl(), parseSourceDefinition(), removeSource() (+5 more)
 
 ### Community 13 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.22
 Nodes (8): graphify reference: extra exports and benchmark, Step 6b - Wiki (only if --wiki flag), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag), Step 7a - FalkorDB export (only if --falkordb or --falkordb-push flag), Step 7b - SVG export (only if --svg flag), Step 7c - GraphML export (only if --graphml flag), Step 7d - MCP server (only if --mcp flag), Step 8 - Token reduction benchmark (only if total_words > 5000)
 
 ### Community 14 - "library-service.ts"
-Cohesion: 0.18
-Nodes (23): PublicationDocument, clampLocator(), clampNumber(), clearHistory(), ensurePublicationCover(), enterReader(), enterReaderNow(), getDatabase() (+15 more)
+Cohesion: 0.12
+Nodes (26): projection, publication, removedBeforeCurrent, removedCurrentProjection, clampLocator(), clampNumber(), clearHistory(), ensurePublicationCover() (+18 more)
 
 ### Community 15 - "html-selectors-adapter.ts"
 Cohesion: 0.20
@@ -216,12 +237,12 @@ Cohesion: 0.09
 Nodes (18): Implementer Subagent Prompt Template, Scoped Re-Review Prompt Template, 1. Dispatch the implementer, 2. Handle the report, 3. Review the task, 4. The fix loop, 5. Complete the task, Common Rationalizations (+10 more)
 
 ### Community 21 - "cache-policy.ts"
-Cohesion: 0.11
-Nodes (21): CacheEvictionCandidate, CacheEvictionProtection, calculateRemainingCount(), ChapterIndexKnowledge, eligible, exact, lowerBound, readyAhead (+13 more)
+Cohesion: 0.12
+Nodes (20): CacheEvictionCandidate, CacheEvictionProtection, calculateRemainingCount(), ChapterIndexKnowledge, eligible, evictionCandidates, exact, lowerBound (+12 more)
 
 ### Community 22 - "reader-view-model.ts"
-Cohesion: 0.22
-Nodes (11): chapterPercentage(), flushProgress(), initialSettings, loadChapter(), locatorFor(), progressWrite, queueProgress(), ReaderChapterContent (+3 more)
+Cohesion: 0.16
+Nodes (22): beginReadingIntentTimer(), chapterPercentage(), establishReadingIntent(), flushProgress(), initialSettings, installPreparationRetryListeners(), isBrowserOnline(), isCacheReadThroughError() (+14 more)
 
 ### Community 23 - "opfs-database.ts"
 Cohesion: 0.17
@@ -248,20 +269,28 @@ Cohesion: 0.18
 Nodes (8): Fetch the methodology first, If the read is refused, MotionScore performance audit, Runtime audits, If the Motion MCP server is unavailable, Motion, Tiers, Upgrading Motion
 
 ### Community 30 - "sources-view-model.ts"
-Cohesion: 0.29
-Nodes (5): closedForm(), emptyDefinition(), SourceForm, SourcesViewModel, useSourcesViewModel
+Cohesion: 0.13
+Nodes (18): zustand, AppViewModel, useAppViewModel, emptySnapshot(), errorMessage(), HomeViewModel, setSnapshot(), useHomeViewModel (+10 more)
 
 ### Community 31 - "html-text.ts"
-Cohesion: 0.70
+Cohesion: 0.50
 Nodes (4): BLOCK_ELEMENTS, collectText(), extractHtmlText(), IGNORED_ELEMENTS
 
-### Community 35 - "backup-service.ts"
-Cohesion: 0.60
-Nodes (5): bulkInsertOrThrow(), downloadBackup(), getDatabase(), importBackupFile(), validateBackup()
+### Community 35 - "@models/database/opfs-database"
+Cohesion: 0.13
+Nodes (18): defaultAppSettings, getCollection(), loadAppSettings(), savePersistenceResult(), bulkInsertOrThrow(), downloadBackup(), getDatabase(), importBackupFile() (+10 more)
+
+### Community 39 - "storage-service.ts"
+Cohesion: 0.09
+Nodes (27): ACTIVE_PREPARATION_CHECK_INTERVAL_MS, CachedStorageRecord, CachedStorageSummary, shouldCheckActivePreparation(), shouldRefreshStorageOnVisibility(), STORAGE_ESTIMATE_MAX_AGE_MS, summarizeCachedStorage(), summary (+19 more)
 
 ### Community 40 - "publication-sync-service.ts"
-Cohesion: 0.17
-Nodes (16): ChapterDocument, getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow() (+8 more)
+Cohesion: 0.18
+Nodes (15): getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow(), publicationWrites (+7 more)
+
+### Community 42 - "package.json"
+Cohesion: 0.12
+Nodes (17): name, private, type, version, @cloudflare/vite-plugin, oxlint, sass, @sinclair/typebox (+9 more)
 
 ### Community 43 - "Bookshelf Reader Technical Specification"
 Cohesion: 0.20
@@ -328,12 +357,12 @@ Cohesion: 0.50
 Nodes (4): 8.1 Responsibility, 8.2 Interface, 8.3 Miniflare development and tests, 8. Cloudflare Worker
 
 ### Community 59 - "remote-fetch-service.ts"
-Cohesion: 0.16
+Cohesion: 0.19
 Nodes (17): authorization(), fetchBlobThroughWorker(), fetchJsonThroughWorker(), fetchThroughWorker(), getAppSettingsCollection(), loadWorkerConfig(), mapNetworkError(), normalizeWorkerOrigin() (+9 more)
 
 ### Community 60 - "compilerOptions"
-Cohesion: 0.11
-Nodes (17): src/**/*.ts, WebWorker, compilerOptions, forceConsistentCasingInFileNames, lib, module, moduleResolution, noEmit (+9 more)
+Cohesion: 0.13
+Nodes (14): compilerOptions, forceConsistentCasingInFileNames, lib, module, moduleResolution, noEmit, noUnusedLocals, noUnusedParameters (+6 more)
 
 ### Community 61 - "Frontend Design"
 Cohesion: 0.29
@@ -355,17 +384,33 @@ Nodes (6): Bindings, Bookshelf Reader Worker, Local development, Production conf
 Cohesion: 0.53
 Nodes (4): chapterKey(), encodeKey(), publicationKey(), resourceKey()
 
+### Community 66 - "Task 3 implementation report"
+Cohesion: 0.06
+Nodes (33): Behavior decisions, Build, Build, Changed-file diagnostics, Changed files, Checks and commands, Checks and commands, Concerns (+25 more)
+
+### Community 67 - "Checks and commands"
+Cohesion: 0.06
+Nodes (31): Automatic preparation, Build, Build, Cache access, Changed files, Chapter openability, Checks and commands, Checks and commands (+23 more)
+
 ### Community 68 - "Workflow Patterns"
 Cohesion: 0.22
 Nodes (8): Before interacting with a page, Core Concepts, Efficient data retrieval, Parallel execution, Testing an extension, Tool selection, Troubleshooting, Workflow Patterns
 
-### Community 69 - "app-settings-service.ts"
-Cohesion: 0.60
-Nodes (4): defaultAppSettings, getCollection(), loadAppSettings(), savePersistenceResult()
+### Community 69 - "cache-preparation.ts"
+Cohesion: 0.11
+Nodes (24): interpretStoragePressure(), StorageEstimateInput, StoragePressure, CachedResourceDocument, ChapterCacheDocument, ChapterDocument, PublicationKind, BOOK_ARTICLE_PREPARATION_WINDOW (+16 more)
 
-### Community 70 - "reader-settings-service.ts"
-Cohesion: 0.60
-Nodes (4): defaultReaderSettings, getReaderSettingsCollection(), loadReaderSettings(), saveReaderSettings()
+### Community 70 - "ContextMenu"
+Cohesion: 0.16
+Nodes (16): react-dom, ContextMenu(), cancelLongPress(), closeMenu(), closeOnEscape(), closeOnOutsidePointer(), closeOnViewportChange(), handleContextMenu() (+8 more)
+
+### Community 71 - "app.tsx"
+Cohesion: 0.17
+Nodes (5): PublicationScreen, Tab, TabLayout(), TabLayoutProps, tabs
+
+### Community 72 - "home-page.tsx"
+Cohesion: 0.20
+Nodes (8): @tanstack/react-virtual, HomePage(), LIBRARY_LISTS, LibraryList, PublicationCover(), PublicationCoverProps, PublicationCoverSize, PublicationKind
 
 ### Community 76 - "routes.ts"
 Cohesion: 0.33
@@ -407,9 +452,9 @@ Nodes (4): Rendered curve images, The visual editor (Motion+), Transition previe
 Cohesion: 0.12
 Nodes (16): 10. Offline status presentation, 12. Cache access and LRU ordering, 16. Loading and failure behavior, 17. Accessibility, 18. Data and persistence requirements, 19. Independence and deletion invariants, 1. Purpose, 20. Verification requirements (+8 more)
 
-### Community 87 - "plugins"
-Cohesion: 0.22
-Nodes (8): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema, oxc, typescript, warn
+### Community 87 - ".oxlintrc.json"
+Cohesion: 0.33
+Nodes (5): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema
 
 ### Community 88 - "14. LRU eviction"
 Cohesion: 0.33
@@ -439,25 +484,77 @@ Nodes (3): 15.1 Cached-size display, 15.2 Clear offline cache, 15. Settings: Off
 Cohesion: 0.67
 Nodes (3): 5.1 Primary navigation, 5.2 Library views, 5. Information architecture
 
+### Community 95 - "domain.ts"
+Cohesion: 0.18
+Nodes (10): AppSettings, Chapter, CurrentChapter, Publication, PublicationBookmark, ReaderBackup, ReaderSettings, ReadingHistory (+2 more)
+
+### Community 96 - "Task 5 implementation report"
+Cohesion: 0.09
+Nodes (21): Build, lint, diagnostics, and diff validation, Build, lint, diagnostics, and diff validation, Build, lint, diagnostics, and diff validation, Concerns, Concerns, Concerns, Files changed, Files changed in this fix round (+13 more)
+
+### Community 97 - "BookDetailsPage"
+Cohesion: 0.22
+Nodes (3): BookDetailsPage(), confirmChapterUpdate(), runChapterAction()
+
+### Community 98 - "Library and Offline Cache implementation plan"
+Cohesion: 0.22
+Nodes (8): Global constraints, Library and Offline Cache implementation plan, Task 1: Cache data model and pure policy, Task 2: Read-through cache, LRU/quota recovery, and automatic preparation, Task 3: Library information architecture and rows, Task 4: Reader index, details, and offline presentation, Task 5: Settings storage section and lifecycle estimation, Task 6: Integration verification and cleanup
+
+### Community 99 - "settings-page.tsx"
+Cohesion: 0.33
+Nodes (6): formatBytes(), isValidStorageUsage(), SettingsPage(), WorkerSetupPage(), PageHeader(), PageHeaderProps
+
+### Community 100 - "miniflare.mjs"
+Cohesion: 0.29
+Nodes (5): miniflare, fetchMock, fixture, mf, root
+
+### Community 101 - "SDD ledger — plan: docs/library-offline-cache-functional-spec.md"
+Cohesion: 0.20
+Nodes (9): Final review, Preflight scan, Rulings, SDD ledger — plan: docs/library-offline-cache-functional-spec.md, Task 1 review, Task 2 review, Task 3 review, Task 4 review (+1 more)
+
+### Community 102 - "scripts"
+Cohesion: 0.33
+Nodes (6): scripts, build, dev, lint, preview, worker:test
+
+### Community 103 - "Task 1 implementation report"
+Cohesion: 0.33
+Nodes (5): Checks run, Concerns, Files changed, Policy and data decisions, Task 1 implementation report
+
+### Community 109 - "cache-preparation.check.ts"
+Cohesion: 0.15
+Nodes (11): cached, candidates, chapters, estimates, evicted, imageHeavyResources, offlineUnavailable, onlineUncached (+3 more)
+
+### Community 110 - "Task 4 implementation report"
+Cohesion: 0.08
+Nodes (23): Build, Build, Changed-file diagnostics, Concerns, Concerns, Diagnostics and whitespace, Diff and graph checks, Existing focused executable checks (+15 more)
+
+### Community 113 - "Implementation plan"
+Cohesion: 0.17
+Nodes (11): 1. Publish an installable, updateable userscript, 2. Define a small, authenticated-by-origin page-to-script protocol, 3. Replace the shared remote-fetch implementation, 4. Gate entry and replace Worker settings UI, 5. Remove Worker persistence and infrastructure safely, Current state and migration boundary, Explicit non-goals, Implementation plan (+3 more)
+
+### Community 114 - "Final review fix wave report"
+Cohesion: 0.20
+Nodes (9): Build, lint, worker, diagnostics, and whitespace, Changed files, Concerns and boundaries, Final review fix wave report, Findings addressed, Focused executable checks, Self-review, Status (+1 more)
+
 ## Knowledge Gaps
-- **508 isolated node(s):** `$schema`, `typescript`, `oxc`, `react/rules-of-hooks`, `warn` (+503 more)
-  These have ≤1 connection - possible missing edges or undocumented components.
-- **14 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **680 isolated node(s):** `$schema`, `plugins`, `react/rules-of-hooks`, `react/only-export-components`, `name` (+675 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 795 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **18 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `app.tsx` to `index.ts`, `reader-page.tsx`, `plugins`?**
-  _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **Why does `Bookshelf Reader Technical Specification` connect `Bookshelf Reader Technical Specification` to `6. User experience`, `14. Module responsibilities`, `15. Implementation sequence`, `Bookshelf Reader`, `7. Source adapter contract`, `10. Content acquisition and scheduling`, `9. Persistence model`, `11. Content processing and rendering`, `5. Product rules`, `8. Cloudflare Worker`?**
-  _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **Why does `ChapterDocument` connect `publication-sync-service.ts` to `schemas.ts`, `book-content-service.ts`?**
-  _High betweenness centrality (0.007) - this node is a cross-community bridge._
-- **What connects `$schema`, `typescript`, `oxc` to the rest of the system?**
-  _508 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `rxdb` connect `opfs-rx-storage.ts` to `schemas.ts`, `package.json`, `book-content-service.ts`, `opfs-database.ts`?**
+  _High betweenness centrality (0.108) - this node is a cross-community bridge._
+- **Why does `react` connect `book-details-page.tsx` to `settings-page.tsx`, `ContextMenu`, `app.tsx`, `home-page.tsx`, `action-disclosure.tsx`, `package.json`, `reader-page.tsx`?**
+  _High betweenness centrality (0.051) - this node is a cross-community bridge._
+- **Why does `zustand` connect `sources-view-model.ts` to `package.json`, `@models/database/opfs-database`, `reader-view-model.ts`?**
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
+- **What connects `$schema`, `plugins`, `react/rules-of-hooks` to the rest of the system?**
+  _680 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `opfs-rx-storage.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.08974358974358974 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08902439024390243 - nodes in this community are weakly interconnected._
 - **Should `schemas.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.03076923076923077 - nodes in this community are weakly interconnected._
-- **Should `app.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.0677555958862674 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.03125 - nodes in this community are weakly interconnected._
+- **Should `What You Must Do When Invoked` be split into smaller, more focused modules?**
+  _Cohesion score 0.08 - nodes in this community are weakly interconnected._

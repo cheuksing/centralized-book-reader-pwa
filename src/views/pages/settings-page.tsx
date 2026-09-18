@@ -1,7 +1,7 @@
 import './settings-page.scss'
 import { useState } from 'react'
 import { useSettingsViewModel } from '@view-models/settings-view-model'
-import { clearOfflineCacheDescription } from '@services/storage-service'
+
 import { PageHeader } from '../ui/page-header'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 
@@ -17,7 +17,7 @@ export function SettingsPage() {
   const storageEstimate = useSettingsViewModel((state) => state.storageEstimate)
   const storageEstimateStatus = useSettingsViewModel((state) => state.storageEstimateStatus)
   const cachedBytes = useSettingsViewModel((state) => state.cachedBytes)
-  const removedFromSourceCount = useSettingsViewModel((state) => state.removedFromSourceCount)
+
   const message = useSettingsViewModel((state) => state.message)
   const setWorkerOrigin = useSettingsViewModel((state) => state.setWorkerOrigin)
   const setWorkerToken = useSettingsViewModel((state) => state.setWorkerToken)
@@ -31,7 +31,7 @@ export function SettingsPage() {
   const clearCache = useSettingsViewModel((state) => state.clearCache)
   const exportBackup = useSettingsViewModel((state) => state.exportBackup)
   const importBackup = useSettingsViewModel((state) => state.importBackup)
-  const openCacheConfirmation = () => { void refreshEstimate().then(() => { if (useSettingsViewModel.getState().removedFromSourceCount !== undefined) setConfirmingCacheClear(true) }) }
+
 
   return <>
     <PageHeader eyebrow="Local preferences" title="Settings" />
@@ -48,11 +48,11 @@ export function SettingsPage() {
       <label>Line spacing <output>{settings.lineHeight.toFixed(2)}</output><input min="1.2" max="2.2" onChange={(event) => void setLineHeight(Number(event.target.value))} step="0.05" type="range" value={settings.lineHeight} /></label>
       <label>Content width<select value={settings.contentWidth} onChange={(event) => void setContentWidth(event.target.value as typeof settings.contentWidth)}><option value="compact">Narrow</option><option value="comfortable">Comfortable</option><option value="wide">Wide</option></select></label>
     </section>
-    <section className="settings-group"><h2>Offline storage</h2><p className="muted">Bookshelf prepares recently used and upcoming chapters while the app is active and storage conditions allow.</p><p className="storage-size">{cachedBytes !== undefined ? `${formatBytes(cachedBytes)} cached` : isValidStorageUsage(storageEstimate?.usage) ? `Origin storage usage: ${formatBytes(storageEstimate.usage)} (browser estimate; includes data outside Bookshelf).` : 'Cached size is unavailable.'}</p><div className="button-row"><button className="secondary-button" onClick={() => void requestPersistence()} type="button">Request persistent storage</button><button className="secondary-button" onClick={() => void refreshEstimate()} type="button">Refresh estimate</button></div><p aria-live="polite" className="status-note">{storageStatus}</p>{storageEstimateStatus && <p aria-live="polite" className="status-note">{storageEstimateStatus}</p>}<p aria-live="polite" className="status-note">{storagePressureStatus}</p>{removedFromSourceCount === undefined && <p aria-live="polite" className="status-note">Offline cache details are unavailable. Refresh before clearing.</p>}<button className="danger-button" disabled={removedFromSourceCount === undefined} onClick={openCacheConfirmation} type="button">Clear offline cache</button></section>
+    <section className="settings-group"><h2>Offline storage</h2><p className="muted">Bookshelf prepares recently used and upcoming chapters while the app is active and storage conditions allow.</p><p className="storage-size">{cachedBytes !== undefined ? `${formatBytes(cachedBytes)} cached` : isValidStorageUsage(storageEstimate?.usage) ? `Origin storage usage: ${formatBytes(storageEstimate.usage)} (browser estimate; includes data outside Bookshelf).` : 'Cached size is unavailable.'}</p><div className="button-row"><button className="secondary-button" onClick={() => void requestPersistence()} type="button">Request persistent storage</button><button className="secondary-button" onClick={() => void refreshEstimate()} type="button">Refresh estimate</button></div><p aria-live="polite" className="status-note">{storageStatus}</p>{storageEstimateStatus && <p aria-live="polite" className="status-note">{storageEstimateStatus}</p>}<p aria-live="polite" className="status-note">{storagePressureStatus}</p><button className="danger-button" onClick={() => setConfirmingCacheClear(true)} type="button">Clear offline cache</button></section>
     <section className="settings-group"><h2>Backup & restore</h2><p className="muted">Metadata only: source definitions, publication metadata, bookmarks, Recent, progress, and reader preferences. Worker credentials, persistence status, and attachments are never exported.</p><div className="button-row"><button className="secondary-button" onClick={() => void exportBackup()} type="button">Export metadata</button><label className="secondary-button file-button">Import metadata<input accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file) }} type="file" /></label></div>{message && <p aria-live="polite" className="status-note" role="status">{message}</p>}</section>
     <ConfirmDialog
       confirmLabel="Clear cache"
-      description={clearOfflineCacheDescription(removedFromSourceCount ?? 0)}
+      description="Cached chapter content will be removed."
       destructive
       onCancel={() => setConfirmingCacheClear(false)}
       onConfirm={() => { setConfirmingCacheClear(false); void clearCache() }}

@@ -8,13 +8,8 @@ import {
   type CachedStorageSummary,
 } from './storage-policy'
 
-export { ACTIVE_PREPARATION_CHECK_INTERVAL_MS, clearOfflineCacheDescription, shouldCheckActivePreparation, shouldRefreshStorageOnVisibility, STORAGE_ESTIMATE_MAX_AGE_MS, summarizeCachedStorage } from './storage-policy'
-export type { CachedStorageRecord, CachedStorageSummary } from './storage-policy'
-
-export interface ClearOfflineCacheResult {
-  removedChapterCount: number
-  removedFromSourceCount: number
-}
+export { ACTIVE_PREPARATION_CHECK_INTERVAL_MS, shouldCheckActivePreparation, shouldRefreshStorageOnVisibility, STORAGE_ESTIMATE_MAX_AGE_MS, summarizeCachedStorage } from './storage-policy'
+export type { CachedStorageSummary } from './storage-policy'
 
 export interface StorageLifecycleOptions {
   refreshEstimate: () => Promise<boolean>
@@ -29,7 +24,7 @@ const offlineCacheClearStartListeners = new Set<() => void>()
 const offlineCacheClearBarrierListeners = new Set<() => Promise<void>>()
 const offlineCacheClearFinishListeners = new Set<() => void>()
 const offlineCacheClearListeners = new Set<() => void>()
-let offlineCacheClearOperation: Promise<ClearOfflineCacheResult> | undefined
+let offlineCacheClearOperation: Promise<void> | undefined
 
 export async function requestPersistentStorageAccess(): Promise<string> {
   const granted = typeof navigator !== 'undefined' ? await requestPersistentStorage() : false
@@ -44,14 +39,11 @@ export async function storageEstimate(): Promise<StorageEstimate | undefined> {
 
 export async function getCachedStorageSummary(): Promise<CachedStorageSummary> {
   const database = await getDatabase()
-  const [caches, chapters] = await Promise.all([
-    database.chapterCaches.find({ selector: {} }).exec(),
-    database.chapters.find({ selector: {} }).exec(),
-  ])
-  return summarizeCachedStorage(caches.map((cache) => cache.toJSON()), chapters.map((chapter) => chapter.toJSON()))
+  const caches = await database.chapterCaches.find({ selector: {} }).exec()
+  return summarizeCachedStorage(caches.map((cache) => cache.toJSON()))
 }
 
-export function clearOfflineCache(): Promise<ClearOfflineCacheResult> {
+export function clearOfflineCache(): Promise<void> {
   requestStorageEstimateRefresh()
   if (offlineCacheClearOperation) return offlineCacheClearOperation
   const operation = clearOfflineCacheNow()
@@ -66,24 +58,19 @@ export function clearOfflineCache(): Promise<ClearOfflineCacheResult> {
   return result
 }
 
-async function clearOfflineCacheNow(): Promise<ClearOfflineCacheResult> {
+async function clearOfflineCacheNow(): Promise<void> {
   try {
     notifyOfflineCacheClearStarted()
     await waitForOfflineCacheClearBarriers()
     const database = await getDatabase()
-    const [caches, jobs, chapters] = await Promise.all([
+    const [caches, jobs] = await Promise.all([
       database.chapterCaches.find({ selector: {} }).exec(),
       database.downloadJobs.find({ selector: {} }).exec(),
-      database.chapters.find({ selector: {} }).exec(),
     ])
-    const chapterByKey = new Map(chapters.map((chapter) => [chapter.key, chapter]))
-    const removedFromSourceCount = caches.filter((cache) => chapterByKey.get(cache.key)?.removedFromSource).length
-    let removedChapterCount = 0
 
     for (const cache of caches) {
       try {
         await cache.remove()
-        removedChapterCount += 1
       } catch (error) {
         throw new Error(`Could not remove cached chapter ${cache.chapterId}: ${errorMessage(error, 'storage removal failed.')}`)
       }
@@ -98,7 +85,6 @@ async function clearOfflineCacheNow(): Promise<ClearOfflineCacheResult> {
     }
 
     notifyOfflineCacheCleared()
-    return { removedChapterCount, removedFromSourceCount }
   } finally {
     notifyOfflineCacheClearFinished()
   }

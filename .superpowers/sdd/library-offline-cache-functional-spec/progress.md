@@ -41,3 +41,28 @@ Execution decomposition: `.superpowers/sdd/library-offline-cache-functional-spec
 
 - Task 3: fix round 1/5 (2 addressed, 0 open; commits a62a068..01236fa)
 - Task 3: complete (commits ebe75db..01236fa, review clean)
+
+## Task 4 review
+
+- Task 4: minor (deferred): the unavailable-offline reader branch depends on an exact human-readable error string; a typed openability result or shared error code would be more robust, but this is non-blocking.
+- Task 4: fix round 1/5 (4 addressed, 0 open; commits 2db4b5a..858ce8f)
+- Task 4: complete (commits 4e977af..858ce8f, review clean)
+
+## Task 5 review
+
+- Task 5: minor (deferred): `cachedChapterCount` is maintained but not rendered; remove it or surface it beside cached bytes.
+- Task 5: minor (deferred): the focused check does not exercise the full lifecycle/clear path with mocked browser/database operations; pure policy and scheduling checks remain the smallest dependency-free coverage.
+- Task 5: fix round 1/5 (4 addressed, 2 open — reader manifest-fetch race during clear; usage-only estimate status; commits 52e5c2b..2e33b4f)
+- Task 5: fix round 2/5 (2 addressed, 0 open; commits 2e33b4f..56115e1)
+- Task 5: complete (commits 858ce8f..56115e1, review clean)
+- Task 6: fix round 1/5 (1 addressed, 0 open; commits acece6d..5781fc3)
+- Task 6: complete (commits 56115e1..5781fc3, review clean)
+
+## Final review
+
+- Final review: Important findings entered fix wave — temporary preparation gates do not retry; incomplete estimates can over-evict; preparation can repopulate after clear; open readers can lose online read-through after clear; the Library list is an overly broad live region; and revision replacement’s final metadata commit bypasses bounded quota recovery.
+- Final review: fix wave `5781fc3..ccce7e5`; scoped re-review addressed findings 2–6 with no new Critical/Important breakage.
+- Final review: minor (deferred): failed Library bookmark actions can be announced by both the visible alert and the new status region, causing duplicate announcements.
+- Final review: parked — preparation intent can miss the initial unknown-to-normal pressure transition and a newer request can share an unrelated in-flight preparation result.
+  - Ruling: park this residual at the final one-wave cap because online reading remains safe, online/visibility/connection/clear retries cover the ordinary recovery paths, and no later task depends on this optional preparation timing; cost if wrong: an upcoming-chapter preparation window can be delayed until a later reading-intent or lifecycle trigger.
+- Final review: complete (commits 4e977af..ccce7e5, 5 findings addressed, 1 Important parked, 1 Minor deferred; diagnostics clean).

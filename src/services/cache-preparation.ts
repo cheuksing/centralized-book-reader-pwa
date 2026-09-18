@@ -1,4 +1,4 @@
-import type { ChapterCacheDocument, ChapterDocument, PublicationKind } from '../models/database/schemas.js'
+import type { CachedResourceDocument, ChapterCacheDocument, ChapterDocument, PublicationKind } from '../models/database/schemas.js'
 import {
   interpretStoragePressure,
   type StorageEstimateInput,
@@ -33,17 +33,23 @@ export function preparationGate(input: PreparationGateInput): PreparationGateRes
   return { allowed: true }
 }
 
-export function preparationWindowFor(kind: PublicationKind): number {
-  return kind === 'comic' ? COMIC_PREPARATION_WINDOW : BOOK_ARTICLE_PREPARATION_WINDOW
+export function isImageHeavyResources(resources: readonly Pick<CachedResourceDocument, 'kind' | 'cacheable'>[]): boolean {
+  const cacheable = resources.filter((resource) => resource.cacheable)
+  const imageCount = cacheable.filter((resource) => resource.kind === 'image').length
+  return imageCount > 0 && imageCount >= cacheable.length - imageCount
 }
 
-export function getUpcomingChapterKeys(chapters: readonly Pick<ChapterDocument, 'key' | 'order'>[], currentChapterKey: string, kind: PublicationKind): string[] {
+export function preparationWindowFor(kind: PublicationKind, imageHeavy = false): number {
+  return kind === 'comic' || imageHeavy ? COMIC_PREPARATION_WINDOW : BOOK_ARTICLE_PREPARATION_WINDOW
+}
+
+export function getUpcomingChapterKeys(chapters: readonly Pick<ChapterDocument, 'key' | 'order'>[], currentChapterKey: string, kind: PublicationKind, imageHeavy = false): string[] {
   const current = chapters.find((chapter) => chapter.key === currentChapterKey)
   if (!current) return []
   return [...chapters]
     .filter((chapter) => chapter.order > current.order)
     .sort((left, right) => left.order - right.order || left.key.localeCompare(right.key))
-    .slice(0, preparationWindowFor(kind))
+    .slice(0, preparationWindowFor(kind, imageHeavy))
     .map((chapter) => chapter.key)
 }
 
@@ -57,6 +63,14 @@ export interface ChapterOpenability {
 
 export function hasReadableCachedContent(cache: Pick<ChapterCacheDocument, 'resources'> | undefined): boolean {
   return Boolean(cache?.resources.some((resource) => resource.cacheable && resource.state === 'available'))
+}
+
+export function shouldEstablishProgressIntent(progressPercent: number, firstVisibleObservation: boolean): boolean {
+  return !firstVisibleObservation && progressPercent >= READING_INTENT_PROGRESS_PERCENT
+}
+
+export function shouldRecordVisibleChapterAccess(wasActiveChapter: boolean, alreadyVisible: boolean): boolean {
+  return !wasActiveChapter && !alreadyVisible
 }
 
 export function getChapterOpenability(

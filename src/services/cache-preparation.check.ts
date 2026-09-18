@@ -2,8 +2,12 @@ import {
   evictUntilSafe,
   getChapterOpenability,
   getUpcomingChapterKeys,
+  isImageHeavyResources,
+  isQuotaStorageError,
   preparationGate,
   runWithBoundedQuotaRetry,
+  shouldEstablishProgressIntent,
+  shouldRecordVisibleChapterAccess,
 } from './cache-preparation.js'
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -26,6 +30,20 @@ const chapters = [
 ]
 assert(getUpcomingChapterKeys(chapters, 'chapter-1', 'book').join(',') === 'chapter-2,chapter-3,chapter-4', 'books must prepare the next three chapters in source order')
 assert(getUpcomingChapterKeys(chapters, 'chapter-1', 'comic').join(',') === 'chapter-2', 'comics must prepare only the next chapter')
+const imageHeavyResources = [{ kind: 'image' as const, cacheable: true }, { kind: 'image' as const, cacheable: true }, { kind: 'text' as const, cacheable: true }]
+assert(isImageHeavyResources([{ kind: 'image', cacheable: true }]), 'a cacheable image resource must classify as image-heavy')
+assert(isImageHeavyResources(imageHeavyResources), 'image-majority resources must classify as image-heavy')
+assert(getUpcomingChapterKeys(chapters, 'chapter-1', 'book', isImageHeavyResources(imageHeavyResources)).join(',') === 'chapter-2', 'image-heavy books must prepare only the next chapter')
+assert(getUpcomingChapterKeys(chapters, 'chapter-1', 'article', true).join(',') === 'chapter-2', 'image-heavy articles must prepare only the next chapter')
+assert(!isImageHeavyResources([{ kind: 'image', cacheable: true }, { kind: 'text', cacheable: true }, { kind: 'html', cacheable: true }]), 'content with more non-image resources must not classify as image-heavy')
+assert(!shouldEstablishProgressIntent(20, true), 'the first visible observation must not establish reading intent')
+assert(!shouldEstablishProgressIntent(19, false), 'progress below the intent threshold must not establish reading intent')
+assert(shouldEstablishProgressIntent(20, false), 'later threshold progress must establish reading intent')
+assert(!shouldRecordVisibleChapterAccess(true, false), 'the active chapter must not receive a duplicate visibility access write')
+assert(!shouldRecordVisibleChapterAccess(false, true), 'a chapter already observed in the session must not receive a duplicate visibility access write')
+assert(shouldRecordVisibleChapterAccess(false, false), 'a newly visible preloaded chapter must receive one access write')
+assert(isQuotaStorageError({ name: 'QuotaExceededError' }), 'quota errors must select transient read-through recovery')
+assert(!isQuotaStorageError(new Error('network failed')), 'non-quota errors must not select transient read-through recovery')
 
 const cached = { state: 'partial' as const, resources: [{ id: 'text', sourceResourceId: 'text', url: 'https://example.test/text', kind: 'text' as const, state: 'available' as const, cacheable: true }] }
 assert(getChapterOpenability({ removedFromSource: false }, cached, false).canOpen, 'readable partial caches must remain openable offline')

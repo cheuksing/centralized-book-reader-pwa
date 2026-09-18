@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import type { ChapterDocument, ReadingLocator } from '@models/database/schemas'
 import type { Chapter, Publication, ReaderSettings } from '@models/entities/domain'
-import { loadChapterContent, prepareUpcomingChapters, releaseBookContent, ensureResourceCached, READING_INTENT, type ReaderSection } from '@services/book-content-service'
+import { loadChapterContent, markChapterAccessed, prepareUpcomingChapters, releaseBookContent, ensureResourceCached, READING_INTENT, type ReaderSection } from '@services/book-content-service'
+import { shouldEstablishProgressIntent, shouldRecordVisibleChapterAccess } from '@services/cache-preparation'
 import { enterReader, getLibraryPublication, saveReadingProgress } from '@services/library-service'
 import { loadReaderSettings, saveReaderSettings } from '@services/reader-settings-service'
 import { getLocalChapters, getSourceForPublication, syncPublication } from '@services/publication-sync-service'
@@ -70,12 +71,16 @@ let progressWrite: Promise<void> = Promise.resolve()
 let readingIntentTimer: number | undefined
 let readingIntentChapterKey: string | undefined
 let preparationRequestedChapterKey: string | undefined
+const observedChapterKeys = new Set<string>()
+const visibleChapterKeys = new Set<string>()
 
 function resetReadingIntent(): void {
   if (readingIntentTimer !== undefined) window.clearTimeout(readingIntentTimer)
   readingIntentTimer = undefined
   readingIntentChapterKey = undefined
   preparationRequestedChapterKey = undefined
+  observedChapterKeys.clear()
+  visibleChapterKeys.clear()
 }
 
 function beginReadingIntentTimer(publication: Publication, chapterKey: string): void {
@@ -93,8 +98,8 @@ async function establishReadingIntent(publication: Publication, chapterKey: stri
   await prepareUpcomingChapters(publication, current.chapters, chapterKey).catch(() => undefined)
 }
 
-function maybeEstablishReadingIntent(publication: Publication, chapterId: string, chapterPercentage: number): void {
-  if (chapterPercentage < READING_INTENT.progressPercent) return
+function maybeEstablishReadingIntent(publication: Publication, chapterId: string, chapterPercentage: number, firstVisibleObservation = false): void {
+  if (!shouldEstablishProgressIntent(chapterPercentage, firstVisibleObservation)) return
   const chapter = useReaderViewModel.getState().chapters.find((candidate) => candidate.chapterId === chapterId)
   if (chapter) void establishReadingIntent(publication, chapter.key)
 }
@@ -371,10 +376,17 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     const entry = readerChapters.find((candidate) => candidate.chapter.chapterId === chapterId)
     const section = entry?.sections[index]
     if (chapterIndex < 0 || !section) return
+    const chapter = chapters[chapterIndex]
+    const wasActiveChapter = chapter.key === chapters[get().chapterIndex]?.key
+    const firstVisibleObservation = !observedChapterKeys.has(chapter.key)
+    const wasVisible = visibleChapterKeys.has(chapter.key)
+    observedChapterKeys.add(chapter.key)
+    visibleChapterKeys.add(chapter.key)
     const nextLocator = locator ?? locatorFor(section, index, entry.sections.length)
     set({ chapterIndex, sectionIndex: index, sections: entry.sections, resumeLocator: nextLocator })
+    if (shouldRecordVisibleChapterAccess(wasActiveChapter, wasVisible)) void markChapterAccessed(chapter.key)
     queueProgress(publication, nextLocator)
-    maybeEstablishReadingIntent(publication, chapterId, nextLocator.chapterPercentage)
+    maybeEstablishReadingIntent(publication, chapterId, nextLocator.chapterPercentage, firstVisibleObservation)
   },
 }))
 

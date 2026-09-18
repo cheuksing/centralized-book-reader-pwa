@@ -1,11 +1,12 @@
 import { create } from 'zustand'
 import type { ChapterDocument, ReadingLocator } from '@models/database/schemas'
 import type { Chapter, Publication, ReaderSettings } from '@models/entities/domain'
-import { loadChapterContent, markChapterAccessed, prepareUpcomingChapters, releaseBookContent, ensureResourceCached, READING_INTENT, type ReaderSection } from '@services/book-content-service'
-import { shouldEstablishProgressIntent, shouldRecordVisibleChapterAccess } from '@services/cache-preparation'
+import { loadChapterContent, markChapterAccessed, prepareUpcomingChapters, releaseBookContent, ensureResourceCached, READING_INTENT, type ChapterPreparationResult, type ReaderSection } from '@services/book-content-service'
+import { shouldEstablishProgressIntent, shouldRecordVisibleChapterAccess, shouldRetainPreparationIntent } from '@services/cache-preparation'
 import { enterReader, getLibraryPublication, saveReadingProgress } from '@services/library-service'
 import { loadReaderSettings, saveReaderSettings } from '@services/reader-settings-service'
 import { getLocalChapters, getSourceForPublication, syncPublication } from '@services/publication-sync-service'
+import { subscribeToOfflineCacheClearFinish } from '@services/storage-service'
 
 const initialSettings: ReaderSettings = { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable' }
 
@@ -73,6 +74,8 @@ let progressWrite: Promise<void> = Promise.resolve()
 let readingIntentTimer: number | undefined
 let readingIntentChapterKey: string | undefined
 let preparationRequestedChapterKey: string | undefined
+let preparationRequestedPublication: Publication | undefined
+let preparationRetryListenersInstalled = false
 const observedChapterKeys = new Set<string>()
 const visibleChapterKeys = new Set<string>()
 
@@ -81,6 +84,7 @@ function resetReadingIntent(): void {
   readingIntentTimer = undefined
   readingIntentChapterKey = undefined
   preparationRequestedChapterKey = undefined
+  preparationRequestedPublication = undefined
   observedChapterKeys.clear()
   visibleChapterKeys.clear()
 }
@@ -93,11 +97,44 @@ function beginReadingIntentTimer(publication: Publication, chapterKey: string): 
   }, READING_INTENT.delayMs)
 }
 
-async function establishReadingIntent(publication: Publication, chapterKey: string): Promise<void> {
+async function establishReadingIntent(publication: Publication, chapterKey: string, retryPending = false): Promise<void> {
   const current = useReaderViewModel.getState()
-  if (current.publicationKey !== publication.key || current.chapters[current.chapterIndex]?.key !== chapterKey || preparationRequestedChapterKey === chapterKey) return
+  if (current.publicationKey !== publication.key || current.chapters[current.chapterIndex]?.key !== chapterKey || (!retryPending && preparationRequestedChapterKey === chapterKey)) return
   preparationRequestedChapterKey = chapterKey
-  await prepareUpcomingChapters(publication, current.chapters, chapterKey).catch(() => undefined)
+  preparationRequestedPublication = publication
+  const result = await prepareUpcomingChapters(publication, current.chapters, chapterKey).catch((error): ChapterPreparationResult => ({ status: 'failed', attempted: true, preparedChapterKeys: [], reason: 'preparation-failed', error: error instanceof Error ? error.message : 'Could not prepare the next chapter offline.' }))
+  if (preparationRequestedChapterKey === chapterKey && preparationRequestedPublication === publication && !shouldRetainPreparationIntent(result)) {
+    preparationRequestedChapterKey = undefined
+    preparationRequestedPublication = undefined
+  }
+}
+
+export function hasPendingPreparation(): boolean {
+  return preparationRequestedChapterKey !== undefined
+}
+
+export function retryPendingPreparation(): void {
+  const chapterKey = preparationRequestedChapterKey
+  const publication = preparationRequestedPublication
+  if (!chapterKey || !publication || (typeof document !== 'undefined' && document.visibilityState !== 'visible')) return
+  const current = useReaderViewModel.getState()
+  if (current.publicationKey !== publication.key || current.chapters[current.chapterIndex]?.key !== chapterKey) {
+    preparationRequestedChapterKey = undefined
+    preparationRequestedPublication = undefined
+    return
+  }
+  void establishReadingIntent(publication, chapterKey, true)
+}
+
+function installPreparationRetryListeners(): void {
+  if (preparationRetryListenersInstalled || typeof window === 'undefined' || typeof document === 'undefined') return
+  preparationRetryListenersInstalled = true
+  const retry = () => retryPendingPreparation()
+  subscribeToOfflineCacheClearFinish(retry)
+  window.addEventListener('online', retry)
+  document.addEventListener('visibilitychange', retry)
+  const connection = (navigator as Navigator & { connection?: EventTarget }).connection
+  connection?.addEventListener('change', retry)
 }
 
 function maybeEstablishReadingIntent(publication: Publication, chapterId: string, chapterPercentage: number, firstVisibleObservation = false): void {
@@ -141,6 +178,15 @@ function updateReaderChapter(readerChapters: ReaderChapterContent[], chapterKey:
   return readerChapters.map((entry) => entry.chapter.key === chapterKey ? update(entry) : entry)
 }
 
+function isBrowserOnline(): boolean {
+  return typeof navigator === 'undefined' || navigator.onLine !== false
+}
+
+function isCacheReadThroughError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  return error.message === 'This chapter has no cached manifest.' || error.message === 'The chapter cache no longer exists.' || error.message === 'The chapter cache disappeared while loading.' || error.name === 'CacheClearInProgressError'
+}
+
 export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   settings: initialSettings,
   publicationKey: undefined,
@@ -162,6 +208,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   initialize: async () => {
     if (get().initialized) return
     set({ initialized: true })
+    installPreparationRetryListeners()
     try { set({ settings: await loadReaderSettings() }) } catch { set({ settings: initialSettings }) }
   },
   openPublication: async (publication, requestedChapterId) => {
@@ -334,11 +381,32 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     const entry = get().readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
     if (!entry) return
     try {
-      await ensureResourceCached(chapterKey, sourceResourceId, priority)
-      const current = get()
-      const latestEntry = current.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
-      if (current.publicationKey !== publication.key || !latestEntry) return
-      const sections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+      let sections: ReaderSection[]
+      try {
+        await ensureResourceCached(chapterKey, sourceResourceId, priority)
+        const current = get()
+        const latestEntry = current.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
+        if (current.publicationKey !== publication.key || !latestEntry) return
+        sections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+      } catch (error) {
+        if (!isBrowserOnline() || !isCacheReadThroughError(error)) throw error
+        const current = get()
+        const latestEntry = current.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
+        if (current.publicationKey !== publication.key || !latestEntry) return
+        const recoveredSections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+        if (recoveredSections.some((section) => section.resourceId === sourceResourceId && section.cached)) {
+          sections = recoveredSections
+        } else {
+          releaseBookContent(recoveredSections)
+          try {
+            await ensureResourceCached(chapterKey, sourceResourceId, priority)
+            sections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+          } catch (retryError) {
+            if (!isBrowserOnline() || !isCacheReadThroughError(retryError)) throw retryError
+            sections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+          }
+        }
+      }
       const next = get()
       const currentEntry = next.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
       if (next.publicationKey !== publication.key || !currentEntry) {

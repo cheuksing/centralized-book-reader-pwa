@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Route, Switch, useLocation, useRoute } from 'wouter'
 import { useSourcesViewModel } from '@view-models/sources-view-model'
 import { useSettingsViewModel } from '@view-models/settings-view-model'
-import { useReaderViewModel } from '@view-models/reader-view-model'
+import { hasPendingPreparation, retryPendingPreparation, useReaderViewModel } from '@view-models/reader-view-model'
 import { BookDetailsPage } from '../views/pages/book-details-page'
 import { BookIndexPage } from '../views/pages/book-index-page'
 import { HomePage } from '../views/pages/home-page'
@@ -37,8 +37,10 @@ export function App() {
 
   useEffect(() => startStorageLifecycle({
     refreshEstimate: () => useSettingsViewModel.getState().refreshEstimate(),
-    isPreparationActive: isAutomaticPreparationActive,
+    isPreparationActive: () => isAutomaticPreparationActive() || hasPendingPreparation(),
     checkActivePreparation: checkActivePreparationStorage,
+    getStoragePressure: () => useSettingsViewModel.getState().storagePressure,
+    onNormalStoragePressure: retryPendingPreparation,
   }), [])
 
   if (!settingsInitialized) return <main className="blocking-page"><div className="loading-mark">◌</div><h1>Opening Bookshelf</h1><p>Checking local storage and the active app instance…</p></main>

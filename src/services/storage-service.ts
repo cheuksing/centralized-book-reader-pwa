@@ -20,6 +20,8 @@ export interface StorageLifecycleOptions {
   refreshEstimate: () => Promise<boolean>
   isPreparationActive: () => boolean
   checkActivePreparation?: () => Promise<void>
+  getStoragePressure?: () => StoragePressure
+  onNormalStoragePressure?: () => void
 }
 
 const storageRefreshListeners = new Set<() => void>()
@@ -161,6 +163,7 @@ export function notifyStorageFailure(): void {
 export function startStorageLifecycle(options: StorageLifecycleOptions): () => void {
   let stopped = false
   let lastSuccessfulEstimateAt = 0
+  let lastStoragePressure: StoragePressure | undefined
   let inFlight: Promise<void> | undefined
   let refreshQueued = false
 
@@ -172,6 +175,9 @@ export function startStorageLifecycle(options: StorageLifecycleOptions): () => v
     }
     inFlight = options.refreshEstimate().then((successful) => {
       if (successful) lastSuccessfulEstimateAt = Date.now()
+      const pressure = options.getStoragePressure?.()
+      if (successful && pressure === 'normal' && lastStoragePressure !== undefined && lastStoragePressure !== pressure) options.onNormalStoragePressure?.()
+      if (pressure !== undefined) lastStoragePressure = pressure
     }).catch(() => undefined).finally(() => {
       inFlight = undefined
       if (refreshQueued && !stopped) {

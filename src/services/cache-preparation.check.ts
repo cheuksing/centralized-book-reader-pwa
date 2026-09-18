@@ -6,6 +6,7 @@ import {
   isQuotaStorageError,
   preparationGate,
   runWithBoundedQuotaRetry,
+  shouldRetainPreparationIntent,
   shouldEstablishProgressIntent,
   shouldRecordVisibleChapterAccess,
 } from './cache-preparation.js'
@@ -20,6 +21,13 @@ assert(!preparationGate({ active: true, online: true, saveData: true, pressure: 
 assert(!preparationGate({ active: true, online: true, saveData: false, pressure: 'pause' }).allowed, 'pause pressure must gate preparation')
 assert(!preparationGate({ active: true, online: true, saveData: false, pressure: 'critical' }).allowed, 'critical pressure must gate preparation')
 assert(preparationGate({ active: true, online: true, saveData: false, pressure: 'unknown' }).allowed, 'unknown estimates must not block ordinary reading/preparation')
+assert(shouldRetainPreparationIntent({ status: 'skipped', reason: 'offline' }), 'temporary preparation gates must retain reading intent')
+assert(shouldRetainPreparationIntent({ status: 'skipped', reason: 'storage-pressure' }), 'storage pressure must retain reading intent')
+assert(shouldRetainPreparationIntent({ status: 'completed', reason: 'storage-pressure' }), 'temporary gates after partial preparation must retain reading intent')
+assert(shouldRetainPreparationIntent({ status: 'skipped', reason: 'cache-clearing' }), 'cache clearing must retain reading intent for a later retry')
+assert(!shouldRetainPreparationIntent({ status: 'completed' }), 'completed preparation must consume reading intent')
+assert(!shouldRetainPreparationIntent({ status: 'failed' }), 'failed preparation must not retry continuously')
+assert(!shouldRetainPreparationIntent({ status: 'skipped', reason: 'no-upcoming-chapters' }), 'empty preparation windows must consume reading intent')
 
 const chapters = [
   { key: 'chapter-3', order: 3 },
@@ -66,6 +74,16 @@ const recovery = await evictUntilSafe({
   mode: 'critical',
 })
 assert(recovery.stoppedBecause === 'pressure-cleared' && evicted.join(',') === 'oldest', 'critical recovery must evict one candidate and stop when pressure clears')
+
+let incompleteEstimateCalls = 0
+const incompleteEstimateRecovery = await evictUntilSafe({
+  getEstimate: async () => incompleteEstimateCalls++ === 0 ? { usage: 99, quota: undefined } : { usage: 1, quota: 100 },
+  getCandidates: () => [{ key: 'least-recent' }, { key: 'next-least-recent' }],
+  getKey: (candidate) => candidate.key,
+  remove: async () => undefined,
+  mode: 'quota',
+})
+assert(incompleteEstimateRecovery.evicted.length === 1 && incompleteEstimateRecovery.stoppedBecause === 'no-estimate', 'incomplete estimates must allow only one quota-recovery eviction')
 
 let attempts = 0
 let recoveries = 0

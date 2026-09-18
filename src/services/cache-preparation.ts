@@ -11,7 +11,7 @@ export const BOOK_ARTICLE_PREPARATION_WINDOW = 3
 export const COMIC_PREPARATION_WINDOW = 1
 export const QUOTA_RECOVERY_SAFETY_MARGIN_BYTES = 1_048_576
 
-export type PreparationSkipReason = 'inactive' | 'offline' | 'save-data' | 'storage-pressure'
+export type PreparationSkipReason = 'inactive' | 'offline' | 'save-data' | 'storage-pressure' | 'cache-clearing'
 
 export interface PreparationGateInput {
   active?: boolean
@@ -31,6 +31,10 @@ export function preparationGate(input: PreparationGateInput): PreparationGateRes
   if (input.saveData === true) return { allowed: false, reason: 'save-data' }
   if (input.pressure === 'pause' || input.pressure === 'critical') return { allowed: false, reason: 'storage-pressure' }
   return { allowed: true }
+}
+
+export function shouldRetainPreparationIntent(result: { status: 'completed' | 'skipped' | 'failed'; reason?: PreparationSkipReason | 'no-upcoming-chapters' | 'preparation-failed' }): boolean {
+  return result.reason === 'inactive' || result.reason === 'offline' || result.reason === 'save-data' || result.reason === 'storage-pressure' || result.reason === 'cache-clearing'
 }
 
 export function isImageHeavyResources(resources: readonly Pick<CachedResourceDocument, 'kind' | 'cacheable'>[]): boolean {
@@ -114,6 +118,7 @@ export async function evictUntilSafe<T>(options: BoundedEvictionOptions<T>): Pro
   const attempted = new Set<string>()
   const maxEvictions = options.maxEvictions ?? 100
   let estimate = await safeEstimate(options.getEstimate)
+  const estimateUnavailable = estimate === undefined
 
   for (let attempt = 0; attempt < maxEvictions; attempt += 1) {
     if (isSafe(estimate, options.mode, options.requiredBytes, options.safetyMarginBytes)) {
@@ -131,6 +136,7 @@ export async function evictUntilSafe<T>(options: BoundedEvictionOptions<T>): Pro
     }
     evicted.push(candidate)
     estimate = await safeEstimate(options.getEstimate)
+    if (estimateUnavailable) return { evicted, estimate, stoppedBecause: 'no-estimate' }
   }
 
   return { evicted, estimate, stoppedBecause: 'max-evictions' }
@@ -162,7 +168,11 @@ function isSafe(estimate: StorageEstimateInput | undefined, mode: BoundedEvictio
 
 async function safeEstimate(getEstimate: () => Promise<StorageEstimateInput | undefined>): Promise<StorageEstimateInput | undefined> {
   try {
-    return await getEstimate()
+    const estimate = await getEstimate()
+    const usage = estimate?.usage
+    const quota = estimate?.quota
+    if (typeof usage !== 'number' || !Number.isFinite(usage) || usage < 0 || typeof quota !== 'number' || !Number.isFinite(quota) || quota <= 0) return undefined
+    return { usage, quota }
   } catch {
     return undefined
   }

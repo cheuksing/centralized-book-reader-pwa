@@ -9,7 +9,7 @@ interface HomeViewModel {
   error?: string
   isLoading: boolean
   initialize: () => Promise<() => void>
-  toggleBookmark: (publication: Publication) => Promise<void>
+  toggleBookmark: (publication: Publication) => Promise<boolean>
   refresh: () => Promise<void>
 }
 
@@ -33,8 +33,10 @@ export const useHomeViewModel = create<HomeViewModel>((set) => ({
   toggleBookmark: async (publication) => {
     try {
       await togglePublicationBookmark(publication)
+      return true
     } catch (error) {
       set({ error: errorMessage(error, 'Could not update this bookmark.') })
+      return false
     }
   },
   refresh: async () => {

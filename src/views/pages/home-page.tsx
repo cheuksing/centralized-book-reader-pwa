@@ -18,7 +18,7 @@ const LIBRARY_LISTS: LibraryList[] = ['recent', 'bookmarks']
 const BOOKS_PER_PAGE = 20
 const SWIPE_THRESHOLD = 48
 
-function PublicationRow({ publication, list }: { publication: Publication; list: LibraryList }) {
+function PublicationRow({ publication, list, onStatus }: { publication: Publication; list: LibraryList; onStatus: (message: string) => void }) {
   const toggleBookmark = useHomeViewModel((state) => state.toggleBookmark)
   const refresh = useHomeViewModel((state) => state.refresh)
   const [, navigate] = useLocation()
@@ -32,8 +32,8 @@ function PublicationRow({ publication, list }: { publication: Publication; list:
     <ContextMenu
       actions={[
         { label: 'Open chapter index', onSelect: () => { setActivePublication(publication); navigate(indexPath(publication.key)) } },
-        { label: publication.bookmarked ? 'Remove bookmark' : 'Bookmark', onSelect: () => { void toggleBookmark(publication) } },
-        ...(list === 'recent' ? [{ label: 'Remove from recent', onSelect: () => { void removeHistoryEntry(publication.key).then(refresh) } }] : []),
+        { label: publication.bookmarked ? 'Remove bookmark' : 'Bookmark', onSelect: () => { void toggleBookmark(publication).then((updated) => onStatus(updated ? (publication.bookmarked ? 'Publication removed from Saved.' : 'Publication saved.') : 'Could not update Saved.')) } },
+        ...(list === 'recent' ? [{ label: 'Remove from recent', onSelect: () => { void removeHistoryEntry(publication.key).then(async () => { await refresh(); onStatus('Publication removed from Recent.') }).catch((error: unknown) => onStatus(error instanceof Error ? error.message : 'Could not remove this publication from Recent.')) } }] : []),
       ]}
       ariaLabel={`Open ${publication.title}`}
       className="book-row"
@@ -58,6 +58,7 @@ export function HomePage() {
   const isLoading = useHomeViewModel((state) => state.isLoading)
   const error = useHomeViewModel((state) => state.error)
   const initialize = useHomeViewModel((state) => state.initialize)
+  const [status, setStatus] = useState('')
   const canvasRef = useRef<HTMLElement>(null)
   const swipeOrigin = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const swipeTriggered = useRef(false)
@@ -143,6 +144,7 @@ export function HomePage() {
           <button aria-selected={activeList === 'bookmarks'} className={activeList === 'bookmarks' ? 'is-active' : ''} onClick={() => setActiveList('bookmarks')} role="tab" type="button">Saved</button>
         </div>
         {error && <p className="database-error" role="alert">{error}</p>}
+        <p aria-atomic="true" aria-live="polite" className="visually-hidden" role="status">{isLoading ? `Opening your ${label.toLowerCase()} library…` : status}</p>
         {isLoading ? <p className="muted library-message" key={activeList}>Opening your local library…</p> : books.length === 0 ? (
           <section className="library-empty" key={activeList}>
             <h2>{activeList === 'recent' ? 'No recent publications' : 'No saved publications'}</h2>
@@ -150,11 +152,11 @@ export function HomePage() {
           </section>
         ) : (
           <>
-            <section className="library-book-list library-book-list-virtual" aria-label={label} aria-live="polite" key={activeList} ref={canvasRef} style={{ height: virtualizer.getTotalSize() }}>
+            <section className="library-book-list library-book-list-virtual" aria-label={label} key={activeList} ref={canvasRef} style={{ height: virtualizer.getTotalSize() }}>
               {virtualItems.map((virtualRow) => {
                 const publication = visibleBooks[virtualRow.index]
                 if (!publication) return null
-                return <div data-index={virtualRow.index} key={publication.key} ref={virtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - scrollMargin}px)`, width: '100%' }}><PublicationRow list={activeList} publication={publication} /></div>
+                return <div data-index={virtualRow.index} key={publication.key} ref={virtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - scrollMargin}px)`, width: '100%' }}><PublicationRow list={activeList} onStatus={setStatus} publication={publication} /></div>
               })}
             </section>
             <InfiniteScrollSentinel key={`${activeList}-${visibleBooks.length}`} hasMore={hasMoreBooks} isLoading={isLoading} label={label.toLowerCase()} onLoadMore={loadMoreBooks} />

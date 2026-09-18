@@ -34,7 +34,6 @@ function menuPosition(position: Position, actionCount: number): Position {
 }
 
 export function ContextMenu({ actions, ariaLabel, children, className, itemDisabled = false, onItemPress }: ContextMenuProps) {
-  const itemRef = useRef<HTMLElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const longPressTimer = useRef<number | undefined>(undefined)
   const longPressTriggered = useRef(false)
@@ -101,6 +100,10 @@ export function ContextMenu({ actions, ariaLabel, children, className, itemDisab
     }
   }
 
+  useEffect(() => () => {
+    if (longPressTimer.current !== undefined) window.clearTimeout(longPressTimer.current)
+  }, [])
+
   useEffect(() => {
     if (!isOpen) return
     menuRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus()
@@ -134,6 +137,7 @@ export function ContextMenu({ actions, ariaLabel, children, className, itemDisab
     <>
       <article
         aria-disabled={itemDisabled || undefined}
+        aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label={ariaLabel}
         className={className}
@@ -145,7 +149,6 @@ export function ContextMenu({ actions, ariaLabel, children, className, itemDisab
         onPointerLeave={cancelLongPress}
         onPointerMove={handlePointerMove}
         onPointerUp={cancelLongPress}
-        ref={itemRef}
         role="button"
         tabIndex={0}
       >

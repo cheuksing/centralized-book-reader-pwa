@@ -57,6 +57,19 @@
   }
 }
 
+.offline-guidance {
+  background: #edf4ee;
+  border: 1px solid #cbded0;
+  border-radius: 9px;
+  color: #315f4a;
+  font-size: .82rem;
+  line-height: 1.45;
+  margin: 0 auto 18px;
+  max-width: 540px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
 .detail-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -96,7 +109,7 @@
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: 8px 0;
 }
 
 .chapter-copy {
@@ -108,13 +121,34 @@
   flex: 1 1 auto;
   gap: 11px;
   min-width: 0;
-  padding: 0;
+  padding: 10px 4px;
   text-align: left;
+
+  &:disabled {
+    color: #79827d;
+    cursor: not-allowed;
+    opacity: .6;
+  }
+
+  &.is-current {
+    background: #e2eee7;
+    border-radius: 8px;
+    color: #2d694f;
+    padding-inline: 10px;
+  }
 
   > .chapter-copy-number {
     color: #87938c;
     font-family: ui-monospace, monospace;
     font-size: .72rem;
+  }
+
+  strong {
+    display: block;
+    font-family: Georgia, serif;
+    font-size: .93rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -122,51 +156,38 @@
   min-width: 0;
 }
 
-.chapter-copy {
-  strong,
-  small {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  strong {
-    font-family: Georgia, serif;
-    font-size: .93rem;
-    font-weight: 500;
-    overflow-wrap: anywhere;
-  }
-
-  small {
-    color: #718079;
-    font-size: .7rem;
-    margin-top: 4px;
-  }
+.chapter-status {
+  color: #718079;
+  display: block;
+  font-size: .7rem;
+  line-height: 1.35;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
 }
 
-.chapter-actions {
+.chapter-unavailable {
   align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  justify-content: flex-end;
-  min-width: 0;
-
-  button {
-    background: #f9faf6;
-    border: 1px solid #cbd9d0;
-    border-radius: 7px;
-    color: #31654f;
-    font-size: .7rem;
-    font-weight: 750;
-    min-height: 44px;
-    padding: 6px 8px;
-  }
+  color: #76551d;
+  display: inline-flex;
+  font-size: 1rem;
+  justify-content: center;
+  min-width: 24px;
 }
 
-.chapter-secondary-actions-desktop {
-  display: none;
+.chapter-update-action {
+  background: #f9faf6;
+  border: 1px solid #cbd9d0;
+  border-radius: 7px;
+  color: #31654f;
+  font-size: .7rem;
+  font-weight: 750;
+  min-height: 44px;
+  padding: 6px 10px;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+  }
 }
 
 @media (min-width: 521px) {
@@ -190,18 +211,6 @@
   .chapter-panel {
     margin-inline: 20px;
   }
-
-  .chapter-actions > .action-disclosure {
-    display: none;
-  }
-
-  .chapter-secondary-actions-desktop {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    justify-content: flex-end;
-  }
 }
 
 @media (max-width: 520px) {
@@ -210,36 +219,8 @@
     flex-direction: column;
   }
 
-  .chapter-copy {
+  .chapter-copy,
+  .chapter-update-action {
     width: 100%;
-
-    strong,
-    small {
-      overflow: visible;
-      text-overflow: clip;
-      white-space: normal;
-    }
-  }
-
-  .chapter-actions {
-    display: grid;
-    gap: 8px;
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: stretch;
-    width: 100%;
-
-    > .chapter-primary-action,
-    > .action-disclosure {
-      width: 100%;
-    }
-  }
-
-  .chapter-secondary-actions-mobile {
-    display: grid;
-    gap: 4px;
-
-    button {
-      width: 100%;
-    }
   }
 }

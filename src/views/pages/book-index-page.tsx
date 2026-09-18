@@ -7,9 +7,12 @@ import { readerPath } from '@app/routes'
 import { useReaderViewModel } from '@view-models/reader-view-model'
 import { InfiniteScrollSentinel } from '../ui/infinite-scroll-sentinel'
 import { PageHeader } from '../ui/page-header'
+import { useOnlineStatus } from '../ui/use-online-status'
+import { getChapterOpenability } from '@services/book-content-service'
 
 export function BookIndexPage() {
   const [, navigate] = useLocation()
+  const online = useOnlineStatus()
   const publication = useAppViewModel((state) => state.activePublication)
   const chapters = useReaderViewModel((state) => state.chapters)
   const chapterIndex = useReaderViewModel((state) => state.chapterIndex)
@@ -24,7 +27,7 @@ export function BookIndexPage() {
   const [scrollMargin, setScrollMargin] = useState(0)
   const currentChapterId = readerPublicationKey === publication?.key ? chapters[chapterIndex]?.chapterId : undefined
   const selectedIndex = chapters.findIndex((chapter) => chapter.chapterId === (currentChapterId ?? publication?.progress?.locator.chapterId))
-  const hasMoreChapters = chapterCursorPublicationKey === publication?.key && Boolean(chapterNextCursor)
+  const hasMoreChapters = online && chapterCursorPublicationKey === publication?.key && Boolean(chapterNextCursor)
   const getChapterKey = useCallback((index: number) => chapters[index]?.key ?? index, [chapters])
   const rangeExtractor = useCallback((range: Range) => {
     const indexes = defaultRangeExtractor(range)
@@ -32,8 +35,8 @@ export function BookIndexPage() {
     return [...indexes, selectedIndex].sort((left, right) => left - right)
   }, [selectedIndex])
   const loadMore = useCallback(() => {
-    if (publication) void loadMoreChapters(publication)
-  }, [loadMoreChapters, publication])
+    if (publication && online) void loadMoreChapters(publication)
+  }, [loadMoreChapters, online, publication])
   const virtualizer = useWindowVirtualizer<HTMLLIElement>({
     count: chapters.length,
     estimateSize: () => 72,
@@ -85,16 +88,31 @@ export function BookIndexPage() {
   if (!publication) return null
   const closeIndex = () => navigate(readerPath(publication.key), { replace: true })
   const jumpToChapter = (chapterId: string) => navigate(readerPath(publication.key, chapterId))
+  const chapterCountLabel = publication.knownChapterCount === undefined || publication.chapterIndexKnowledge === undefined || publication.chapterIndexKnowledge === 'unknown'
+    ? undefined
+    : `${publication.knownChapterCount}${publication.chapterIndexKnowledge === 'has-more' ? '+' : ''} chapters`
+  const resumeChapter = publication.progress ? chapters.find((chapter) => chapter.chapterId === publication.progress?.locator.chapterId) : undefined
+  const resumeUnavailable = Boolean(!online && resumeChapter && !getChapterOpenability(resumeChapter, resumeChapter.cache, online).canOpen)
 
   return <main className="book-index-page">
-    <header className="index-header"><button onClick={closeIndex} type="button">← Reader</button></header>
+    <header className="index-header"><button onClick={closeIndex} type="button">← Back to Reader</button></header>
     <section className="index-content">
-      <PageHeader eyebrow="Chapter index" supportingCopy="Choose a chapter directly. Read/resume is the action that restores your saved locator." title={publication.title} />
+      <PageHeader supportingCopy={chapterCountLabel} title={publication.title} />
+      {resumeUnavailable ? <p className="index-guidance" role="alert">This chapter is unavailable offline. Choose a cached chapter below to continue reading.</p> : !online && <p className="offline-guidance" role="status">You’re offline. Cached chapters are still available.</p>}
       <ol className="section-index section-index-virtual" ref={canvasRef} style={{ height: virtualizer.getTotalSize() }}>
         {virtualItems.map((virtualRow) => {
           const chapter = chapters[virtualRow.index]
           if (!chapter) return null
-          return <li data-index={virtualRow.index} key={chapter.key} ref={virtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - scrollMargin}px)`, width: '100%' }}><button aria-current={virtualRow.index === selectedIndex ? 'location' : undefined} className={virtualRow.index === selectedIndex ? 'is-current' : ''} onClick={() => jumpToChapter(chapter.chapterId)} type="button"><span>{String(virtualRow.index + 1).padStart(2, '0')}</span><strong>{chapter.title}</strong><small>{chapter.removedFromSource ? 'Cached copy' : chapter.cache?.state?.replace('-', ' ') ?? 'Not downloaded'}</small></button></li>
+          const openability = getChapterOpenability(chapter, chapter.cache, online)
+          const unavailableOffline = !online && !openability.canOpen
+          const status = unavailableOffline
+            ? 'Chapter unavailable offline'
+            : chapter.removedFromSource
+              ? openability.availableOffline ? 'Saved copy — removed from source' : 'Removed from source'
+              : chapter.updateAvailable
+                ? 'Update available'
+                : openability.cacheState === 'failed' ? 'Could not prepare offline' : undefined
+          return <li data-index={virtualRow.index} key={chapter.key} ref={virtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - scrollMargin}px)`, width: '100%' }}><button aria-current={virtualRow.index === selectedIndex ? 'location' : undefined} className={`${virtualRow.index === selectedIndex ? 'is-current ' : ''}${unavailableOffline ? 'is-unavailable' : ''}`} disabled={!openability.canOpen} onClick={() => jumpToChapter(chapter.chapterId)} type="button"><span>{String(chapter.order + 1).padStart(2, '0')}</span><span className="chapter-index-copy"><strong>{chapter.title}</strong>{status && <small className="chapter-status">{status}</small>}</span>{unavailableOffline && <span aria-label="Chapter unavailable offline" className="chapter-unavailable" role="img">⊘</span>}</button></li>
         })}
       </ol>
       <InfiniteScrollSentinel hasMore={hasMoreChapters} isLoading={isLoadingMoreChapters} label="chapters" onLoadMore={loadMore} />

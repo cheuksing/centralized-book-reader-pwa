@@ -46,8 +46,11 @@ assert(isQuotaStorageError({ name: 'QuotaExceededError' }), 'quota errors must s
 assert(!isQuotaStorageError(new Error('network failed')), 'non-quota errors must not select transient read-through recovery')
 
 const cached = { state: 'partial' as const, resources: [{ id: 'text', sourceResourceId: 'text', url: 'https://example.test/text', kind: 'text' as const, state: 'available' as const, cacheable: true }] }
+const onlineUncached = getChapterOpenability({ removedFromSource: false }, undefined, true)
+assert(onlineUncached.canOpen && onlineUncached.requiresNetwork && onlineUncached.reason === 'online', 'ordinary uncached chapters must remain openable online and require the network')
+const offlineUnavailable = getChapterOpenability({ removedFromSource: false }, undefined, false)
+assert(!offlineUnavailable.canOpen && offlineUnavailable.reason === 'unavailable-offline', 'uncached chapters must be unavailable offline')
 assert(getChapterOpenability({ removedFromSource: false }, cached, false).canOpen, 'readable partial caches must remain openable offline')
-assert(!getChapterOpenability({ removedFromSource: false }, undefined, false).canOpen, 'uncached chapters must be unavailable offline')
 assert(getChapterOpenability({ removedFromSource: true }, cached, false).reason === 'cached', 'removed chapters with a readable cache must remain openable')
 assert(!getChapterOpenability({ removedFromSource: true }, undefined, true).canOpen, 'removed chapters without a cache must not require a dead source')
 

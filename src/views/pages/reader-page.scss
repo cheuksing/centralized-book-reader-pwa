@@ -195,6 +195,19 @@
   padding: 8px 0;
 }
 
+.reader-offline-guidance {
+  background: color-mix(in srgb, var(--reader-text) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--reader-text) 18%, transparent);
+  border-radius: 9px;
+  color: color-mix(in srgb, var(--reader-text) 72%, transparent);
+  font-family: Inter, sans-serif !important;
+  font-size: .78rem !important;
+  line-height: 1.45;
+  margin: 14px auto 0;
+  max-width: 760px;
+  padding: 9px 12px;
+}
+
 .reader-error {
   background: #843b2d;
   bottom: calc(18px + env(safe-area-inset-bottom));
@@ -418,7 +431,6 @@
   width: 100%;
 }
 
-.reader-downloads,
 .reader-appearance {
   border-top: 1px solid color-mix(in srgb, var(--reader-text) 13%, transparent);
   margin-top: 18px;
@@ -430,34 +442,6 @@
   }
 }
 
-.reader-download-actions {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 10px;
-
-  button {
-    background: color-mix(in srgb, var(--reader-text) 5%, transparent);
-    border: 1px solid color-mix(in srgb, var(--reader-text) 20%, transparent);
-    border-radius: 8px;
-    color: var(--reader-text);
-    min-height: 44px;
-    padding: 10px 8px;
-
-    &:disabled {
-      cursor: not-allowed;
-      opacity: .4;
-    }
-  }
-}
-
-.reader-download-status {
-  color: color-mix(in srgb, var(--reader-text) 64%, transparent);
-  font-family: Inter, sans-serif !important;
-  font-size: .76rem !important;
-  line-height: 1.4;
-  margin: 9px 0 0 !important;
-}
 
 .reader-control-panel {
   border-top: 1px solid color-mix(in srgb, var(--reader-text) 13%, transparent);

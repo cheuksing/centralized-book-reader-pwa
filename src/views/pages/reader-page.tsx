@@ -6,8 +6,9 @@ import { useAppViewModel } from '@app/app-store'
 import { indexPath } from '@app/routes'
 import type { ReadingLocator } from '@models/database/schemas'
 import type { Chapter, Publication } from '@models/entities/domain'
-import { downloadChapter, type ReaderSection } from '@services/book-content-service'
+import type { ReaderSection } from '@services/book-content-service'
 import { useReaderViewModel, type ReaderChapterContent } from '@view-models/reader-view-model'
+import { useOnlineStatus } from '../ui/use-online-status'
 
 const emptySections: ReaderSection[] = []
 
@@ -32,7 +33,6 @@ export function ReaderPage() {
   const openPublication = useReaderViewModel((state) => state.openPublication)
   const loadAdjacentChapter = useReaderViewModel((state) => state.loadAdjacentChapter)
   const selectAdjacentChapter = useReaderViewModel((state) => state.selectAdjacentChapter)
-  const loadMoreChapters = useReaderViewModel((state) => state.loadMoreChapters)
   const ensureImage = useReaderViewModel((state) => state.ensureImage)
   const updateVisibleSection = useReaderViewModel((state) => state.updateVisibleSection)
   const flushProgress = useReaderViewModel((state) => state.flushProgress)
@@ -53,8 +53,7 @@ export function ReaderPage() {
   const restoredLocatorRef = useRef<string | undefined>(undefined)
   const controlsOpen = searchParams.get('controls') === '1'
   const [readerScrollMargin, setReaderScrollMargin] = useState(0)
-  const [downloadMode, setDownloadMode] = useState<'all' | 'next' | undefined>()
-  const [downloadStatus, setDownloadStatus] = useState<string>()
+  const online = useOnlineStatus()
   const hasMoreChapters = chapterCursorPublicationKey === publication?.key && Boolean(chapterNextCursor)
   const getReaderChapterKey = useCallback((index: number) => readerChapters[index]?.chapter.key ?? index, [readerChapters])
   const readerVirtualizer = useWindowVirtualizer<HTMLDivElement>({
@@ -249,43 +248,6 @@ export function ReaderPage() {
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => { chapterNavigationRef.current = false }))
   }, [chapter, closeControls, publication, selectAdjacentChapter])
 
-  const queueChapterDownloads = useCallback(async (limit: number | undefined) => {
-    if (!publication || !chapter || downloadMode) return
-    const sourceChapterKey = chapter.key
-    setDownloadMode(limit === undefined ? 'all' : 'next')
-    setDownloadStatus(undefined)
-    try {
-      const chapterKeys: string[] = []
-      while (true) {
-        const state = useReaderViewModel.getState()
-        const sourceIndex = state.chapters.findIndex((candidate) => candidate.key === sourceChapterKey)
-        if (sourceIndex < 0) break
-        const candidates = state.chapters.slice(sourceIndex + 1, limit === undefined ? undefined : sourceIndex + 1 + limit)
-        const knownKeys = new Set(chapterKeys)
-        candidates.forEach((candidate) => { if (!knownKeys.has(candidate.key)) { knownKeys.add(candidate.key); chapterKeys.push(candidate.key) } })
-        if ((limit !== undefined && chapterKeys.length >= limit) || state.chapterCursorPublicationKey !== publication.key || !state.chapterNextCursor) break
-        const beforeLength = state.chapters.length
-        const beforeCursor = state.chapterNextCursor
-        await loadMoreChapters(publication)
-        const current = useReaderViewModel.getState()
-        if (current.chapters.length === beforeLength && current.chapterNextCursor === beforeCursor) break
-      }
-      const selectedKeys = limit === undefined ? chapterKeys : chapterKeys.slice(0, limit)
-      if (selectedKeys.length === 0) {
-        setDownloadStatus('No remaining chapters to download.')
-        return
-      }
-      const results = await Promise.allSettled(selectedKeys.map((chapterKey) => downloadChapter(chapterKey)))
-      const failed = results.filter((result) => result.status === 'rejected').length
-      const completed = results.length - failed
-      const chapterLabel = completed === 1 ? 'chapter' : 'chapters'
-      setDownloadStatus(failed === 0 ? `Downloaded ${completed} ${chapterLabel}.` : `Downloaded ${completed} ${chapterLabel}; ${failed} failed.`)
-    } catch (failure) {
-      setDownloadStatus(failure instanceof Error ? failure.message : 'Could not start chapter downloads.')
-    } finally {
-      setDownloadMode(undefined)
-    }
-  }, [chapter, downloadMode, loadMoreChapters, publication])
 
   const handleReaderClick = useCallback((event: MouseEvent<HTMLElement>) => {
     const selection = window.getSelection()
@@ -309,18 +271,17 @@ export function ReaderPage() {
   }, [loadAdjacentChapter, publication])
 
   const effectiveTheme = useMemo(() => settings.theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : settings.theme === 'system' ? 'light' : settings.theme, [settings.theme])
+  const unavailableOffline = error === 'This chapter is unavailable offline.'
   if (!publication) return null
 
   const previousAvailable = chapterIndex > 0
-  const nextAvailable = chapterIndex < chapters.length - 1 || hasMoreChapters
-  const hasRemainingChapters = Boolean(chapter && (chapterIndex < chapters.length - 1 || hasMoreChapters))
-  const nextDownloadCount = remainingChapters === undefined ? 20 : Math.min(20, remainingChapters)
-  const nextDownloadLabel = nextDownloadCount === 1 ? 'Download 1 chapter' : `Download next ${nextDownloadCount} chapters`
+  const nextAvailable = chapterIndex < chapters.length - 1 || (online && hasMoreChapters)
   const chapterPosition = chapter ? `Chapter ${chapterIndex + 1}${chapterCountKnown ? ` of ${chapters.length}` : ''}` : 'Preparing chapter'
   const chapterRemaining = chapter ? chapterCountKnown ? `${remainingChapters} ${remainingChapters === 1 ? 'chapter' : 'chapters'} remaining` : 'More chapters available' : ''
 
   return <main className={`reader reader-${effectiveTheme} reader-${settings.contentWidth}`} style={{ fontSize: `${settings.fontSize}px`, lineHeight: settings.lineHeight }}>
-    {isLoading || isLoadingChapter ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : error && !hasContent ? <section className="reader-status"><h1>Could not prepare this chapter</h1><p>{error}</p><button className="primary-button" onClick={() => void openPublication(publication, requestedChapterId)} type="button">Try again</button><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : readerChapters.length > 0 ? <article className="reader-content" onClick={handleReaderClick} ref={contentRef}>
+    {!online && hasContent && <p className="reader-offline-guidance" role="status">You’re offline. Cached chapters are still available.</p>}
+    {isLoading || isLoadingChapter ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : error && !hasContent ? <section className="reader-status">{unavailableOffline ? <><h1>Chapter unavailable offline</h1><p>This chapter is unavailable offline. Open the chapter index to choose a cached chapter.</p><button className="primary-button" onClick={() => openChapterIndex()} type="button">Open chapter index</button></> : <><h1>Could not prepare this chapter</h1><p>{error}</p><button className="primary-button" onClick={() => void openPublication(publication, requestedChapterId)} type="button">Try again</button></>}<button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : readerChapters.length > 0 ? <article className="reader-content" onClick={handleReaderClick} ref={contentRef}>
       <button className="visually-hidden reader-controls-trigger" onClick={openControls} ref={controlsTriggerRef} type="button">Open reader controls</button>
       <div className="reader-virtual-canvas" ref={readerCanvasRef} style={{ height: readerVirtualizer.getTotalSize() }}>
         {readerVirtualItems.map((virtualRow) => {
@@ -331,14 +292,14 @@ export function ReaderPage() {
           return <div className="reader-virtual-item" data-index={virtualRow.index} key={entry.chapter.key} ref={readerVirtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - readerScrollMargin}px)`, width: '100%' }}><ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={chapters.length} countKnown={chapterCountKnown} entry={entry} ensureImage={ensureImage} separated={virtualRow.index > 0} onBoundary={handleChapterBoundary} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} /></div>
         })}
       </div>
-    </article> : <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index from publication details to refresh or download content.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section>}
+    </article> : <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index to choose available content.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section>}
     {error && hasContent && <p className="reader-error" role="alert">{error}</p>}
     {!isLoading && hasContent && <dialog aria-labelledby="reader-controls-title" className={`reader-controls-dialog${!controlsOpen ? ' is-closing' : ''}`} onCancel={(event) => { event.preventDefault(); closeControls() }} onClick={(event) => { if (event.target === event.currentTarget) closeControls() }} onClose={() => { if (controlsOpen) closeControls() }} ref={controlsRef}>
       <div className="reader-controls-panel" onAnimationEnd={finishControlsClose}>
         <div className="reader-controls-heading"><div><p className="reader-controls-kicker">Reader controls</p><h2 id="reader-controls-title">{chapter?.title ?? 'Current chapter'}</h2><p className="reader-controls-meta">{chapterPosition} · {chapterRemaining}</p></div><button className="reader-controls-close" onClick={closeControls} type="button">Close</button></div>
         <div className="reader-chapter-navigation"><button disabled={!previousAvailable || isLoadingPreviousChapter || isLoadingChapter} onClick={() => void navigateChapter('previous')} type="button">← Previous chapter</button><button disabled={!nextAvailable || isLoadingNextChapter || isLoadingMoreChapters || isLoadingChapter} onClick={() => void navigateChapter('next')} type="button">Next chapter →</button></div>
         <button className="reader-index-button" onClick={openChapterIndex} type="button">Open chapter index</button>
-        <section className="reader-downloads" aria-labelledby="reader-downloads-title"><h3 id="reader-downloads-title">Offline downloads</h3><div className="reader-download-actions"><button disabled={!hasRemainingChapters || Boolean(downloadMode)} onClick={() => void queueChapterDownloads(undefined)} type="button">{downloadMode === 'all' ? 'Downloading…' : 'Download all remaining chapters'}</button><button disabled={!hasRemainingChapters || Boolean(downloadMode)} onClick={() => void queueChapterDownloads(20)} type="button">{downloadMode === 'next' ? 'Downloading…' : nextDownloadLabel}</button></div>{downloadStatus && <p className="reader-download-status" role="status">{downloadStatus}</p>}</section>
+
         <section className="reader-appearance" aria-labelledby="reader-appearance-title"><h3 id="reader-appearance-title">Appearance</h3><div className="reader-control-panel">
           <label className="reader-control-group"><span>Theme</span><select aria-label="Theme" onChange={(event) => setTheme(event.target.value as typeof settings.theme)} value={settings.theme}><option value="system">System default</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
           <div className="reader-control-group"><span>Font size</span><div className="reader-control-actions"><button aria-label="Decrease font size" disabled={settings.fontSize <= 14} onClick={decreaseFontSize} type="button">A−</button><output>{settings.fontSize}px</output><button aria-label="Increase font size" disabled={settings.fontSize >= 28} onClick={increaseFontSize} type="button">A+</button></div></div>
@@ -378,7 +339,7 @@ function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, bou
 
   return <section className={`reader-chapter${separated ? ' reader-chapter-separated' : ''}`} data-chapter-id={entry.chapter.chapterId} ref={chapterRoot}>
     <div aria-hidden="true" className="reader-chapter-boundary" ref={startBoundary} />
-    <p className="reader-kicker">Chapter {chapterNumber}{countKnown ? ` of ${chapterTotal}` : ''}{entry.chapter.removedFromSource ? ' · cached copy' : ''}</p><h1>{entry.chapter.title}</h1>
+    <p className="reader-kicker">Chapter {chapterNumber}{countKnown ? ` of ${chapterTotal}` : ''}{entry.chapter.removedFromSource ? ' · Saved copy — removed from source' : ''}</p><h1>{entry.chapter.title}</h1>
     {entry.sections.map((section, sectionIndex) => <ReaderSectionView chapter={entry.chapter} ensureImage={ensureImage} index={sectionIndex} key={`${section.chapterKey}:${section.resourceId}`} onVisible={handleVisible} publication={publication} section={section} />)}
     <div aria-hidden="true" className="reader-chapter-boundary" ref={endBoundary} />
   </section>

@@ -3,6 +3,7 @@ import { useAppViewModel } from '@app/app-store'
 import type { Publication } from '@models/entities/domain'
 import { clearHistory, removeHistoryEntry } from '@services/library-service'
 import { useHomeViewModel } from '@view-models/home-view-model'
+import { ContextMenu } from '../ui/context-menu'
 import { PageHeader } from '../ui/page-header'
 import { PublicationCover } from '../ui/publication-cover'
 
@@ -15,21 +16,23 @@ function PublicationRow({ publication, list }: { publication: Publication; list:
   const availability = publication.availability === 'available' ? 'available offline' : publication.availability === 'partial' ? 'partly offline' : 'not cached'
 
   return (
-    <article className="book-row">
-      <button aria-label={`Open ${publication.title}`} className="book-row-main" onClick={() => openPublication(publication)} type="button">
-        <PublicationCover kind={publication.kind} />
-        <div className="book-details">
-          <h3>{publication.title}</h3>
-          <p>{publication.author ?? 'Unknown author'} · {publication.kind}</p>
-          {publication.currentChapter && <small>Reading chapter {publication.currentChapter.number}: {publication.currentChapter.title} · {publication.currentChapter.remaining} chapter{publication.currentChapter.remaining === 1 ? '' : 's'} remaining</small>}
-          <span className={`download-badge state-${publication.availability}`}>{availability}</span>
-        </div>
-      </button>
-      <div className="row-actions">
-        <button className="bookmark-button" onClick={() => void toggleBookmark(publication)} type="button" aria-label={`${publication.bookmarked ? 'Remove bookmark from' : 'Bookmark'} ${publication.title}`}>{publication.bookmarked ? '★' : '☆'}</button>
-        {list === 'recent' && <button className="remove-history-button" onClick={() => void removeHistoryEntry(publication.key).then(refresh)} type="button" aria-label={`Remove ${publication.title} from recent`}>×</button>}
+    <ContextMenu
+      actions={[
+        { label: publication.bookmarked ? 'Remove bookmark' : 'Bookmark', onSelect: () => { void toggleBookmark(publication) } },
+        ...(list === 'recent' ? [{ label: 'Remove from recent', onSelect: () => { void removeHistoryEntry(publication.key).then(refresh) } }] : []),
+      ]}
+      ariaLabel={`Open ${publication.title}`}
+      className="book-row"
+      onItemPress={() => openPublication(publication)}
+    >
+      <PublicationCover kind={publication.kind} />
+      <div className="book-details">
+        <h3>{publication.title}</h3>
+        <p>{publication.author ?? 'Unknown author'} · {publication.kind}</p>
+        {publication.currentChapter && <small>Reading chapter {publication.currentChapter.number}: {publication.currentChapter.title} · {publication.currentChapter.remaining} chapter{publication.currentChapter.remaining === 1 ? '' : 's'} remaining</small>}
+        <span className={`download-badge state-${publication.availability}`}>{availability}</span>
       </div>
-    </article>
+    </ContextMenu>
   )
 }
 

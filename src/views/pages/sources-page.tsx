@@ -5,7 +5,7 @@ import type { Publication as RemotePublication } from '@models/sources/source-ad
 import { useSettingsViewModel } from '@view-models/settings-view-model'
 import { useSourceBrowserViewModel } from '@view-models/source-browser-view-model'
 import { useSourcesViewModel } from '@view-models/sources-view-model'
-import { ActionDisclosure } from '../ui/action-disclosure'
+import { ContextMenu } from '../ui/context-menu'
 import { InfiniteScrollSentinel } from '../ui/infinite-scroll-sentinel'
 import { PageHeader } from '../ui/page-header'
 import { SectionHeading } from '../ui/section-heading'
@@ -80,26 +80,22 @@ export function SourcesPage() {
       </form>}
 
       {isLoading ? <p className="muted">Opening installed sources…</p> : sources.length === 0 ? <section className="empty-sources"><h2>No sources yet</h2><p>Install a source definition after configuring your Worker.</p><button className="primary-button" onClick={startAddingSource} type="button">Install a source</button></section> : <section className="source-list" aria-label="Installed sources">
-        {sources.map((source) => <article className="source-card" key={source.id}>
-          <div className="source-mark">{source.name.slice(0, 1).toUpperCase()}</div>
+        {sources.map((source) => <ContextMenu
+          actions={[
+            { label: source.enabled ? 'Pause source' : 'Enable source', onSelect: () => { void toggleSource(source.id) } },
+            { label: 'Edit definition', onSelect: () => startEditingSource(source) },
+            { disabled: !workerConfigured || !source.manifestUrl, label: 'Check update', onSelect: () => { void checkForUpdate(source) } },
+            { destructive: true, label: 'Remove', onSelect: () => { if (window.confirm(`Remove ${source.name} and its local library records and cached chapters?`)) void removeSource(source.id) } },
+          ]}
+          ariaLabel={`Open ${source.name}`}
+          className="source-card"
+          itemDisabled={!workerConfigured || !source.enabled}
+          key={source.id}
+          onItemPress={() => void browseSource(source)}
+        >
+          <div aria-hidden="true" className="source-mark">{source.name.slice(0, 1).toUpperCase()}</div>
           <div className="source-details"><h2>{source.name}</h2><p>{source.adapter.type === 'html-selectors' ? 'HTML selectors' : 'Generic JSON'} · {source.enabled ? 'Enabled' : 'Paused'}{source.customized ? ' · Customized' : ''}</p></div>
-          <label className="switch"><span className="visually-hidden">Enable {source.name}</span><input checked={source.enabled} onChange={() => void toggleSource(source.id)} type="checkbox" /><span aria-hidden="true" /></label>
-          <div className="source-actions">
-            <button className="primary-button source-primary-action" disabled={!workerConfigured || !source.enabled} onClick={() => void browseSource(source)} type="button">Browse</button>
-            <ActionDisclosure label="Manage source">
-              <div className="source-secondary-actions source-secondary-actions-mobile">
-                <button onClick={() => startEditingSource(source)} type="button">Edit definition</button>
-                <button disabled={!workerConfigured || !source.manifestUrl} onClick={() => void checkForUpdate(source)} type="button">Check update</button>
-                <button className="remove-source" onClick={() => { if (window.confirm(`Remove ${source.name} and its local library records and cached chapters?`)) void removeSource(source.id) }} type="button">Remove</button>
-              </div>
-            </ActionDisclosure>
-            <div className="source-secondary-actions source-secondary-actions-desktop">
-              <button onClick={() => startEditingSource(source)} type="button">Edit definition</button>
-              <button disabled={!workerConfigured || !source.manifestUrl} onClick={() => void checkForUpdate(source)} type="button">Check update</button>
-              <button className="remove-source" onClick={() => { if (window.confirm(`Remove ${source.name} and its local library records and cached chapters?`)) void removeSource(source.id) }} type="button">Remove</button>
-            </div>
-          </div>
-        </article>)}
+        </ContextMenu>)}
       </section>}
 
       {selectedSource && <section className="source-browser" aria-label={`${selectedSource.name} browser`}>

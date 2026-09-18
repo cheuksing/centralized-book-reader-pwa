@@ -8,7 +8,7 @@ Domain language: [`CONTEXT.md`](../CONTEXT.md)
 
 Bookshelf Reader is a local-first PWA for discovering and reading books, articles, and comics from user-installed third-party sources. It normalizes source-specific JSON responses and server-rendered HTML into publications, chapters, and resources; stores reader content in RxDB using the project's OPFS storage adapter; and keeps bookmarks, recent history, progress, and downloads independent.
 
-This document is the implementation contract. When existing code conflicts with it, this document describes the intended behavior.
+This document is the implementation contract. When existing code conflicts with it, this document describes the intended behavior. Feature-specific amendments may explicitly supersede named requirements; see [`library-offline-cache-functional-spec.md`](library-offline-cache-functional-spec.md) for the approved Library and offline-cache redesign.
 
 ## 2. Existing foundation and known gaps
 

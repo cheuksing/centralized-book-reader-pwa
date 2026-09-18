@@ -39,8 +39,12 @@ _Avoid_: Category as the general term
 The union of publications retained through a publication bookmark, reading history, or cached chapter.
 
 **Publication bookmark**:
-An explicit request to keep a publication in the Bookmarks list. It is not a marker inside reader content.
+An explicit request to keep a publication in the Saved list. It is not a marker inside reader content.
 _Avoid_: Favorite, in-content bookmark
+
+**Saved**:
+The user-facing Library view of publication bookmarks.
+_Avoid_: Bookmarks as a navigation label, Favorite
 
 **Reading history**:
 A recency list of the last 30 publications whose reader pages were entered. Removing an entry does not remove progress or cached content.
@@ -55,6 +59,14 @@ A user-requested operation that makes an entire chapter available offline. It ca
 
 **Read-through cache**:
 Content persisted because it was displayed or prefetched around the reader viewport, without an explicit whole-chapter download request.
+
+**Offline cache**:
+App-managed chapter content persisted through reading or automatic preparation. It remains until the user clears it or storage pressure requires least-recently-used eviction.
+_Avoid_: Download when no user-requested download occurred
+
+**Ready ahead**:
+The number of fully cached chapters after the current chapter in source order. It does not mean those chapters are unread.
+_Avoid_: Unread downloads
 
 **Available offline**:
 A chapter whose required reader resources are present locally. A partially cached chapter is available only up to its cached boundary.

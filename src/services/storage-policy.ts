@@ -22,8 +22,7 @@ export function summarizeCachedStorage(caches: readonly CachedStorageRecord[], c
   const chaptersByKey = new Map(chapters.map((chapter) => [chapter.key, chapter]))
   return caches.reduce<CachedStorageSummary>((summary, cache) => {
     const resourceBytes = cache.resources?.reduce((total, resource) => total + (Number.isFinite(resource.byteLength) ? Math.max(0, resource.byteLength!) : 0), 0) ?? 0
-    const receivedBytes = Number.isFinite(cache.receivedBytes) ? Math.max(0, cache.receivedBytes!) : 0
-    summary.cachedBytes += Math.max(receivedBytes, resourceBytes)
+    summary.cachedBytes += resourceBytes
     summary.cachedChapterCount += 1
     if (chaptersByKey.get(cache.key)?.removedFromSource) summary.removedFromSourceCount += 1
     return summary

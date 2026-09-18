@@ -54,3 +54,58 @@ Status: DONE_WITH_CONCERNS
 
 - No live browser/OPFS integration run was performed for an actual RxDB attachment-removal failure or visibility event; validation is covered by the executable pure checks, TypeScript, diagnostics, lint, and production build.
 - `graphify update .` was intentionally not run because the task explicitly forbids modifying Graphify output. Existing unrelated worktree edits remain visible and were not staged.
+
+## Fix round 1
+
+Status: DONE_WITH_CONCERNS
+
+### Implementation summary
+
+- Cached-size summaries now derive displayed bytes only from current resource byte lengths; cache creation/manifest merges and resource commits also recalculate `receivedBytes`. The focused check uses stale `receivedBytes: 999` with current resources totaling `160` and asserts `160`.
+- Clear-cache now shares concurrent clear requests, signals a start barrier, blocks new durable cache mutations, awaits active preparation/resource/download operations, removes only chapter caches and download jobs, then releases the barrier in `finally`. Online reading falls back to transient content if a cache write is rejected during clear.
+- Estimate status now separates valid usage from pressure validity, explicitly renders unknown estimate/pressure, distinguishes normal, pause/no-eviction, and critical/bounded-recovery states, and guards byte formatting. Failure paths request lifecycle refresh in `finally` while preserving non-blocking behavior.
+- Removed publication-cover cleanup from the Settings clear path; conditional active-storage wording replaces the suspended-work guarantee.
+
+### Files changed in this fix round
+
+- `src/services/book-content-service.ts`
+- `src/services/storage-policy.ts`
+- `src/services/storage-service.check.ts`
+- `src/services/storage-service.ts`
+- `src/view-models/settings-view-model.ts`
+- `src/views/pages/settings-page.tsx`
+- `.superpowers/sdd/library-offline-cache-functional-spec/task-5-report.md` (this append)
+
+Protected pre-existing changes in `package-lock.json`, `graphify-out/*`, and `progress.md` were not edited or staged.
+
+### Focused checks
+
+- Command: `node --experimental-strip-types src/services/storage-service.check.ts`
+  Output: `storage service checks passed`
+- Command: `grep -RIn --exclude-dir=node_modules -E 'automatically keeps|Explicit downloads|explicit download|Clear downloaded content|Delete downloaded content|Storage & offline content|used of|quota' src/views/pages/settings-page.tsx src/services/storage-service.ts` (run through an inverted-match guard)
+  Output: `no obsolete Settings wording or cover-clear references`
+- Command: `npx tsc -p tsconfig.app.json --noEmit`
+  Output: no stdout; exit code 0.
+
+### Build, lint, diagnostics, and diff validation
+
+- Command: `npm run lint`
+  Output: `Found 0 warnings and 0 errors.` / `Finished in 113ms on 60 files with 116 rules using 32 threads.`
+- Command: `npm run build`
+  Output: `✓ 1027 modules transformed.`, `✓ built in 381ms`, `PWA v1.3.0`, `precache 13 entries (823.21 KiB)`, and generated `dist/sw.js`/`dist/workbox-9c191d2f.js`; it emitted the existing non-failing `vite-tsconfig-paths` advisory.
+- Project diagnostics: `No errors or warnings found in the project.`
+- Command: `git diff --check`
+  Output: no output; exit code 0.
+- Staged validation: `git diff --cached --check` and a staged-name review will be run before commit; only the six source/check files and this report will be staged.
+
+### Self-review
+
+- The pruned-resource check prevents stale `receivedBytes` from inflating the displayed total, and current resource lengths remain the single display source.
+- The clear barrier covers automatic preparation, reader resource writes, explicit download/cache/job writes, access checkpoints, quota recovery, and per-chapter deletion; clear failure still rejects and refreshes rather than claiming success.
+- Clear-cache no longer imports or calls publication-cover cleanup. The independent explicit single-chapter deletion path retains its existing library cleanup behavior and is not the Settings clear boundary.
+- Settings preserves live-region/status behavior, warns about cached chapters removed from source before confirmation, reports unknown estimate/pressure explicitly, and does not promise suspended preparation.
+
+### Concerns
+
+- No live browser/OPFS integration run was performed for an actual RxDB attachment-removal failure or visibility/barrier event; automated validation is otherwise clean.
+- The two Minor findings remain deferred as requested.

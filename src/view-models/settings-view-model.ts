@@ -17,6 +17,7 @@ interface SettingsViewModel {
   databaseError?: string
   storageStatus: string
   storagePressure: StoragePressure
+  storagePressureStatus: string
   storageEstimate?: StorageEstimate
   storageEstimateStatus: string
   cachedBytes?: number
@@ -41,6 +42,17 @@ interface SettingsViewModel {
 
 function errorMessage(error: unknown, fallback: string): string { return error instanceof Error ? error.message : fallback }
 
+function isValidStorageUsage(value: number | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+}
+
+function storagePressureMessage(pressure: StoragePressure): string {
+  if (pressure === 'normal') return 'Storage pressure is normal.'
+  if (pressure === 'pause') return 'Automatic preparation paused because storage is low; no cache eviction is performed.'
+  if (pressure === 'critical') return 'Storage pressure is critical; bounded recovery may remove eligible cached chapters.'
+  return 'Storage pressure is unknown.'
+}
+
 export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
   let estimateRefresh: Promise<boolean> | undefined
 
@@ -64,6 +76,7 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
     hasLocalData: false,
     storageStatus: 'Persistent storage not requested.',
     storagePressure: 'unknown',
+    storagePressureStatus: 'Storage pressure is unknown.',
     storageEstimateStatus: 'Storage estimate is unavailable.',
     cachedChapterCount: 0,
     message: '',
@@ -112,16 +125,18 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
         const [estimateResult, summaryResult] = await Promise.allSettled([storageEstimate(), getCachedStorageSummary()])
         const estimate = estimateResult.status === 'fulfilled' ? estimateResult.value : undefined
         const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : undefined
-        const hasUsage = typeof estimate?.usage === 'number' && Number.isFinite(estimate.usage)
+        const hasValidUsage = isValidStorageUsage(estimate?.usage)
+        const storagePressure = interpretStoragePressure(estimate)
         set({
           storageEstimate: estimate,
-          storagePressure: interpretStoragePressure(estimate),
-          storageEstimateStatus: hasUsage ? '' : 'Storage estimate is unavailable.',
+          storagePressure,
+          storagePressureStatus: storagePressureMessage(storagePressure),
+          storageEstimateStatus: hasValidUsage ? '' : 'Storage estimate is unavailable.',
           ...(summary ? { cachedBytes: summary.cachedBytes, cachedChapterCount: summary.cachedChapterCount, removedFromSourceCount: summary.removedFromSourceCount } : { cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined }),
         })
-        return hasUsage
+        return hasValidUsage
       })().catch(() => {
-        set({ storageEstimate: undefined, storagePressure: 'unknown', storageEstimateStatus: 'Storage estimate is unavailable.', cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined })
+        set({ storageEstimate: undefined, storagePressure: 'unknown', storagePressureStatus: 'Storage pressure is unknown.', storageEstimateStatus: 'Storage estimate is unavailable.', cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined })
         return false
       }).finally(() => {
         estimateRefresh = undefined

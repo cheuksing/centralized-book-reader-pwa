@@ -8,7 +8,7 @@ import { extractHtmlText } from '@models/sources/html-text'
 import { fetchBlobThroughWorker } from '@services/remote-fetch-service'
 import { enqueueImage } from '@services/image-coordinator'
 import { removePublicationCoverIfUnused } from '@services/library-service'
-import { notifyStorageFailure, requestStorageEstimateRefresh, subscribeToOfflineCacheClear } from '@services/storage-service'
+import { notifyStorageFailure, requestStorageEstimateRefresh, subscribeToOfflineCacheClear, subscribeToOfflineCacheClearBarrier, subscribeToOfflineCacheClearFinish, subscribeToOfflineCacheClearStart } from '@services/storage-service'
 import {
   BOOK_ARTICLE_PREPARATION_WINDOW,
   COMIC_PREPARATION_WINDOW,
@@ -54,9 +54,17 @@ const resourceOperations = new Map<string, Promise<void>>()
 const downloadOperations = new Map<string, Promise<void>>()
 const busyChapterKeys = new Set<string>()
 const volatileResources = new Map<string, { blob: Blob; mimeType: string }>()
+const activeCacheMutations = new Set<Promise<unknown>>()
+let cacheClearInProgress = false
 subscribeToOfflineCacheClear(() => volatileResources.clear())
+subscribeToOfflineCacheClearStart(() => { cacheClearInProgress = true })
+subscribeToOfflineCacheClearFinish(() => { cacheClearInProgress = false })
 let nextPreparingChapterKey: string | undefined
 let preparationOperation: Promise<ChapterPreparationResult> | undefined
+subscribeToOfflineCacheClearBarrier(async () => {
+  const operations = [preparationOperation, ...activeCacheMutations, ...resourceOperations.values(), ...downloadOperations.values()].filter((operation): operation is Promise<unknown> => Boolean(operation))
+  await Promise.allSettled(operations)
+})
 
 export interface ChapterPreparationResult {
   status: 'completed' | 'skipped' | 'failed'
@@ -68,6 +76,28 @@ export interface ChapterPreparationResult {
 
 export interface LoadChapterContentOptions {
   recordAccess?: boolean
+}
+
+class CacheClearInProgressError extends Error {
+  constructor() {
+    super('Offline cache clearing is in progress.')
+    this.name = 'CacheClearInProgressError'
+  }
+}
+
+function withCacheMutation<T>(operation: () => Promise<T>): Promise<T> {
+  if (cacheClearInProgress) return Promise.reject(new CacheClearInProgressError())
+  const mutation = Promise.resolve().then(() => {
+    if (cacheClearInProgress) throw new CacheClearInProgressError()
+    return operation()
+  })
+  activeCacheMutations.add(mutation)
+  void mutation.finally(() => activeCacheMutations.delete(mutation)).catch(() => undefined)
+  return mutation
+}
+
+function isCacheClearInProgressError(error: unknown): boolean {
+  return error instanceof CacheClearInProgressError
 }
 
 export async function loadChapterContent(publication: PublicationDocument, chapter: ChapterDocument, options: LoadChapterContentOptions = {}): Promise<ReaderSection[]> {
@@ -82,8 +112,8 @@ export async function loadChapterContent(publication: PublicationDocument, chapt
     try {
       cache = await createOrMergeCache(chapter, manifest, { currentlyOpenChapterKey: chapter.key })
     } catch (error) {
-      if (!isQuotaStorageError(error)) throw error
-      notifyStorageFailure()
+      if (!isQuotaStorageError(error) && !isCacheClearInProgressError(error)) throw error
+      if (isQuotaStorageError(error)) notifyStorageFailure()
       const transientCache = transientCacheFor(chapter, manifest)
       try {
         await prepareTransientCache(transientCache)
@@ -216,7 +246,7 @@ async function prepareChapter(publication: PublicationDocument, chapter: Chapter
     if (!latest) throw new Error('The chapter cache disappeared while preparing.')
     const latestResources = latest.resources
     if (latestResources.some((resource) => resource.cacheable && resource.state !== 'available')) throw new Error('The chapter could not be fully prepared offline.')
-    await withQuotaRecovery(chapter.key, () => latest.patch({ state: 'available', updatedAt: new Date().toISOString() }), 0, { nextPreparingChapterKey: chapter.key })
+    await withCacheMutation(() => withQuotaRecovery(chapter.key, () => latest.patch({ state: 'available', updatedAt: new Date().toISOString() }), 0, { nextPreparingChapterKey: chapter.key }))
   } finally {
     busyChapterKeys.delete(chapter.key)
     if (nextPreparingChapterKey === chapter.key) nextPreparingChapterKey = undefined
@@ -224,14 +254,22 @@ async function prepareChapter(publication: PublicationDocument, chapter: Chapter
 }
 
 async function recoverCriticalStorage(currentlyOpenChapterKey?: string): Promise<void> {
-  await evictUntilSafe<CacheEvictionCandidate>({
-    getEstimate: safeStorageEstimate,
-    getCandidates: () => getDatabaseEvictionCandidates({ currentlyOpenChapterKey }),
-    getKey: (candidate) => candidate.key,
-    remove: (candidate) => removeEvictionCandidate(candidate.key),
-    mode: 'critical',
-  })
-  requestStorageEstimateRefresh()
+  try {
+    await withCacheMutation(async () => {
+      await evictUntilSafe<CacheEvictionCandidate>({
+        getEstimate: safeStorageEstimate,
+        getCandidates: () => getDatabaseEvictionCandidates({ currentlyOpenChapterKey }),
+        getKey: (candidate) => candidate.key,
+        remove: (candidate) => removeEvictionCandidate(candidate.key),
+        mode: 'critical',
+      })
+    })
+  } catch (error) {
+    notifyStorageFailure()
+    throw error
+  } finally {
+    requestStorageEstimateRefresh()
+  }
 }
 
 async function withQuotaRecovery<T>(chapterKey: string, operation: () => Promise<T>, requiredBytes: number, protection: CacheProtection = {}): Promise<T> {
@@ -333,7 +371,7 @@ export async function markChapterAccessed(chapterKey: string): Promise<void> {
   try {
     const database = await getDatabase()
     const cache = await database.chapterCaches.findOne(chapterKey).exec()
-    if (cache) await withQuotaRecovery(chapterKey, () => cache.patch({ lastAccessedAt: new Date().toISOString() }), 0, { currentlyOpenChapterKey: chapterKey })
+    if (cache) await withCacheMutation(() => withQuotaRecovery(chapterKey, () => cache.patch({ lastAccessedAt: new Date().toISOString() }), 0, { currentlyOpenChapterKey: chapterKey }))
   } catch {
     // Access metadata is advisory and must not block an otherwise successful open.
   }
@@ -352,6 +390,10 @@ export function downloadChapter(chapterKey: string): Promise<void> {
 }
 
 async function downloadChapterNow(chapterKey: string): Promise<void> {
+  return withCacheMutation(() => downloadChapterNowInternal(chapterKey))
+}
+
+async function downloadChapterNowInternal(chapterKey: string): Promise<void> {
   const database = await getDatabase()
   const chapter = await database.chapters.findOne(chapterKey).exec()
   if (!chapter) throw new Error('This chapter no longer exists.')
@@ -397,9 +439,11 @@ async function downloadChapterNow(chapterKey: string): Promise<void> {
 }
 
 export async function pauseDownload(chapterKey: string): Promise<void> {
-  const database = await getDatabase()
-  const job = await database.downloadJobs.findOne(chapterKey).exec()
-  if (job) await job.patch({ state: 'paused', updatedAt: new Date().toISOString() })
+  await withCacheMutation(async () => {
+    const database = await getDatabase()
+    const job = await database.downloadJobs.findOne(chapterKey).exec()
+    if (job) await job.patch({ state: 'paused', updatedAt: new Date().toISOString() })
+  })
 }
 
 export async function resumeDownload(chapterKey: string): Promise<void> {
@@ -407,14 +451,27 @@ export async function resumeDownload(chapterKey: string): Promise<void> {
 }
 
 export async function cancelDownload(chapterKey: string): Promise<void> {
-  const database = await getDatabase()
-  const job = await database.downloadJobs.findOne(chapterKey).exec()
-  if (job) await job.patch({ state: 'cancelled', updatedAt: new Date().toISOString() })
-  const cache = await database.chapterCaches.findOne(chapterKey).exec()
-  if (cache) await cache.patch({ state: cache.resources.some((resource) => resource.state === 'available') ? 'partial' : 'not-downloaded', updatedAt: new Date().toISOString() })
+  await withCacheMutation(async () => {
+    const database = await getDatabase()
+    const job = await database.downloadJobs.findOne(chapterKey).exec()
+    if (job) await job.patch({ state: 'cancelled', updatedAt: new Date().toISOString() })
+    const cache = await database.chapterCaches.findOne(chapterKey).exec()
+    if (cache) await cache.patch({ state: cache.resources.some((resource) => resource.state === 'available') ? 'partial' : 'not-downloaded', updatedAt: new Date().toISOString() })
+  })
 }
 
 export async function deleteChapterCache(chapterKey: string): Promise<void> {
+  try {
+    await withCacheMutation(() => deleteChapterCacheNow(chapterKey))
+  } catch (error) {
+    notifyStorageFailure()
+    throw error
+  } finally {
+    requestStorageEstimateRefresh()
+  }
+}
+
+async function deleteChapterCacheNow(chapterKey: string): Promise<void> {
   const database = await getDatabase()
   const cache = await database.chapterCaches.findOne(chapterKey).exec()
   const publicationKeyValue = cache ? publicationKey(cache.sourceId, cache.publicationId) : undefined
@@ -427,7 +484,6 @@ export async function deleteChapterCache(chapterKey: string): Promise<void> {
   const chapter = await database.chapters.findOne(chapterKey).exec()
   if (chapter) await chapter.patch({ updateAvailable: false })
   if (publicationKeyValue) await removePublicationCoverIfUnused(publicationKeyValue)
-  requestStorageEstimateRefresh()
 }
 
 export async function resumeExplicitDownloads(): Promise<void> {
@@ -485,6 +541,10 @@ function transientCacheFor(chapter: ChapterDocument, manifest: CacheManifest): C
 }
 
 async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}): Promise<RxDocument<ChapterCacheDocument>> {
+  return withCacheMutation(() => createOrMergeCacheNow(chapter, manifest, protection))
+}
+
+async function createOrMergeCacheNow(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}): Promise<RxDocument<ChapterCacheDocument>> {
   const database = await getDatabase()
   const existing = await database.chapterCaches.findOne(chapter.key).exec()
   const resources = cacheResourcesFromManifest(manifest, existing?.resources)
@@ -495,7 +555,7 @@ async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManif
       const attachment = existing.getAttachment(resource.id)
       if (attachment) await attachment.remove()
     }))
-    await withQuotaRecovery(chapter.key, () => existing.patch({ resources, sourceRevision: manifest.sourceRevision, updatedAt: now, state: cacheState(resources) }), 0, protection)
+    await withQuotaRecovery(chapter.key, () => existing.patch({ resources, receivedBytes: cachedBytesForResources(resources), sourceRevision: manifest.sourceRevision, updatedAt: now, state: cacheState(resources) }), 0, protection)
     return existing
   }
   return withQuotaRecovery(chapter.key, () => database.chapterCaches.insert({
@@ -506,7 +566,7 @@ async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManif
     sourceRevision: manifest.sourceRevision,
     state: cacheState(resources),
     resources,
-    receivedBytes: 0,
+    receivedBytes: cachedBytesForResources(resources),
     createdAt: now,
     updatedAt: now,
   }), 0, protection)
@@ -552,7 +612,7 @@ async function prepareTransientCache(cache: ChapterCacheDocument): Promise<void>
       volatileResources.set(resource.id, { blob: prepared.blob, mimeType: prepared.mimeType })
       const updated = mergeResources(cache.resources, prepared.discovered).map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'available' as const, mimeType: prepared.mimeType, byteLength: prepared.blob.size } : candidate)
       cache.resources = updated
-      cache.receivedBytes = updated.reduce((sum, candidate) => sum + (candidate.byteLength ?? 0), 0)
+      cache.receivedBytes = cachedBytesForResources(updated)
       cache.state = cacheState(updated)
       cache.updatedAt = new Date().toISOString()
     } catch (error) {
@@ -563,6 +623,10 @@ async function prepareTransientCache(cache: ChapterCacheDocument): Promise<void>
 }
 
 async function cacheResource(cache: ChapterCacheDocument, resource: CachedResourceDocument): Promise<void> {
+  return withCacheMutation(() => cacheResourceNow(cache, resource))
+}
+
+async function cacheResourceNow(cache: ChapterCacheDocument, resource: CachedResourceDocument): Promise<void> {
   const database = await getDatabase()
   const source = await database.sources.findOne(cache.sourceId).exec()
   if (!source) throw new Error('The source for this cache is no longer installed.')
@@ -587,7 +651,7 @@ async function cacheResource(cache: ChapterCacheDocument, resource: CachedResour
       if (!latest) throw new Error('The chapter cache disappeared while storing content.')
       const merged = mergeResources(latest.resources, discovered)
       const updated = merged.map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'available' as const, mimeType: committedMimeType, byteLength: committedBlob.size } : candidate)
-      await latest.patch({ resources: updated, receivedBytes: updated.reduce((sum, candidate) => sum + (candidate.byteLength ?? 0), 0), state: cacheState(updated), updatedAt: new Date().toISOString() })
+      await latest.patch({ resources: updated, receivedBytes: cachedBytesForResources(updated), state: cacheState(updated), updatedAt: new Date().toISOString() })
     }, committedBlob.size, { currentlyOpenChapterKey: cache.key })
     volatileResources.delete(resource.id)
   } catch (error) {
@@ -654,6 +718,10 @@ function mergeResources(current: CachedResourceDocument[], additions: CachedReso
   const byId = new Map(current.map((resource) => [resource.id, resource]))
   additions.forEach((resource) => { if (!byId.has(resource.id)) byId.set(resource.id, resource) })
   return [...byId.values()]
+}
+
+function cachedBytesForResources(resources: readonly CachedResourceDocument[]): number {
+  return resources.reduce((sum, resource) => sum + (resource.byteLength ?? 0), 0)
 }
 
 function cacheState(resources: CachedResourceDocument[]): ChapterCacheDocument['state'] {

@@ -11,12 +11,12 @@ function assert(condition: unknown, message: string): asserts condition {
 
 const summary = summarizeCachedStorage([
   { key: 'chapter-1', receivedBytes: 128, resources: [{ byteLength: 96 }] },
-  { key: 'chapter-2', receivedBytes: 0, resources: [{ byteLength: 64 }] },
+  { key: 'chapter-2', receivedBytes: 999, resources: [{ byteLength: 64 }] },
 ], [
   { key: 'chapter-1', removedFromSource: true },
   { key: 'chapter-2', removedFromSource: false },
 ])
-assert(summary.cachedBytes === 192 && summary.cachedChapterCount === 2, 'cached storage must sum chapter-cache bytes without touching metadata collections')
+assert(summary.cachedBytes === 160 && summary.cachedChapterCount === 2, 'cached storage must derive size from current resources when a pruned resource leaves stale receivedBytes')
 assert(summary.removedFromSourceCount === 1, 'clear-cache confirmation must count cached chapters removed from source')
 
 const description = clearOfflineCacheDescription(summary.removedFromSourceCount)

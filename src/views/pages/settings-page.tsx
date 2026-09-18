@@ -13,7 +13,7 @@ export function SettingsPage() {
   const workerConfigured = useSettingsViewModel((state) => state.workerConfigured)
   const databaseError = useSettingsViewModel((state) => state.databaseError)
   const storageStatus = useSettingsViewModel((state) => state.storageStatus)
-  const storagePressure = useSettingsViewModel((state) => state.storagePressure)
+  const storagePressureStatus = useSettingsViewModel((state) => state.storagePressureStatus)
   const storageEstimate = useSettingsViewModel((state) => state.storageEstimate)
   const storageEstimateStatus = useSettingsViewModel((state) => state.storageEstimateStatus)
   const cachedBytes = useSettingsViewModel((state) => state.cachedBytes)
@@ -48,7 +48,7 @@ export function SettingsPage() {
       <label>Line spacing <output>{settings.lineHeight.toFixed(2)}</output><input min="1.2" max="2.2" onChange={(event) => void setLineHeight(Number(event.target.value))} step="0.05" type="range" value={settings.lineHeight} /></label>
       <label>Content width<select value={settings.contentWidth} onChange={(event) => void setContentWidth(event.target.value as typeof settings.contentWidth)}><option value="compact">Narrow</option><option value="comfortable">Comfortable</option><option value="wide">Wide</option></select></label>
     </section>
-    <section className="settings-group"><h2>Offline storage</h2><p className="muted">Bookshelf automatically keeps recently used and upcoming chapters available offline.</p><p className="storage-size">{cachedBytes !== undefined ? `${formatBytes(cachedBytes)} cached` : storageEstimate?.usage !== undefined ? `Origin storage usage: ${formatBytes(storageEstimate.usage)} (browser estimate; includes data outside Bookshelf).` : 'Cached size is unavailable.'}</p><div className="button-row"><button className="secondary-button" onClick={() => void requestPersistence()} type="button">Request persistent storage</button><button className="secondary-button" onClick={() => void refreshEstimate()} type="button">Refresh estimate</button></div><p aria-live="polite" className="status-note">{storageStatus}</p>{storageEstimateStatus && <p aria-live="polite" className="status-note">{storageEstimateStatus}</p>}{(storagePressure === 'pause' || storagePressure === 'critical') && <p aria-live="polite" className="status-note">Automatic preparation paused because storage is low.</p>}{removedFromSourceCount === undefined && <p aria-live="polite" className="status-note">Offline cache details are unavailable. Refresh before clearing.</p>}<button className="danger-button" disabled={removedFromSourceCount === undefined} onClick={openCacheConfirmation} type="button">Clear offline cache</button></section>
+    <section className="settings-group"><h2>Offline storage</h2><p className="muted">Bookshelf prepares recently used and upcoming chapters while the app is active and storage conditions allow.</p><p className="storage-size">{cachedBytes !== undefined ? `${formatBytes(cachedBytes)} cached` : isValidStorageUsage(storageEstimate?.usage) ? `Origin storage usage: ${formatBytes(storageEstimate.usage)} (browser estimate; includes data outside Bookshelf).` : 'Cached size is unavailable.'}</p><div className="button-row"><button className="secondary-button" onClick={() => void requestPersistence()} type="button">Request persistent storage</button><button className="secondary-button" onClick={() => void refreshEstimate()} type="button">Refresh estimate</button></div><p aria-live="polite" className="status-note">{storageStatus}</p>{storageEstimateStatus && <p aria-live="polite" className="status-note">{storageEstimateStatus}</p>}<p aria-live="polite" className="status-note">{storagePressureStatus}</p>{removedFromSourceCount === undefined && <p aria-live="polite" className="status-note">Offline cache details are unavailable. Refresh before clearing.</p>}<button className="danger-button" disabled={removedFromSourceCount === undefined} onClick={openCacheConfirmation} type="button">Clear offline cache</button></section>
     <section className="settings-group"><h2>Backup & restore</h2><p className="muted">Metadata only: source definitions, publication metadata, bookmarks, Recent, progress, and reader preferences. Worker credentials, persistence status, and attachments are never exported.</p><div className="button-row"><button className="secondary-button" onClick={() => void exportBackup()} type="button">Export metadata</button><label className="secondary-button file-button">Import metadata<input accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file) }} type="file" /></label></div>{message && <p aria-live="polite" className="status-note" role="status">{message}</p>}</section>
     <ConfirmDialog
       confirmLabel="Clear cache"
@@ -62,7 +62,12 @@ export function SettingsPage() {
   </>
 }
 
+function isValidStorageUsage(value: number | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+}
+
 function formatBytes(value: number): string {
+  if (!Number.isFinite(value) || value < 0) return 'Unknown size'
   if (value < 1024) return `${value} B`
   if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`
   if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`

@@ -1,7 +1,5 @@
 import { getStorageEstimate, interpretStoragePressure, requestPersistentStorage, type StoragePressure } from '@models/cache/cache-policy'
-import { publicationKey } from '@models/entities/keys'
 import { savePersistenceResult } from '@services/app-settings-service'
-import { removePublicationCoverIfUnused } from '@services/library-service'
 import {
   ACTIVE_PREPARATION_CHECK_INTERVAL_MS,
   shouldCheckActivePreparation,
@@ -26,7 +24,11 @@ export interface StorageLifecycleOptions {
 }
 
 const storageRefreshListeners = new Set<() => void>()
+const offlineCacheClearStartListeners = new Set<() => void>()
+const offlineCacheClearBarrierListeners = new Set<() => Promise<void>>()
+const offlineCacheClearFinishListeners = new Set<() => void>()
 const offlineCacheClearListeners = new Set<() => void>()
+let offlineCacheClearOperation: Promise<ClearOfflineCacheResult> | undefined
 
 export async function requestPersistentStorageAccess(): Promise<string> {
   const granted = typeof navigator !== 'undefined' ? await requestPersistentStorage() : false
@@ -50,48 +52,57 @@ export async function getCachedStorageSummary(): Promise<CachedStorageSummary> {
 
 export function clearOfflineCache(): Promise<ClearOfflineCacheResult> {
   requestStorageEstimateRefresh()
-  return clearOfflineCacheNow().finally(() => requestStorageEstimateRefresh()).catch((error: unknown) => {
+  if (offlineCacheClearOperation) return offlineCacheClearOperation
+  const operation = clearOfflineCacheNow()
+  const result = operation.finally(() => {
+    requestStorageEstimateRefresh()
+    if (offlineCacheClearOperation === result) offlineCacheClearOperation = undefined
+  }).catch((error: unknown) => {
     notifyStorageFailure()
     throw error
   })
+  offlineCacheClearOperation = result
+  return result
 }
 
 async function clearOfflineCacheNow(): Promise<ClearOfflineCacheResult> {
-  const database = await getDatabase()
-  const [caches, jobs, chapters] = await Promise.all([
-    database.chapterCaches.find({ selector: {} }).exec(),
-    database.downloadJobs.find({ selector: {} }).exec(),
-    database.chapters.find({ selector: {} }).exec(),
-  ])
-  const chapterByKey = new Map(chapters.map((chapter) => [chapter.key, chapter]))
-  const publicationKeys = new Set(caches.map((cache) => publicationKey(cache.sourceId, cache.publicationId)))
-  const removedFromSourceCount = caches.filter((cache) => chapterByKey.get(cache.key)?.removedFromSource).length
-  let removedChapterCount = 0
-  let removedJobCount = 0
+  try {
+    notifyOfflineCacheClearStarted()
+    await waitForOfflineCacheClearBarriers()
+    const database = await getDatabase()
+    const [caches, jobs, chapters] = await Promise.all([
+      database.chapterCaches.find({ selector: {} }).exec(),
+      database.downloadJobs.find({ selector: {} }).exec(),
+      database.chapters.find({ selector: {} }).exec(),
+    ])
+    const chapterByKey = new Map(chapters.map((chapter) => [chapter.key, chapter]))
+    const removedFromSourceCount = caches.filter((cache) => chapterByKey.get(cache.key)?.removedFromSource).length
+    let removedChapterCount = 0
+    let removedJobCount = 0
 
-  for (const cache of caches) {
-    try {
-      await cache.remove()
-      removedChapterCount += 1
-    } catch (error) {
-      throw new Error(`Could not remove cached chapter ${cache.chapterId}: ${errorMessage(error, 'storage removal failed.')}`)
+    for (const cache of caches) {
+      try {
+        await cache.remove()
+        removedChapterCount += 1
+      } catch (error) {
+        throw new Error(`Could not remove cached chapter ${cache.chapterId}: ${errorMessage(error, 'storage removal failed.')}`)
+      }
     }
-  }
 
-  for (const job of jobs) {
-    try {
-      await job.remove()
-      removedJobCount += 1
-    } catch (error) {
-      throw new Error(`Could not remove a cached chapter job: ${errorMessage(error, 'storage removal failed.')}`)
+    for (const job of jobs) {
+      try {
+        await job.remove()
+        removedJobCount += 1
+      } catch (error) {
+        throw new Error(`Could not remove a cached chapter job: ${errorMessage(error, 'storage removal failed.')}`)
+      }
     }
-  }
 
-  notifyOfflineCacheCleared()
-  await Promise.all([...publicationKeys].map(async (key) => {
-    await removePublicationCoverIfUnused(key).catch(() => undefined)
-  }))
-  return { removedChapterCount, removedJobCount, removedFromSourceCount }
+    notifyOfflineCacheCleared()
+    return { removedChapterCount, removedJobCount, removedFromSourceCount }
+  } finally {
+    notifyOfflineCacheClearFinished()
+  }
 }
 
 export function subscribeToStorageRefresh(listener: () => void): () => void {
@@ -99,9 +110,38 @@ export function subscribeToStorageRefresh(listener: () => void): () => void {
   return () => storageRefreshListeners.delete(listener)
 }
 
+export function subscribeToOfflineCacheClearStart(listener: () => void): () => void {
+  offlineCacheClearStartListeners.add(listener)
+  return () => offlineCacheClearStartListeners.delete(listener)
+}
+
+export function subscribeToOfflineCacheClearBarrier(listener: () => Promise<void>): () => void {
+  offlineCacheClearBarrierListeners.add(listener)
+  return () => offlineCacheClearBarrierListeners.delete(listener)
+}
+
+export function subscribeToOfflineCacheClearFinish(listener: () => void): () => void {
+  offlineCacheClearFinishListeners.add(listener)
+  return () => offlineCacheClearFinishListeners.delete(listener)
+}
+
 export function subscribeToOfflineCacheClear(listener: () => void): () => void {
   offlineCacheClearListeners.add(listener)
   return () => offlineCacheClearListeners.delete(listener)
+}
+
+function notifyOfflineCacheClearStarted(): void {
+  for (const listener of offlineCacheClearStartListeners) listener()
+}
+
+async function waitForOfflineCacheClearBarriers(): Promise<void> {
+  await Promise.all([...offlineCacheClearBarrierListeners].map((listener) => listener()))
+}
+
+function notifyOfflineCacheClearFinished(): void {
+  for (const listener of offlineCacheClearFinishListeners) {
+    try { listener() } catch { /* Clear cleanup hooks must not leave the mutation barrier stuck. */ }
+  }
 }
 
 function notifyOfflineCacheCleared(): void {

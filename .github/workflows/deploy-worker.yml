@@ -28,7 +28,7 @@ jobs:
           export CLOUDFLARE_ACCOUNT_ID="$DEPLOY_CLOUDFLARE_ACCOUNT_ID"
           export CLOUDFLARE_API_TOKEN="$DEPLOY_CLOUDFLARE_API_TOKEN"
           export WORKER_ACCESS_TOKEN="$DEPLOY_WORKER_ACCESS_TOKEN"
-          export WORKER_ALLOWED_ORIGINS="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          export WORKER_ALLOWED_ORIGINS="https://${{ github.repository_owner }}.github.io"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$WORKER_ACCESS_TOKEN"

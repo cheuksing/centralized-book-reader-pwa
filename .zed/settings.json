@@ -1,10 +1,8 @@
 {
   "context_servers": {
-    "chrome-devtools-mcp-zed": {
-      "settings": {
-        "headless": true,
-        "viewport": "1080x1920"
-      }
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest", "--categoryExtensions"]
     },
     "motion": {
         "url": "https://mcp.motion.dev"

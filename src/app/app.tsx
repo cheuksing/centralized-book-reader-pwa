@@ -14,6 +14,8 @@ import { TabLayout } from '../views/layouts/tab-layout'
 import { useAppViewModel } from '@app/app-store'
 import { decodeRouteParam, tabPath, type Tab } from '@app/routes'
 import { getLibraryPublication } from '@services/library-service'
+import { checkActivePreparationStorage, isAutomaticPreparationActive } from '@services/book-content-service'
+import { startStorageLifecycle } from '@services/storage-service'
 import './app.scss'
 
 type PublicationScreen = 'details' | 'reader' | 'index'
@@ -32,6 +34,12 @@ export function App() {
     void initializeReader()
     void initializeSources()
   }, [initializeReader, initializeSettings, initializeSources])
+
+  useEffect(() => startStorageLifecycle({
+    refreshEstimate: () => useSettingsViewModel.getState().refreshEstimate(),
+    isPreparationActive: isAutomaticPreparationActive,
+    checkActivePreparation: checkActivePreparationStorage,
+  }), [])
 
   if (!settingsInitialized) return <main className="blocking-page"><div className="loading-mark">◌</div><h1>Opening Bookshelf</h1><p>Checking local storage and the active app instance…</p></main>
   if (databaseError) return <main className="blocking-page"><h1>Bookshelf cannot open here</h1><p>{databaseError}</p><p className="muted">Close the other Bookshelf tab or use a browser with OPFS and Web Locks support.</p></main>

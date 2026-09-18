@@ -1,11 +1,12 @@
 import { create } from 'zustand'
 import type { ReaderSettings } from '@models/entities/domain'
+import { interpretStoragePressure, type StoragePressure } from '@models/cache/cache-policy'
 import { loadAppSettings } from '@services/app-settings-service'
 import { downloadBackup, importBackupFile } from '@services/backup-service'
 import { defaultReaderSettings, loadReaderSettings, saveReaderSettings } from '@services/reader-settings-service'
-import { removePublicationCoverIfUnused } from '@services/library-service'
+
 import { normalizeWorkerOrigin, saveWorkerConfig, testWorkerConnection, workerConfigFrom, type WorkerConfig } from '@services/remote-fetch-service'
-import { requestPersistentStorageAccess, storageEstimate } from '@services/storage-service'
+import { clearOfflineCache, getCachedStorageSummary, requestPersistentStorageAccess, storageEstimate } from '@services/storage-service'
 
 interface SettingsViewModel {
   settings: ReaderSettings
@@ -15,7 +16,12 @@ interface SettingsViewModel {
   hasLocalData: boolean
   databaseError?: string
   storageStatus: string
+  storagePressure: StoragePressure
   storageEstimate?: StorageEstimate
+  storageEstimateStatus: string
+  cachedBytes?: number
+  cachedChapterCount: number
+  removedFromSourceCount?: number
   message: string
   initialized: boolean
   initialize: () => Promise<void>
@@ -27,7 +33,7 @@ interface SettingsViewModel {
   setLineHeight: (lineHeight: number) => Promise<void>
   setContentWidth: (contentWidth: ReaderSettings['contentWidth']) => Promise<void>
   requestPersistence: () => Promise<void>
-  refreshEstimate: () => Promise<void>
+  refreshEstimate: () => Promise<boolean>
   clearCache: () => Promise<void>
   exportBackup: () => Promise<void>
   importBackup: (file: File) => Promise<void>
@@ -36,6 +42,8 @@ interface SettingsViewModel {
 function errorMessage(error: unknown, fallback: string): string { return error instanceof Error ? error.message : fallback }
 
 export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
+  let estimateRefresh: Promise<boolean> | undefined
+
   async function persist(settings: ReaderSettings): Promise<void> {
     set({ settings })
     try { await saveReaderSettings(settings); set({ databaseError: undefined }) } catch (error) { set({ databaseError: errorMessage(error, 'Could not save reader settings.') }) }
@@ -54,7 +62,10 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
     workerToken: '',
     workerConfigured: false,
     hasLocalData: false,
-    storageStatus: 'Not requested',
+    storageStatus: 'Persistent storage not requested.',
+    storagePressure: 'unknown',
+    storageEstimateStatus: 'Storage estimate is unavailable.',
+    cachedChapterCount: 0,
     message: '',
     initialized: false,
     initialize: async () => {
@@ -71,8 +82,8 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
           database.chapterCaches.find({ selector: {} }).exec(),
           database.readingHistory.find({ selector: {} }).exec(),
         ])
-        set({ settings, workerOrigin: appSettings.workerOrigin ?? developmentWorker?.origin ?? '', workerToken: appSettings.workerToken ?? developmentWorker?.token ?? '', workerConfigured: Boolean(worker), hasLocalData: publications.length > 0 || caches.length > 0 || history.length > 0, storageStatus: appSettings.persistentStorageGranted === undefined ? 'Not requested' : appSettings.persistentStorageGranted ? 'Persistent storage granted' : 'Browser did not grant persistent storage', databaseError: undefined })
-        await get().refreshEstimate()
+        set({ settings, workerOrigin: appSettings.workerOrigin ?? developmentWorker?.origin ?? '', workerToken: appSettings.workerToken ?? developmentWorker?.token ?? '', workerConfigured: Boolean(worker), hasLocalData: publications.length > 0 || caches.length > 0 || history.length > 0, storageStatus: appSettings.persistentStorageGranted === undefined ? 'Persistent storage not requested.' : appSettings.persistentStorageGranted ? 'Persistent storage granted.' : 'Browser did not grant persistent storage.', databaseError: undefined })
+        void get().refreshEstimate()
       } catch (error) {
         set({ databaseError: errorMessage(error, 'Could not open local storage.') })
       }
@@ -95,19 +106,39 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
     requestPersistence: async () => {
       try { set({ storageStatus: await requestPersistentStorageAccess() }) } catch (error) { set({ storageStatus: errorMessage(error, 'Could not request persistent storage.') }) }
     },
-    refreshEstimate: async () => set({ storageEstimate: await storageEstimate() }),
+    refreshEstimate: () => {
+      if (estimateRefresh) return estimateRefresh
+      const operation = (async () => {
+        const [estimateResult, summaryResult] = await Promise.allSettled([storageEstimate(), getCachedStorageSummary()])
+        const estimate = estimateResult.status === 'fulfilled' ? estimateResult.value : undefined
+        const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : undefined
+        const hasUsage = typeof estimate?.usage === 'number' && Number.isFinite(estimate.usage)
+        set({
+          storageEstimate: estimate,
+          storagePressure: interpretStoragePressure(estimate),
+          storageEstimateStatus: hasUsage ? '' : 'Storage estimate is unavailable.',
+          ...(summary ? { cachedBytes: summary.cachedBytes, cachedChapterCount: summary.cachedChapterCount, removedFromSourceCount: summary.removedFromSourceCount } : { cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined }),
+        })
+        return hasUsage
+      })().catch(() => {
+        set({ storageEstimate: undefined, storagePressure: 'unknown', storageEstimateStatus: 'Storage estimate is unavailable.', cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined })
+        return false
+      }).finally(() => {
+        estimateRefresh = undefined
+      })
+      estimateRefresh = operation
+      return operation
+    },
     clearCache: async () => {
+      set({ message: 'Clearing offline cache…' })
       try {
-        const { getReaderDatabase } = await import('@models/database/opfs-database')
-        const database = await getReaderDatabase()
-        await Promise.all([
-          ...(await database.chapterCaches.find({ selector: {} }).exec()).map((document) => document.remove()),
-          ...(await database.downloadJobs.find({ selector: {} }).exec()).map((document) => document.remove()),
-        ])
-        await Promise.all((await database.publications.find({ selector: {} }).exec()).map((publication) => removePublicationCoverIfUnused(publication.key)))
+        await clearOfflineCache()
         await get().refreshEstimate()
-        set({ message: 'Cached chapter content and download jobs were removed. Bookmarks, history, and progress remain.' })
-      } catch (error) { set({ message: errorMessage(error, 'Could not clear cached content.') }) }
+        set({ message: 'Offline cache cleared. Cached chapter content was removed; saved publications, reading history, and reading position remain.' })
+      } catch (error) {
+        await get().refreshEstimate()
+        set({ message: `Could not clear offline cache: ${errorMessage(error, 'storage removal failed.')}` })
+      }
     },
     exportBackup: async () => {
       try { await downloadBackup(); set({ message: 'Metadata backup exported. Worker credentials and cached content were excluded.' }) } catch (error) { set({ message: errorMessage(error, 'Could not export this backup.') }) }

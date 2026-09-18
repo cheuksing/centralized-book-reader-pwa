@@ -8,6 +8,7 @@ import { extractHtmlText } from '@models/sources/html-text'
 import { fetchBlobThroughWorker } from '@services/remote-fetch-service'
 import { enqueueImage } from '@services/image-coordinator'
 import { removePublicationCoverIfUnused } from '@services/library-service'
+import { notifyStorageFailure, requestStorageEstimateRefresh, subscribeToOfflineCacheClear } from '@services/storage-service'
 import {
   BOOK_ARTICLE_PREPARATION_WINDOW,
   COMIC_PREPARATION_WINDOW,
@@ -53,6 +54,7 @@ const resourceOperations = new Map<string, Promise<void>>()
 const downloadOperations = new Map<string, Promise<void>>()
 const busyChapterKeys = new Set<string>()
 const volatileResources = new Map<string, { blob: Blob; mimeType: string }>()
+subscribeToOfflineCacheClear(() => volatileResources.clear())
 let nextPreparingChapterKey: string | undefined
 let preparationOperation: Promise<ChapterPreparationResult> | undefined
 
@@ -81,6 +83,7 @@ export async function loadChapterContent(publication: PublicationDocument, chapt
       cache = await createOrMergeCache(chapter, manifest, { currentlyOpenChapterKey: chapter.key })
     } catch (error) {
       if (!isQuotaStorageError(error)) throw error
+      notifyStorageFailure()
       const transientCache = transientCacheFor(chapter, manifest)
       try {
         await prepareTransientCache(transientCache)
@@ -109,12 +112,23 @@ export async function loadChapterContent(publication: PublicationDocument, chapt
 }
 
 export function prepareUpcomingChapters(publication: PublicationDocument, chapters: readonly ChapterDocument[], currentChapterKey: string): Promise<ChapterPreparationResult> {
+  requestStorageEstimateRefresh()
   if (preparationOperation) return preparationOperation
   const operation = prepareUpcomingChaptersNow(publication, chapters, currentChapterKey).finally(() => {
     if (preparationOperation === operation) preparationOperation = undefined
+    requestStorageEstimateRefresh()
   })
   preparationOperation = operation
   return operation
+}
+
+export function isAutomaticPreparationActive(): boolean {
+  return preparationOperation !== undefined
+}
+
+export async function checkActivePreparationStorage(): Promise<void> {
+  if (!preparationOperation) return
+  await safeStorageEstimate()
 }
 
 export async function ensureResourceCached(chapterKey: string, sourceResourceId: string, priority = 0): Promise<void> {
@@ -161,7 +175,9 @@ async function prepareUpcomingChaptersNow(publication: PublicationDocument, chap
       await prepareChapter(publication, chapter)
       preparedChapterKeys.push(chapter.key)
       await safeStorageEstimate()
+      requestStorageEstimateRefresh()
     } catch (error) {
+      if (isQuotaStorageError(error)) notifyStorageFailure()
       return {
         status: 'failed',
         attempted: true,
@@ -215,20 +231,28 @@ async function recoverCriticalStorage(currentlyOpenChapterKey?: string): Promise
     remove: (candidate) => removeEvictionCandidate(candidate.key),
     mode: 'critical',
   })
+  requestStorageEstimateRefresh()
 }
 
 async function withQuotaRecovery<T>(chapterKey: string, operation: () => Promise<T>, requiredBytes: number, protection: CacheProtection = {}): Promise<T> {
-  return runWithBoundedQuotaRetry(operation, async () => {
-    await evictUntilSafe<CacheEvictionCandidate>({
-      getEstimate: safeStorageEstimate,
-      getCandidates: () => getDatabaseEvictionCandidates({ ...protection, busyChapterKeys: new Set(busyChapterKeys).add(chapterKey) }),
-      getKey: (candidate) => candidate.key,
-      remove: (candidate) => removeEvictionCandidate(candidate.key),
-      mode: 'quota',
-      requiredBytes,
-      safetyMarginBytes: QUOTA_RECOVERY_SAFETY_MARGIN_BYTES,
+  try {
+    return await runWithBoundedQuotaRetry(operation, async () => {
+      notifyStorageFailure()
+      await evictUntilSafe<CacheEvictionCandidate>({
+        getEstimate: safeStorageEstimate,
+        getCandidates: () => getDatabaseEvictionCandidates({ ...protection, busyChapterKeys: new Set(busyChapterKeys).add(chapterKey) }),
+        getKey: (candidate) => candidate.key,
+        remove: (candidate) => removeEvictionCandidate(candidate.key),
+        mode: 'quota',
+        requiredBytes,
+        safetyMarginBytes: QUOTA_RECOVERY_SAFETY_MARGIN_BYTES,
+      })
+      requestStorageEstimateRefresh()
     })
-  })
+  } catch (error) {
+    if (isQuotaStorageError(error)) notifyStorageFailure()
+    throw error
+  }
 }
 
 async function getDatabaseEvictionCandidates(protection: CacheProtection & { busyChapterKeys?: ReadonlySet<string> } = {}): Promise<CacheEvictionCandidate[]> {
@@ -403,6 +427,7 @@ export async function deleteChapterCache(chapterKey: string): Promise<void> {
   const chapter = await database.chapters.findOne(chapterKey).exec()
   if (chapter) await chapter.patch({ updateAvailable: false })
   if (publicationKeyValue) await removePublicationCoverIfUnused(publicationKeyValue)
+  requestStorageEstimateRefresh()
 }
 
 export async function resumeExplicitDownloads(): Promise<void> {

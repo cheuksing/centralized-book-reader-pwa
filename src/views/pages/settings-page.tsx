@@ -1,6 +1,7 @@
 import './settings-page.scss'
 import { useState } from 'react'
 import { useSettingsViewModel } from '@view-models/settings-view-model'
+import { clearOfflineCacheDescription } from '@services/storage-service'
 import { PageHeader } from '../ui/page-header'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 
@@ -12,7 +13,11 @@ export function SettingsPage() {
   const workerConfigured = useSettingsViewModel((state) => state.workerConfigured)
   const databaseError = useSettingsViewModel((state) => state.databaseError)
   const storageStatus = useSettingsViewModel((state) => state.storageStatus)
+  const storagePressure = useSettingsViewModel((state) => state.storagePressure)
   const storageEstimate = useSettingsViewModel((state) => state.storageEstimate)
+  const storageEstimateStatus = useSettingsViewModel((state) => state.storageEstimateStatus)
+  const cachedBytes = useSettingsViewModel((state) => state.cachedBytes)
+  const removedFromSourceCount = useSettingsViewModel((state) => state.removedFromSourceCount)
   const message = useSettingsViewModel((state) => state.message)
   const setWorkerOrigin = useSettingsViewModel((state) => state.setWorkerOrigin)
   const setWorkerToken = useSettingsViewModel((state) => state.setWorkerToken)
@@ -26,6 +31,7 @@ export function SettingsPage() {
   const clearCache = useSettingsViewModel((state) => state.clearCache)
   const exportBackup = useSettingsViewModel((state) => state.exportBackup)
   const importBackup = useSettingsViewModel((state) => state.importBackup)
+  const openCacheConfirmation = () => { void refreshEstimate().then(() => { if (useSettingsViewModel.getState().removedFromSourceCount !== undefined) setConfirmingCacheClear(true) }) }
 
   return <>
     <PageHeader eyebrow="Local preferences" title="Settings" />
@@ -42,16 +48,16 @@ export function SettingsPage() {
       <label>Line spacing <output>{settings.lineHeight.toFixed(2)}</output><input min="1.2" max="2.2" onChange={(event) => void setLineHeight(Number(event.target.value))} step="0.05" type="range" value={settings.lineHeight} /></label>
       <label>Content width<select value={settings.contentWidth} onChange={(event) => void setContentWidth(event.target.value as typeof settings.contentWidth)}><option value="compact">Narrow</option><option value="comfortable">Comfortable</option><option value="wide">Wide</option></select></label>
     </section>
-    <section className="settings-group"><h2>Storage & offline content</h2><p className="muted">Bookshelf never evicts reader content automatically. Explicit downloads can be paused, cancelled, deleted, or retried.</p><div className="button-row"><button className="secondary-button" onClick={() => void requestPersistence()} type="button">Request persistent storage</button><button className="secondary-button" onClick={() => void refreshEstimate()} type="button">Refresh estimate</button></div><p className="status-note">{storageStatus}{storageEstimate?.usage !== undefined && storageEstimate.quota !== undefined ? ` · ${formatBytes(storageEstimate.usage)} used of ${formatBytes(storageEstimate.quota)}` : ''}</p><button className="danger-button" onClick={() => setConfirmingCacheClear(true)} type="button">Clear downloaded content</button></section>
-    <section className="settings-group"><h2>Backup & restore</h2><p className="muted">Metadata only: source definitions, publication metadata, bookmarks, Recent, progress, and reader preferences. Worker credentials, persistence status, and attachments are never exported.</p><div className="button-row"><button className="secondary-button" onClick={() => void exportBackup()} type="button">Export metadata</button><label className="secondary-button file-button">Import metadata<input accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file) }} type="file" /></label></div>{message && <p className="status-note" role="status">{message}</p>}</section>
+    <section className="settings-group"><h2>Offline storage</h2><p className="muted">Bookshelf automatically keeps recently used and upcoming chapters available offline.</p><p className="storage-size">{cachedBytes !== undefined ? `${formatBytes(cachedBytes)} cached` : storageEstimate?.usage !== undefined ? `Origin storage usage: ${formatBytes(storageEstimate.usage)} (browser estimate; includes data outside Bookshelf).` : 'Cached size is unavailable.'}</p><div className="button-row"><button className="secondary-button" onClick={() => void requestPersistence()} type="button">Request persistent storage</button><button className="secondary-button" onClick={() => void refreshEstimate()} type="button">Refresh estimate</button></div><p aria-live="polite" className="status-note">{storageStatus}</p>{storageEstimateStatus && <p aria-live="polite" className="status-note">{storageEstimateStatus}</p>}{(storagePressure === 'pause' || storagePressure === 'critical') && <p aria-live="polite" className="status-note">Automatic preparation paused because storage is low.</p>}{removedFromSourceCount === undefined && <p aria-live="polite" className="status-note">Offline cache details are unavailable. Refresh before clearing.</p>}<button className="danger-button" disabled={removedFromSourceCount === undefined} onClick={openCacheConfirmation} type="button">Clear offline cache</button></section>
+    <section className="settings-group"><h2>Backup & restore</h2><p className="muted">Metadata only: source definitions, publication metadata, bookmarks, Recent, progress, and reader preferences. Worker credentials, persistence status, and attachments are never exported.</p><div className="button-row"><button className="secondary-button" onClick={() => void exportBackup()} type="button">Export metadata</button><label className="secondary-button file-button">Import metadata<input accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file) }} type="file" /></label></div>{message && <p aria-live="polite" className="status-note" role="status">{message}</p>}</section>
     <ConfirmDialog
-      confirmLabel="Clear downloaded content"
-      description="This removes cached chapters and active download jobs from this browser."
+      confirmLabel="Clear cache"
+      description={clearOfflineCacheDescription(removedFromSourceCount ?? 0)}
       destructive
       onCancel={() => setConfirmingCacheClear(false)}
       onConfirm={() => { setConfirmingCacheClear(false); void clearCache() }}
       open={confirmingCacheClear}
-      title="Delete downloaded content?"
+      title="Clear offline cache?"
     />
   </>
 }

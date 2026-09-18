@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'wouter'
 import { useAppViewModel } from '@app/app-store'
-import { readerPath } from '@app/routes'
+import { indexPath, readerPath } from '@app/routes'
 import type { Publication } from '@models/entities/domain'
 import { clearHistory, removeHistoryEntry } from '@services/library-service'
 import { useHomeViewModel } from '@view-models/home-view-model'
@@ -21,6 +21,7 @@ function PublicationRow({ publication, list }: { publication: Publication; list:
   return (
     <ContextMenu
       actions={[
+        { label: 'Open chapter index', onSelect: () => { setActivePublication(publication); navigate(indexPath(publication.key)) } },
         { label: publication.bookmarked ? 'Remove bookmark' : 'Bookmark', onSelect: () => { void toggleBookmark(publication) } },
         ...(list === 'recent' ? [{ label: 'Remove from recent', onSelect: () => { void removeHistoryEntry(publication.key).then(refresh) } }] : []),
       ]}

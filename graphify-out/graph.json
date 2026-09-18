@@ -5945,7 +5945,7 @@
       "label": "HomePage()",
       "file_type": "code",
       "source_file": "src/views/pages/home-page.tsx",
-      "source_location": "L42",
+      "source_location": "L43",
       "_callable": true,
       "_origin": "ast",
       "id": "src_views_pages_home_page_homepage",
@@ -18811,7 +18811,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/views/pages/home-page.tsx",
-      "source_location": "L42",
+      "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_pages_home_page",
@@ -23503,5 +23503,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "b4f799e1026e61a282d050955a8059f976614021"
+  "built_at_commit": "414481c7f827577c62ffc5a89d7ff5852c69b794"
 }

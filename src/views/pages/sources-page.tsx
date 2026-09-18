@@ -1,5 +1,7 @@
 import type { FormEvent } from 'react'
+import { useLocation } from 'wouter'
 import { useAppViewModel } from '@app/app-store'
+import { detailsPath } from '@app/routes'
 import type { Publication as PublicationView } from '@models/entities/domain'
 import type { Publication as RemotePublication } from '@models/sources/source-adapter'
 import { useSettingsViewModel } from '@view-models/settings-view-model'
@@ -15,7 +17,8 @@ function localPublication(publication: RemotePublication): PublicationView {
 }
 
 export function SourcesPage() {
-  const openPublication = useAppViewModel((state) => state.openPublicationFromSource)
+  const [, navigate] = useLocation()
+  const setActivePublication = useAppViewModel((state) => state.setActivePublication)
   const workerConfigured = useSettingsViewModel((state) => state.workerConfigured)
   const sources = useSourcesViewModel((state) => state.sources)
   const error = useSourcesViewModel((state) => state.error)
@@ -108,7 +111,7 @@ export function SourcesPage() {
         {hasCatalog && <div className="category-shortcuts" aria-label="Catalog lists">{catalogLists.map((list) => <button className={selectedListId === list.id ? 'is-selected' : ''} key={list.id} onClick={() => void loadList(list.id)} type="button">{list.label}</button>)}</div>}
         {!hasCatalog && !hasSearch && <p className="status-note">This source declares neither catalog lists nor search. Open publications from its direct links or local library.</p>}
         {browserIsLoading && <p className="muted" role="status">Loading through Worker…</p>}
-        {publications.map((publication) => <button className="remote-book" key={publication.key} onClick={() => openPublication(localPublication(publication))} type="button"><div><h3>{publication.title}</h3><p>{publication.author ?? 'Unknown author'} · {publication.kind}</p></div><span>Details →</span></button>)}
+        {publications.map((publication) => <button className="remote-book" key={publication.key} onClick={() => { const local = localPublication(publication); setActivePublication(local); navigate(detailsPath(local.key)) }} type="button"><div><h3>{publication.title}</h3><p>{publication.author ?? 'Unknown author'} · {publication.kind}</p></div><span>Details →</span></button>)}
         <InfiniteScrollSentinel hasMore={Boolean(nextCursor)} isLoading={browserIsLoading} label="books" onLoadMore={() => void loadMore()} />
       </section>}
     </>

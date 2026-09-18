@@ -1,16 +1,16 @@
 # Graph Report - pwa  (2026-09-18)
 
 ## Corpus Check
-- 89 files · ~64,233 words
+- 90 files · ~64,687 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 875 nodes · 1152 edges · 76 communities (63 shown, 13 thin omitted)
+- 888 nodes · 1165 edges · 76 communities (62 shown, 14 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8f225a06`
+- Built from commit: `b4f799e1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -42,7 +42,6 @@
 - graphify reference: commit hook and native AGENTS.md integration
 - graphify reference: incremental update and cluster-only
 - backup.ts
-- plugins
 - sources-view-model.ts
 - html-text.ts
 - graphify reference: GitHub clone and cross-repo merge
@@ -86,6 +85,7 @@
 - review-package
 - sdd-workspace
 - task-brief
+- routes.ts
 
 ## God Nodes (most connected - your core abstractions)
 1. `compilerOptions` - 19 edges
@@ -104,17 +104,17 @@
   worker/test/miniflare.mjs → package.json
 - `listLibrary()` --references--> `PublicationDocument`  [EXTRACTED]
   src/services/library-service.ts → src/models/database/schemas.ts
-- `getLocalChapters()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/publication-sync-service.ts → src/models/database/schemas.ts
-- `syncPublicationNow()` --references--> `ChapterDocument`  [EXTRACTED]
-  src/services/publication-sync-service.ts → src/models/database/schemas.ts
 - `deleteChapterCache()` --references--> `ChapterDocument`  [EXTRACTED]
   src/services/book-content-service.ts → src/models/database/schemas.ts
+- `downloadChapterNow()` --references--> `ChapterDocument`  [EXTRACTED]
+  src/services/book-content-service.ts → src/models/database/schemas.ts
+- `getLocalChapters()` --references--> `ChapterDocument`  [EXTRACTED]
+  src/services/publication-sync-service.ts → src/models/database/schemas.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (76 total, 13 thin omitted)
+## Communities (76 total, 14 thin omitted)
 
 ### Community 0 - "opfs-rx-storage.ts"
 Cohesion: 0.09
@@ -125,8 +125,8 @@ Cohesion: 0.03
 Nodes (63): AppSettingsDocument, AppSettingsDocumentSchema, appSettingsSchema, CachedResourceDocument, CachedResourceSchema, CacheState, cacheStateSchema, catalogSchema (+55 more)
 
 ### Community 2 - "app.tsx"
-Cohesion: 0.08
-Nodes (30): react, Tab, TabLayout(), TabLayoutProps, tabs, BookDetailsPage(), BookIndexPage(), HomePage() (+22 more)
+Cohesion: 0.05
+Nodes (39): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema, oxc, react, typescript (+31 more)
 
 ### Community 3 - "What You Must Do When Invoked"
 Cohesion: 0.08
@@ -137,8 +137,8 @@ Cohesion: 0.06
 Nodes (34): DOM, src, ./src/app/*, ./src/models/*, ./src/services/*, ./src/view-models/*, ./src/views/*, vite/client (+26 more)
 
 ### Community 5 - "dependencies"
-Cohesion: 0.08
-Nodes (25): dependencies, react, react-dom, rxdb, @sinclair/typebox, @tanstack/react-virtual, vite-plugin-pwa, zustand (+17 more)
+Cohesion: 0.07
+Nodes (27): dependencies, react, react-dom, rxdb, @sinclair/typebox, @tanstack/react-virtual, vite-plugin-pwa, wouter (+19 more)
 
 ### Community 6 - "generic-json-adapter.ts"
 Cohesion: 0.22
@@ -153,8 +153,8 @@ Cohesion: 0.07
 Nodes (28): @cloudflare/vite-plugin, miniflare, oxlint, devDependencies, @cloudflare/vite-plugin, miniflare, oxlint, @types/node (+20 more)
 
 ### Community 9 - "book-content-service.ts"
-Cohesion: 0.16
-Nodes (25): ChapterCacheDocument, ChapterDocument, CacheManifest, CacheManifestResource, cacheResource(), cacheState(), cancelDownload(), createOrMergeCache() (+17 more)
+Cohesion: 0.17
+Nodes (24): ChapterCacheDocument, CacheManifest, CacheManifestResource, cacheResource(), cacheState(), cancelDownload(), createOrMergeCache(), deleteChapterCache() (+16 more)
 
 ### Community 10 - "6. User experience"
 Cohesion: 0.18
@@ -220,10 +220,6 @@ Nodes (3): For git commit hook, For native AGENTS.md integration, graphify refer
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
-### Community 29 - "plugins"
-Cohesion: 0.22
-Nodes (8): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema, oxc, typescript, warn
-
 ### Community 30 - "sources-view-model.ts"
 Cohesion: 0.29
 Nodes (5): closedForm(), emptyDefinition(), SourceForm, SourcesViewModel, useSourcesViewModel
@@ -237,8 +233,8 @@ Cohesion: 0.60
 Nodes (5): bulkInsertOrThrow(), downloadBackup(), getDatabase(), importBackupFile(), validateBackup()
 
 ### Community 40 - "publication-sync-service.ts"
-Cohesion: 0.18
-Nodes (15): getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow(), publicationWrites (+7 more)
+Cohesion: 0.17
+Nodes (16): ChapterDocument, getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow() (+8 more)
 
 ### Community 43 - "Bookshelf Reader Technical Specification"
 Cohesion: 0.20
@@ -332,10 +328,6 @@ Nodes (6): Bindings, Bookshelf Reader Worker, Local development, Production conf
 Cohesion: 0.53
 Nodes (4): chapterKey(), encodeKey(), publicationKey(), resourceKey()
 
-### Community 66 - "app-store.ts"
-Cohesion: 0.33
-Nodes (5): AppScreen, AppViewModel, ReaderReturnScreen, Tab, useAppViewModel
-
 ### Community 68 - "Workflow Patterns"
 Cohesion: 0.22
 Nodes (8): Before interacting with a page, Core Concepts, Efficient data retrieval, Parallel execution, Testing an extension, Tool selection, Troubleshooting, Workflow Patterns
@@ -348,20 +340,24 @@ Nodes (4): defaultAppSettings, getCollection(), loadAppSettings(), savePersisten
 Cohesion: 0.60
 Nodes (4): defaultReaderSettings, getReaderSettingsCollection(), loadReaderSettings(), saveReaderSettings()
 
+### Community 76 - "routes.ts"
+Cohesion: 0.33
+Nodes (3): indexPath(), readerPath(), Tab
+
 ## Knowledge Gaps
 - **412 isolated node(s):** `$schema`, `typescript`, `oxc`, `react/rules-of-hooks`, `warn` (+407 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **14 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ChapterDocument` connect `book-content-service.ts` to `publication-sync-service.ts`, `schemas.ts`?**
-  _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **Why does `react` connect `app.tsx` to `index.ts`, `reader-page.tsx`, `plugins`?**
+- **Why does `react` connect `app.tsx` to `index.ts`, `reader-page.tsx`?**
+  _High betweenness centrality (0.009) - this node is a cross-community bridge._
+- **Why does `ChapterDocument` connect `publication-sync-service.ts` to `schemas.ts`, `book-content-service.ts`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
 - **Why does `PublicationDocument` connect `library-service.ts` to `schemas.ts`?**
-  _High betweenness centrality (0.007) - this node is a cross-community bridge._
+  _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **What connects `$schema`, `typescript`, `oxc` to the rest of the system?**
   _412 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `opfs-rx-storage.ts` be split into smaller, more focused modules?**
@@ -369,4 +365,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `schemas.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.03076923076923077 - nodes in this community are weakly interconnected._
 - **Should `app.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.08156028368794327 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05478750640040963 - nodes in this community are weakly interconnected._

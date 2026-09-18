@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useLocation, useSearchParams } from 'wouter'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useAppViewModel } from '@app/app-store'
+import { indexPath } from '@app/routes'
 import type { ReadingLocator } from '@models/database/schemas'
 import type { Chapter, Publication } from '@models/entities/domain'
 import { downloadChapter, type ReaderSection } from '@services/book-content-service'
@@ -9,11 +11,10 @@ import { useReaderViewModel, type ReaderChapterContent } from '@view-models/read
 const emptySections: ReaderSection[] = []
 
 export function ReaderPage() {
+  const [, navigate] = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const publication = useAppViewModel((state) => state.activePublication)
-  const requestedChapterId = useAppViewModel((state) => state.requestedChapterId)
-  const clearRequestedChapter = useAppViewModel((state) => state.clearRequestedChapter)
-  const closeReader = useAppViewModel((state) => state.closeReader)
-  const openIndex = useAppViewModel((state) => state.openIndex)
+  const requestedChapterId = searchParams.get('chapter') ?? undefined
   const settings = useReaderViewModel((state) => state.settings)
   const chapters = useReaderViewModel((state) => state.chapters)
   const chapterIndex = useReaderViewModel((state) => state.chapterIndex)
@@ -49,7 +50,7 @@ export function ReaderPage() {
   const chapterNavigationRef = useRef(false)
   const scrollVersionRef = useRef(0)
   const restoredLocatorRef = useRef<string | undefined>(undefined)
-  const [controlsOpen, setControlsOpen] = useState(false)
+  const controlsOpen = searchParams.get('controls') === '1'
   const [readerScrollMargin, setReaderScrollMargin] = useState(0)
   const [downloadMode, setDownloadMode] = useState<'all' | 'next' | undefined>()
   const [downloadStatus, setDownloadStatus] = useState<string>()
@@ -87,8 +88,12 @@ export function ReaderPage() {
 
   useEffect(() => {
     if (!publication) return
-    void openPublication(publication, requestedChapterId).then(() => { if (requestedChapterId) clearRequestedChapter() })
-  }, [clearRequestedChapter, openPublication, publication, requestedChapterId])
+    let cancelled = false
+    void openPublication(publication, requestedChapterId).then(() => {
+      if (!cancelled && requestedChapterId) setSearchParams((current) => { current.delete('chapter'); return current }, { replace: true })
+    })
+    return () => { cancelled = true }
+  }, [openPublication, publication, requestedChapterId, setSearchParams])
   useEffect(() => {
     userScrolledRef.current = false
     restoredLocatorRef.current = undefined
@@ -219,10 +224,13 @@ export function ReaderPage() {
     })
   }, [chapterIndex, chapters, hasMoreChapters, loadAdjacentChapter, publication])
 
+  const openControls = useCallback(() => {
+    setSearchParams((current) => { current.set('controls', '1'); return current })
+  }, [setSearchParams])
   const closeControls = useCallback(() => {
-    setControlsOpen(false)
+    setSearchParams((current) => { current.delete('controls'); return current }, { replace: true })
     window.requestAnimationFrame(() => controlsTriggerRef.current?.focus())
-  }, [])
+  }, [setSearchParams])
 
   const navigateChapter = useCallback(async (direction: 'previous' | 'next') => {
     if (!publication || !chapter) return
@@ -281,18 +289,18 @@ export function ReaderPage() {
     if (selection && !selection.isCollapsed) return
     const target = event.target
     if (!(target instanceof Element) || target.closest('a, button, input, select, textarea, summary, img, video, [contenteditable="true"]')) return
-    setControlsOpen(true)
-  }, [])
+    openControls()
+  }, [openControls])
 
   const leaveReader = useCallback(() => {
     closeControls()
     closeBook()
-    closeReader()
-  }, [closeBook, closeControls, closeReader])
+    window.history.back()
+  }, [closeBook, closeControls])
   const openChapterIndex = useCallback(() => {
     closeControls()
-    openIndex()
-  }, [closeControls, openIndex])
+    if (publication) navigate(indexPath(publication.key))
+  }, [closeControls, navigate, publication])
   const retryBoundary = useCallback((direction: 'previous' | 'next', chapterId: string) => {
     if (publication) void loadAdjacentChapter(publication, direction, chapterId)
   }, [loadAdjacentChapter, publication])
@@ -310,7 +318,7 @@ export function ReaderPage() {
 
   return <main className={`reader reader-${effectiveTheme} reader-${settings.contentWidth}`} style={{ fontSize: `${settings.fontSize}px`, lineHeight: settings.lineHeight }}>
     {isLoading || isLoadingChapter ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : error && !hasContent ? <section className="reader-status"><h1>Could not prepare this chapter</h1><p>{error}</p><button className="primary-button" onClick={() => void openPublication(publication, requestedChapterId)} type="button">Try again</button><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : readerChapters.length > 0 ? <article className="reader-content" onClick={handleReaderClick} ref={contentRef}>
-      <button className="visually-hidden reader-controls-trigger" onClick={() => setControlsOpen(true)} ref={controlsTriggerRef} type="button">Open reader controls</button>
+      <button className="visually-hidden reader-controls-trigger" onClick={openControls} ref={controlsTriggerRef} type="button">Open reader controls</button>
       <div className="reader-virtual-canvas" ref={readerCanvasRef} style={{ height: readerVirtualizer.getTotalSize() }}>
         {readerVirtualItems.map((virtualRow) => {
           const entry = readerChapters[virtualRow.index]

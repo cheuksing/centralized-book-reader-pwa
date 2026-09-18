@@ -1,8 +1,20 @@
+import { copyFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { VitePWA } from 'vite-plugin-pwa'
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
+
+function spaFallback(): Plugin {
+  return {
+    name: 'spa-fallback',
+
+    writeBundle(options) {
+      if (options.dir) return copyFile(join(options.dir, 'index.html'), join(options.dir, '404.html'))
+    },
+  }
+}
 
 export default defineConfig(({ command, mode }) => {
   const env = { ...loadEnv('defaults', process.cwd(), ''), ...loadEnv(mode, process.cwd(), ''), ...process.env }
@@ -13,6 +25,7 @@ export default defineConfig(({ command, mode }) => {
       'import.meta.env.VITE_WORKER_TOKEN': JSON.stringify(env.WORKER_ACCESS_TOKEN ?? ''),
     },
     plugins: [
+      spaFallback(),
       tsconfigPaths(),
       react(),
       ...(command === 'serve' ? [cloudflare({

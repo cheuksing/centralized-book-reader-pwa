@@ -28,7 +28,6 @@
   "26": "graphify reference: commit hook and native AGENTS.md integration",
   "27": "graphify reference: incremental update and cluster-only",
   "28": "backup.ts",
-  "29": "plugins",
   "30": "sources-view-model.ts",
   "31": "html-text.ts",
   "32": "graphify reference: GitHub clone and cross-repo merge",
@@ -74,5 +73,6 @@
   "72": "source-browser-view-model.ts",
   "73": "review-package",
   "74": "sdd-workspace",
-  "75": "task-brief"
+  "75": "task-brief",
+  "76": "routes.ts"
 }

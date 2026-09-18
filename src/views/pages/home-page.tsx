@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'wouter'
 import { useAppViewModel } from '@app/app-store'
+import { readerPath } from '@app/routes'
 import type { Publication } from '@models/entities/domain'
 import { clearHistory, removeHistoryEntry } from '@services/library-service'
 import { useHomeViewModel } from '@view-models/home-view-model'
@@ -12,7 +14,8 @@ type LibraryList = 'recent' | 'bookmarks' | 'downloads'
 function PublicationRow({ publication, list }: { publication: Publication; list: LibraryList }) {
   const toggleBookmark = useHomeViewModel((state) => state.toggleBookmark)
   const refresh = useHomeViewModel((state) => state.refresh)
-  const openPublication = useAppViewModel((state) => state.openPublicationFromHome)
+  const [, navigate] = useLocation()
+  const setActivePublication = useAppViewModel((state) => state.setActivePublication)
   const availability = publication.availability === 'available' ? 'available offline' : publication.availability === 'partial' ? 'partly offline' : 'not cached'
 
   return (
@@ -23,7 +26,7 @@ function PublicationRow({ publication, list }: { publication: Publication; list:
       ]}
       ariaLabel={`Open ${publication.title}`}
       className="book-row"
-      onItemPress={() => openPublication(publication)}
+      onItemPress={() => { setActivePublication(publication); navigate(readerPath(publication.key)) }}
     >
       <PublicationCover kind={publication.kind} />
       <div className="book-details">

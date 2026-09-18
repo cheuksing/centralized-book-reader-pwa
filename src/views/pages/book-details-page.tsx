@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'wouter'
 import { ActionDisclosure } from '../ui/action-disclosure'
 import { InfiniteScrollSentinel } from '../ui/infinite-scroll-sentinel'
 import { PageHeader } from '../ui/page-header'
@@ -6,16 +7,15 @@ import { PublicationCover } from '../ui/publication-cover'
 import { SectionHeading } from '../ui/section-heading'
 import { useReaderViewModel } from '@view-models/reader-view-model'
 import { useAppViewModel } from '@app/app-store'
+import { readerPath } from '@app/routes'
 import type { Chapter } from '@models/entities/domain'
 import { downloadChapter, deleteChapterCache, pauseDownload, resumeDownload, cancelDownload } from '@services/book-content-service'
 import { togglePublicationBookmark, loadPublicationCover } from '@services/library-service'
 import { getLocalChapters, getSourceForPublication, persistPublication, syncPublication } from '@services/publication-sync-service'
 
 export function BookDetailsPage() {
+  const [, navigate] = useLocation()
   const publication = useAppViewModel((state) => state.activePublication)
-  const closeDetails = useAppViewModel((state) => state.closeDetails)
-  const startReading = useAppViewModel((state) => state.startReading)
-  const jumpToChapter = useAppViewModel((state) => state.jumpToChapter)
   const updateActivePublication = useAppViewModel((state) => state.updateActivePublication)
   const setChapterNextCursor = useReaderViewModel((state) => state.setChapterNextCursor)
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -24,6 +24,10 @@ export function BookDetailsPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string>()
   const [cover, setCover] = useState<{ publicationKey: string; url?: string }>()
+
+  function closeDetails() { window.history.back() }
+  function startReading() { if (publication) navigate(readerPath(publication.key)) }
+  function jumpToChapter(chapterId: string) { if (publication) navigate(readerPath(publication.key, chapterId)) }
 
   useEffect(() => {
     if (!publication) return

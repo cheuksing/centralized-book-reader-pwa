@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLocation } from 'wouter'
 import { defaultRangeExtractor, useWindowVirtualizer, type Range } from '@tanstack/react-virtual'
 import { useAppViewModel } from '@app/app-store'
+import { readerPath } from '@app/routes'
 import { useReaderViewModel } from '@view-models/reader-view-model'
 import { InfiniteScrollSentinel } from '../ui/infinite-scroll-sentinel'
 import { PageHeader } from '../ui/page-header'
 
 export function BookIndexPage() {
+  const [, navigate] = useLocation()
   const publication = useAppViewModel((state) => state.activePublication)
-  const closeIndex = useAppViewModel((state) => state.closeIndex)
-  const jumpToChapter = useAppViewModel((state) => state.jumpToChapter)
   const chapters = useReaderViewModel((state) => state.chapters)
   const chapterIndex = useReaderViewModel((state) => state.chapterIndex)
   const readerPublicationKey = useReaderViewModel((state) => state.publicationKey)
   const chapterNextCursor = useReaderViewModel((state) => state.chapterNextCursor)
   const chapterCursorPublicationKey = useReaderViewModel((state) => state.chapterCursorPublicationKey)
+  const openPublication = useReaderViewModel((state) => state.openPublication)
   const isLoadingMoreChapters = useReaderViewModel((state) => state.isLoadingMoreChapters)
   const loadMoreChapters = useReaderViewModel((state) => state.loadMoreChapters)
   const canvasRef = useRef<HTMLOListElement>(null)
@@ -42,6 +44,11 @@ export function BookIndexPage() {
   })
   const virtualItems = virtualizer.getVirtualItems()
   const lastVirtualItem = virtualItems.at(-1)
+
+  useEffect(() => {
+    if (!publication || readerPublicationKey === publication.key) return
+    void openPublication(publication)
+  }, [openPublication, publication, readerPublicationKey])
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current
@@ -75,6 +82,8 @@ export function BookIndexPage() {
   }, [chapters.length, hasMoreChapters, isLoadingMoreChapters, lastVirtualItem?.index, loadMore])
 
   if (!publication) return null
+  const closeIndex = () => window.history.back()
+  const jumpToChapter = (chapterId: string) => navigate(readerPath(publication.key, chapterId))
 
   return <main className="book-index-page">
     <header className="index-header"><button onClick={closeIndex} type="button">← Reader</button></header>

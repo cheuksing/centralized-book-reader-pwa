@@ -335,7 +335,7 @@ function rxSchema<T extends TSchema>(document: T, metadata: Omit<RxJsonSchema<St
 }
 
 export const sourceSchema = rxSchema(SourceDocumentSchema, { title: 'source definition', version: 0, primaryKey: 'id', indexes: ['name', 'enabled', 'baseUrl'] })
-export const publicationSchema = rxSchema(PublicationDocumentSchema, { title: 'publication metadata', version: 0, primaryKey: 'key', indexes: [['sourceId', 'title'], ['sourceId', 'createdAt']], attachments: {} })
+export const publicationSchema = rxSchema(PublicationDocumentSchema, { title: 'publication metadata', version: 1, primaryKey: 'key', indexes: [['sourceId', 'title'], ['sourceId', 'createdAt']], attachments: {} })
 export const chapterSchema = rxSchema(ChapterDocumentSchema, { title: 'publication chapter index', version: 0, primaryKey: 'key', indexes: [['publicationId', 'order'], ['publicationId', 'removedFromSource']] })
 export const publicationBookmarkSchema = rxSchema(PublicationBookmarkDocumentSchema, { title: 'publication bookmark', version: 0, primaryKey: 'id', indexes: ['publicationKey'] })
 export const readingHistorySchema = rxSchema(ReadingHistoryDocumentSchema, { title: 'reading history', version: 0, primaryKey: 'id', indexes: [['openedAt', 'publicationKey']] })

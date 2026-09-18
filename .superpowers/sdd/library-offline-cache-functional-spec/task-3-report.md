@@ -245,3 +245,221 @@ The three zero-node warnings are configuration/non-source artifacts and are unre
 - The persisted count is the non-removed chapter rows known after each pagination write. A source changing its index while pages are being fetched can make that persisted lower bound stale until a later synchronization; it is never presented as complete while `nextCursor` exists.
 - `graphify update .` left the existing/generated `graphify-out/.graphify_labels.json`, `.graphify_labels.json.sig`, `GRAPH_REPORT.md`, `graph.html`, and `graph.json` changes in the working tree. They are deliberately not staged.
 - The project-wide diagnostics tool still reports unrelated configuration diagnostics in `package.json`, `.cursor/mcp.json`, and `.mcp.json`; build, lint, and all changed-file diagnostics are clean.
+
+## Round 1 fixes
+
+### Status
+
+Implemented the two Round 1 fixes. The prior statement that the optional publication metadata required no migration/reset was incorrect and is superseded by the versioned RxDB migration described below.
+
+### Changed files
+
+- `src/models/database/schemas.ts`
+  - Bumped only `publicationSchema` from version `0` to version `1` because the optional chapter-index metadata changes the RxDB schema hash.
+
+- `src/models/database/opfs-database.ts`
+  - Registered the installed `RxDBMigrationSchemaPlugin`.
+  - Added `migrationStrategies: { 1: (document) => document }` to the `publications` collection.
+  - The identity strategy preserves every existing publication field, including documents written before the metadata existed; the new fields remain optional.
+  - Other collection versions and strategies are unchanged.
+
+- `src/services/library-service.ts`
+  - Kept current-chapter lookup over all local chapter rows so cached `removedFromSource` entries remain readable and progress still identifies the current chapter.
+  - Added a source-order active list filtered to non-removed rows.
+  - Uses the active-list position for chapter number and remaining-count arithmetic.
+  - If the current chapter itself is removed, its local title/identification remains available, its local position is retained for display, and active-source remaining arithmetic is omitted.
+  - `countReadyAhead` continues to receive the readable local chapter rows, preserving existing cache/read-ahead behavior.
+
+- `src/services/library-service.check.ts`
+  - Added an executable projection check covering a removed chapter before the current chapter, exact remaining arithmetic, active-source chapter numbering, and a removed current chapter.
+
+- `.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md`
+  - Appended this Round 1 fix report. The path remains force-added because `.superpowers/sdd/.gitignore` ignores the report directory.
+
+### Findings addressed
+
+#### RxDB migration compatibility
+
+RxDB's installed migration API was inspected before implementation:
+
+- `node_modules/rxdb/plugins/migration-schema/index.d.mts` re-exports the migration plugin types.
+- `node_modules/rxdb/dist/types/plugins/migration-schema/migration-types.d.ts:5` declares `RxDBMigrationSchemaPlugin`.
+- `node_modules/rxdb/dist/types/types/rx-collection.d.ts:28-33` accepts `migrationStrategies` on collection creation.
+- `node_modules/rxdb/dist/types/types/rx-schema.d.ts:234-238` requires a schema version increase and a strategy for each version step when an existing collection schema changes.
+- `node_modules/rxdb/dist/cjs/rx-collection.js:955` shows that collection creation auto-runs `migratePromise()` by default for nonzero schema versions.
+
+The publication collection now therefore opens an existing OPFS generation through RxDB's preserving v0-to-v1 migration instead of presenting the changed schema as an incompatible version-0 collection. This preserves local publication data rather than requiring a generation reset.
+
+#### Removed chapters and remaining counts
+
+`publication-sync-service.ts` already persists `knownChapterCount` as the number of non-removed chapter rows. The Library projection now uses the same rule for the current position: it finds the current chapter in all local rows, then finds that chapter's position in `chapters.filter((chapter) => !chapter.removedFromSource)`. A removed row before the current chapter no longer consumes one of the known active chapters, so exact and lower-bound remaining counts stay aligned with the sync metadata. Removed rows are not deleted from the local projection, and a removed current chapter remains identifiable while its active-source count is omitted.
+
+### Checks and commands
+
+#### Focused projection check
+
+Command:
+
+```text
+node_modules/.bin/esbuild src/services/library-service.check.ts --bundle --platform=node --format=esm --outfile=dist/library-service.check.mjs --tsconfig=tsconfig.app.json && node dist/library-service.check.mjs
+```
+
+Output:
+
+```text
+dist/library-service.check.mjs  1.9mb ⚠️
+
+⚡ Done in 130ms
+library projection checks passed
+```
+
+The bundle is large because the check imports the existing Library service and its dependency graph; it is emitted only under ignored `dist/` and is not production output.
+
+#### Existing focused checks
+
+Commands:
+
+```text
+node_modules/.bin/esbuild src/models/cache/cache-policy.check.ts --bundle --platform=node --format=esm --outfile=dist/cache-policy.check.mjs --tsconfig=tsconfig.app.json && node dist/cache-policy.check.mjs
+node_modules/.bin/esbuild src/services/cache-preparation.check.ts --bundle --platform=node --format=esm --outfile=dist/cache-preparation.check.mjs --tsconfig=tsconfig.app.json && node dist/cache-preparation.check.mjs
+```
+
+Outputs:
+
+```text
+dist/cache-policy.check.mjs  6.7kb
+
+⚡ Done in 4ms
+cache policy checks passed
+
+dist/cache-preparation.check.mjs  10.8kb
+
+⚡ Done in 6ms
+cache preparation checks passed
+```
+
+#### Build
+
+Command:
+
+```text
+npm run build
+```
+
+Output:
+
+```text
+> pwa@0.0.0 build
+> tsc -b && vite build
+
+▲ [WARNING] Proxy environment variables detected. We'll use your proxy for fetch requests.
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+vite v8.3.0 building client environment for production...
+✓ 1027 modules transformed.
+✓ built in 320ms
+
+PWA v1.3.0
+mode      generateSW
+precache  13 entries (816.47 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-9c191d2f.js
+```
+
+Exit code: `0`.
+
+#### Lint
+
+Command:
+
+```text
+npm run lint
+```
+
+Output:
+
+```text
+> pwa@0.0.0 lint
+> oxlint
+
+Found 0 warnings and 0 errors.
+Finished in 49ms on 57 files with 116 rules using 12 threads.
+```
+
+Exit code: `0`.
+
+#### Diagnostics
+
+Changed-file diagnostics were run for each of:
+
+```text
+src/models/database/schemas.ts
+src/models/database/opfs-database.ts
+src/services/library-service.ts
+src/services/library-service.check.ts
+```
+
+Each returned:
+
+```text
+Diagnostics successfully refreshed.
+File doesn't have errors or warnings!
+```
+
+The project-wide summary returned these unrelated JSON diagnostics:
+
+```text
+/Users/mxalg0007/Code/pwa/graphify-out/.graphify_labels.json: 1 error(s), 0 warning(s)
+/Users/mxalg0007/Code/pwa/package.json: 1 error(s), 0 warning(s)
+/Users/mxalg0007/Code/pwa/.cursor/mcp.json: 1 error(s), 0 warning(s)
+/Users/mxalg0007/Code/pwa/graphify-out/graph.json: 1 error(s), 0 warning(s)
+/Users/mxalg0007/Code/pwa/.mcp.json: 1 error(s), 0 warning(s)
+/Users/mxalg0007/Code/pwa/node_modules/rxdb/plugins/migration-schema/package.json: 1 error(s), 0 warning(s)
+```
+
+#### Whitespace and Graphify refresh
+
+Command:
+
+```text
+git --no-pager diff --check -- src/models/database/opfs-database.ts src/models/database/schemas.ts src/services/library-service.ts
+```
+
+Output: no output; exit code `0`.
+
+Command:
+
+```text
+graphify update .
+```
+
+Output:
+
+```text
+Re-extracting code files in . (no LLM needed)...
+  AST extraction: 60/60 uncached files (100%) [12 workers]
+  warning: 3 source file(s) produced zero nodes and are absent from the graph: settings.json, czbooks.json, skills-lock.json. A re-run will retry them (empties are no longer cached); if it persists, please report the file(s) (#1666).
+[graphify watch] community set changed since labeling (99 saved labels, 97 communities now; renamed 6 community(ies) by their hub). Run `graphify label` to refresh names with the LLM.
+[graphify] backed up curated graph (4 files) -> 2026-09-18/
+[graphify watch] Rebuilt: 1112 nodes, 1511 edges, 97 communities
+[graphify watch] graph.json, graph.html and GRAPH_REPORT.md updated in graphify-out
+Code graph updated. For doc/paper/image changes run /graphify --update in your AI assistant.
+Tip: set GEMINI_API_KEY or GOOGLE_API_KEY to use Gemini for semantic extraction.
+```
+
+### Self-review
+
+- Only the `publications` collection version changed; all other collections retain their existing schemas and no database generation reset was added.
+- The v1 identity strategy preserves old publication documents and allows the new fields to remain absent.
+- Removed chapter rows remain in the readable projection, while remaining counts use the same non-removed definition as sync metadata.
+- The current chapter is identified before filtering; a removed current chapter cannot produce a misleading active-source count.
+- No `app.tsx`, reader index/details/reader screen, Task 1 interface, or Task 2 cache/openability behavior was changed.
+- Existing cache, bookmark, history, progress, cover, and pruning operations remain independent.
+
+### Concerns
+
+- No browser-backed OPFS/RxDB migration integration test was added. The installed RxDB API and TypeScript build validate the migration wiring, while a real old OPFS generation should still be exercised in browser QA.
+- The projection check imports the full Library service, so its temporary Node bundle is approximately 1.9 MB; this does not affect the production bundle.
+- The project-wide diagnostics still report unrelated JSON errors in generated Graphify files, project configuration, and the installed RxDB plugin package. All changed source-file diagnostics, build, lint, and executable checks are clean.
+- Graphify left its expected generated changes in `graphify-out/`; they remain intentionally unstaged.

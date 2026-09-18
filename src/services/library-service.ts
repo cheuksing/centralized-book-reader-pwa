@@ -213,11 +213,13 @@ async function prunePublication(publicationKey: string): Promise<void> {
   if (publication) await publication.remove()
 }
 
-function toPublication(document: PublicationDocument, bookmarked: boolean, historyOpenedAt: string | undefined, progressDocument: { locator: ReadingLocator; updatedAt: string } | undefined, cache: { available: boolean; partial: boolean } | undefined, chapters: ChapterDocument[], cacheStateByChapterKey: ReadonlyMap<string, CacheState>): Publication {
+export function toPublication(document: PublicationDocument, bookmarked: boolean, historyOpenedAt: string | undefined, progressDocument: { locator: ReadingLocator; updatedAt: string } | undefined, cache: { available: boolean; partial: boolean } | undefined, chapters: ChapterDocument[], cacheStateByChapterKey: ReadonlyMap<string, CacheState>): Publication {
   const currentChapter = progressDocument ? chapters.find((chapter) => chapter.chapterId === progressDocument.locator.chapterId) : undefined
   const currentChapterIndex = currentChapter ? chapters.indexOf(currentChapter) : -1
+  const sourceChapters = chapters.filter((chapter) => !chapter.removedFromSource)
+  const currentSourceChapterIndex = currentChapter ? sourceChapters.findIndex((chapter) => chapter.chapterId === currentChapter.chapterId) : -1
   const remaining = calculateRemainingCount({
-    knownRemaining: document.knownChapterCount === undefined ? Number.NaN : document.knownChapterCount - currentChapterIndex - 1,
+    knownRemaining: document.knownChapterCount === undefined || currentSourceChapterIndex < 0 ? Number.NaN : document.knownChapterCount - currentSourceChapterIndex - 1,
     indexKnowledge: document.chapterIndexKnowledge ?? 'unknown',
   })
   const readyAhead = countReadyAhead(currentChapter, chapters.map((chapter) => ({
@@ -228,7 +230,7 @@ function toPublication(document: PublicationDocument, bookmarked: boolean, histo
   })))
   const currentChapterProjection = currentChapter ? {
     title: currentChapter.title,
-    number: currentChapterIndex + 1,
+    number: (currentSourceChapterIndex >= 0 ? currentSourceChapterIndex : currentChapterIndex) + 1,
     ...(remaining.kind === 'omitted' ? {} : { remaining }),
     ...(readyAhead > 0 ? { readyAhead } : {}),
   } : undefined

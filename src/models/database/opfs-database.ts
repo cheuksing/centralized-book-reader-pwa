@@ -1,6 +1,7 @@
 import { addRxPlugin, createRxDatabase, type RxCollection, type RxDatabase } from 'rxdb'
 import { RxDBAttachmentsPlugin } from 'rxdb/plugins/attachments'
 import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode'
+import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema'
 import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
 import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv'
 import { getRxStorageOPFS } from '@models/database/opfs-rx-storage'
@@ -43,6 +44,7 @@ export type ReaderCollections = {
 export type ReaderDatabase = RxDatabase<ReaderCollections>
 
 addRxPlugin(RxDBAttachmentsPlugin)
+addRxPlugin(RxDBMigrationSchemaPlugin)
 addRxPlugin(RxDBQueryBuilderPlugin)
 
 export class ActiveReaderInstanceError extends Error {
@@ -160,7 +162,12 @@ async function createDatabase(databaseName: string): Promise<ReaderDatabase> {
     chapters: { schema: chapterSchema },
     downloadJobs: { schema: downloadJobSchema },
     publicationBookmarks: { schema: publicationBookmarkSchema },
-    publications: { schema: publicationSchema },
+    publications: {
+      schema: publicationSchema,
+      migrationStrategies: {
+        1: (document) => document,
+      },
+    },
     readerSettings: { schema: readerSettingsSchema },
     readingHistory: { schema: readingHistorySchema },
     readingProgress: { schema: readingProgressSchema },

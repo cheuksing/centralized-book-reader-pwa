@@ -56,9 +56,10 @@ const busyChapterKeys = new Set<string>()
 const volatileResources = new Map<string, { blob: Blob; mimeType: string }>()
 const activeCacheMutations = new Set<Promise<unknown>>()
 let cacheClearInProgress = false
+let cacheClearGeneration = 0
 subscribeToOfflineCacheClear(() => volatileResources.clear())
-subscribeToOfflineCacheClearStart(() => { cacheClearInProgress = true })
-subscribeToOfflineCacheClearFinish(() => { cacheClearInProgress = false })
+subscribeToOfflineCacheClearStart(() => { cacheClearInProgress = true; cacheClearGeneration += 1 })
+subscribeToOfflineCacheClearFinish(() => { cacheClearInProgress = false; cacheClearGeneration += 1 })
 let nextPreparingChapterKey: string | undefined
 let preparationOperation: Promise<ChapterPreparationResult> | undefined
 subscribeToOfflineCacheClearBarrier(async () => {
@@ -85,10 +86,10 @@ class CacheClearInProgressError extends Error {
   }
 }
 
-function withCacheMutation<T>(operation: () => Promise<T>): Promise<T> {
-  if (cacheClearInProgress) return Promise.reject(new CacheClearInProgressError())
+function withCacheMutation<T>(operation: () => Promise<T>, expectedGeneration = cacheClearGeneration): Promise<T> {
+  if (cacheClearInProgress || expectedGeneration !== cacheClearGeneration) return Promise.reject(new CacheClearInProgressError())
   const mutation = Promise.resolve().then(() => {
-    if (cacheClearInProgress) throw new CacheClearInProgressError()
+    if (cacheClearInProgress || expectedGeneration !== cacheClearGeneration) throw new CacheClearInProgressError()
     return operation()
   })
   activeCacheMutations.add(mutation)
@@ -108,9 +109,10 @@ export async function loadChapterContent(publication: PublicationDocument, chapt
   const online = isBrowserOnline()
   if (!cache || cache.resources.length === 0) {
     if (!online) throw new Error('This chapter is unavailable offline.')
+    const cacheCreationGeneration = cacheClearGeneration
     const manifest = await sourceAdapterFor(source.toJSON()).getChapterManifest(source.toJSON(), publication.publicationId, chapter.chapterId)
     try {
-      cache = await createOrMergeCache(chapter, manifest, { currentlyOpenChapterKey: chapter.key })
+      cache = await createOrMergeCache(chapter, manifest, { currentlyOpenChapterKey: chapter.key }, cacheCreationGeneration)
     } catch (error) {
       if (!isQuotaStorageError(error) && !isCacheClearInProgressError(error)) throw error
       if (isQuotaStorageError(error)) notifyStorageFailure()
@@ -540,8 +542,8 @@ function transientCacheFor(chapter: ChapterDocument, manifest: CacheManifest): C
   }
 }
 
-async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}): Promise<RxDocument<ChapterCacheDocument>> {
-  return withCacheMutation(() => createOrMergeCacheNow(chapter, manifest, protection))
+async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}, expectedGeneration = cacheClearGeneration): Promise<RxDocument<ChapterCacheDocument>> {
+  return withCacheMutation(() => createOrMergeCacheNow(chapter, manifest, protection), expectedGeneration)
 }
 
 async function createOrMergeCacheNow(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}): Promise<RxDocument<ChapterCacheDocument>> {

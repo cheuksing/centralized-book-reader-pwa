@@ -127,6 +127,7 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
         const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : undefined
         const hasValidUsage = isValidStorageUsage(estimate?.usage)
         const storagePressure = interpretStoragePressure(estimate)
+        const hasValidPressure = storagePressure !== 'unknown'
         set({
           storageEstimate: estimate,
           storagePressure,
@@ -134,7 +135,7 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
           storageEstimateStatus: hasValidUsage ? '' : 'Storage estimate is unavailable.',
           ...(summary ? { cachedBytes: summary.cachedBytes, cachedChapterCount: summary.cachedChapterCount, removedFromSourceCount: summary.removedFromSourceCount } : { cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined }),
         })
-        return hasValidUsage
+        return hasValidPressure
       })().catch(() => {
         set({ storageEstimate: undefined, storagePressure: 'unknown', storagePressureStatus: 'Storage pressure is unknown.', storageEstimateStatus: 'Storage estimate is unavailable.', cachedBytes: undefined, cachedChapterCount: 0, removedFromSourceCount: undefined })
         return false

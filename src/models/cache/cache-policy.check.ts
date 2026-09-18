@@ -5,7 +5,7 @@ import {
   interpretStoragePressure,
   orderEvictionCandidates,
   type CacheEvictionCandidate,
-} from './cache-policy.js'
+} from './cache-policy.ts'
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
@@ -60,6 +60,7 @@ assert(interpretStoragePressure({ usage: 89, quota: 100 }) === 'normal', 'sub-90
 assert(interpretStoragePressure({ usage: 90, quota: 100 }) === 'pause', '90% usage must pause preparation without eviction')
 assert(interpretStoragePressure({ usage: 95, quota: 100 }) === 'pause', '95% usage must still pause preparation without eviction')
 assert(interpretStoragePressure({ usage: 96, quota: 100 }) === 'critical', 'usage above 95% must be critical')
-assert(interpretStoragePressure({ usage: 90 }) === 'unknown', 'incomplete estimates must be represented as unknown')
+assert(interpretStoragePressure({ usage: 90 }) === 'unknown', 'usage-only estimates must be represented as unknown')
+assert(interpretStoragePressure({ usage: 90, quota: Number.NaN }) === 'unknown', 'invalid-quota estimates must be represented as unknown')
 
 console.log('cache policy checks passed')

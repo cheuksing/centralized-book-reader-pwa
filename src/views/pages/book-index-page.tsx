@@ -82,7 +82,7 @@ export function BookIndexPage() {
   }, [chapters.length, hasMoreChapters, isLoadingMoreChapters, lastVirtualItem?.index, loadMore])
 
   if (!publication) return null
-  const closeIndex = () => window.history.back()
+  const closeIndex = () => navigate(readerPath(publication.key), { replace: true })
   const jumpToChapter = (chapterId: string) => navigate(readerPath(publication.key, chapterId))
 
   return <main className="book-index-page">

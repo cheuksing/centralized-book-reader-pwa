@@ -716,7 +716,7 @@
       "file_type": "code",
       "norm_label": "caretdocument",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L382"
+      "source_location": "L380"
     },
     {
       "id": "src_views_pages_reader_page_textcaret",
@@ -729,7 +729,7 @@
       "file_type": "code",
       "norm_label": "textcaret",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L381"
+      "source_location": "L379"
     },
     {
       "id": "src_app_app_store_appviewmodel",
@@ -3135,7 +3135,7 @@
       "file_type": "code",
       "norm_label": "loadchapter()",
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L547"
+      "source_location": "L548"
     },
     {
       "id": "src_view_models_reader_view_model_locatorfor",
@@ -3447,7 +3447,7 @@
       "file_type": "code",
       "norm_label": "clamp()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L529"
+      "source_location": "L527"
     },
     {
       "id": "src_views_pages_reader_page_findcaret",
@@ -3459,7 +3459,7 @@
       "file_type": "code",
       "norm_label": "findcaret()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L417"
+      "source_location": "L415"
     },
     {
       "id": "src_views_pages_reader_page_findquoteoffset",
@@ -3471,7 +3471,7 @@
       "file_type": "code",
       "norm_label": "findquoteoffset()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L468"
+      "source_location": "L466"
     },
     {
       "id": "src_views_pages_reader_page_locatorforelement",
@@ -3483,7 +3483,7 @@
       "file_type": "code",
       "norm_label": "locatorforelement()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L398"
+      "source_location": "L396"
     },
     {
       "id": "src_views_pages_reader_page_offsetfornode",
@@ -3495,7 +3495,7 @@
       "file_type": "code",
       "norm_label": "offsetfornode()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L429"
+      "source_location": "L427"
     },
     {
       "id": "src_views_pages_reader_page_quoteat",
@@ -3507,7 +3507,7 @@
       "file_type": "code",
       "norm_label": "quoteat()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L441"
+      "source_location": "L439"
     },
     {
       "id": "src_views_pages_reader_page_rangeattextoffset",
@@ -3519,7 +3519,7 @@
       "file_type": "code",
       "norm_label": "rangeattextoffset()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L481"
+      "source_location": "L479"
     },
     {
       "id": "src_views_pages_reader_page_readerchapterview",
@@ -3531,7 +3531,7 @@
       "file_type": "code",
       "norm_label": "readerchapterview()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L328"
+      "source_location": "L326"
     },
     {
       "id": "src_views_pages_reader_page_readerpage",
@@ -3555,7 +3555,7 @@
       "file_type": "code",
       "norm_label": "readersectionview()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L362"
+      "source_location": "L360"
     },
     {
       "id": "src_views_pages_reader_page_readinganchory",
@@ -3567,7 +3567,7 @@
       "file_type": "code",
       "norm_label": "readinganchory()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L387"
+      "source_location": "L385"
     },
     {
       "id": "src_views_pages_reader_page_restorelocator",
@@ -3579,7 +3579,7 @@
       "file_type": "code",
       "norm_label": "restorelocator()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L445"
+      "source_location": "L443"
     },
     {
       "id": "src_views_pages_reader_page_scrolltochapterpercentage",
@@ -3591,7 +3591,7 @@
       "file_type": "code",
       "norm_label": "scrolltochapterpercentage()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L519"
+      "source_location": "L517"
     },
     {
       "id": "src_views_pages_reader_page_scrolltoelement",
@@ -3603,7 +3603,7 @@
       "file_type": "code",
       "norm_label": "scrolltoelement()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L513"
+      "source_location": "L511"
     },
     {
       "id": "src_views_pages_reader_page_scrolltoposition",
@@ -3615,7 +3615,7 @@
       "file_type": "code",
       "norm_label": "scrolltoposition()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L525"
+      "source_location": "L523"
     },
     {
       "id": "src_views_pages_reader_page_scrolltotextoffset",
@@ -3627,7 +3627,7 @@
       "file_type": "code",
       "norm_label": "scrolltotextoffset()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L504"
+      "source_location": "L502"
     },
     {
       "id": "src_views_pages_reader_page_visibleresource",
@@ -3639,7 +3639,7 @@
       "file_type": "code",
       "norm_label": "visibleresource()",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L391"
+      "source_location": "L389"
     },
     {
       "id": "src_models_import_export_backup_isreaderbackup",
@@ -20054,7 +20054,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L553",
+      "source_location": "L554",
       "weight": 1.0
     },
     {
@@ -20066,7 +20066,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L559",
+      "source_location": "L560",
       "weight": 1.0
     },
     {
@@ -20078,7 +20078,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L560",
+      "source_location": "L561",
       "weight": 1.0
     },
     {
@@ -20090,7 +20090,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L561",
+      "source_location": "L562",
       "weight": 1.0
     },
     {
@@ -20102,7 +20102,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L562",
+      "source_location": "L563",
       "weight": 1.0
     },
     {
@@ -20114,7 +20114,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L563",
+      "source_location": "L564",
       "weight": 1.0
     },
     {
@@ -20474,7 +20474,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L403",
+      "source_location": "L401",
       "weight": 1.0
     },
     {
@@ -20486,7 +20486,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L412",
+      "source_location": "L410",
       "weight": 1.0
     },
     {
@@ -20498,7 +20498,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L413",
+      "source_location": "L411",
       "weight": 1.0
     },
     {
@@ -20510,7 +20510,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L414",
+      "source_location": "L412",
       "weight": 1.0
     },
     {
@@ -20522,7 +20522,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L435",
+      "source_location": "L433",
       "weight": 1.0
     },
     {
@@ -20606,7 +20606,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L449",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -20618,7 +20618,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L455",
+      "source_location": "L453",
       "weight": 1.0
     },
     {
@@ -20630,7 +20630,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L455",
+      "source_location": "L453",
       "weight": 1.0
     },
     {
@@ -20642,7 +20642,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L455",
+      "source_location": "L453",
       "weight": 1.0
     },
     {
@@ -20654,7 +20654,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L462",
+      "source_location": "L460",
       "weight": 1.0
     },
     {
@@ -20666,7 +20666,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L463",
+      "source_location": "L461",
       "weight": 1.0
     },
     {
@@ -20678,7 +20678,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L465",
+      "source_location": "L463",
       "weight": 1.0
     },
     {
@@ -20690,7 +20690,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L522",
+      "source_location": "L520",
       "weight": 1.0
     },
     {
@@ -20702,7 +20702,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L522",
+      "source_location": "L520",
       "weight": 1.0
     },
     {
@@ -20714,7 +20714,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L515",
+      "source_location": "L513",
       "weight": 1.0
     },
     {
@@ -20726,7 +20726,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L515",
+      "source_location": "L513",
       "weight": 1.0
     },
     {
@@ -20738,7 +20738,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L505",
+      "source_location": "L503",
       "weight": 1.0
     },
     {
@@ -20750,7 +20750,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L509",
+      "source_location": "L507",
       "weight": 1.0
     },
     {
@@ -20762,7 +20762,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L509",
+      "source_location": "L507",
       "weight": 1.0
     },
     {
@@ -32908,7 +32908,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L547",
+      "source_location": "L548",
       "weight": 1.0
     },
     {
@@ -33491,7 +33491,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L328",
+      "source_location": "L326",
       "weight": 1.0
     },
     {
@@ -33502,7 +33502,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L362",
+      "source_location": "L360",
       "weight": 1.0
     },
     {
@@ -33513,7 +33513,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L381",
+      "source_location": "L379",
       "weight": 1.0
     },
     {
@@ -33524,7 +33524,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L382",
+      "source_location": "L380",
       "weight": 1.0
     },
     {
@@ -33535,7 +33535,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L387",
+      "source_location": "L385",
       "weight": 1.0
     },
     {
@@ -33546,7 +33546,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L391",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -33557,7 +33557,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L398",
+      "source_location": "L396",
       "weight": 1.0
     },
     {
@@ -33568,7 +33568,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L417",
+      "source_location": "L415",
       "weight": 1.0
     },
     {
@@ -33579,7 +33579,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L429",
+      "source_location": "L427",
       "weight": 1.0
     },
     {
@@ -33590,7 +33590,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L441",
+      "source_location": "L439",
       "weight": 1.0
     },
     {
@@ -33601,7 +33601,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L445",
+      "source_location": "L443",
       "weight": 1.0
     },
     {
@@ -33612,7 +33612,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L468",
+      "source_location": "L466",
       "weight": 1.0
     },
     {
@@ -33623,7 +33623,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L481",
+      "source_location": "L479",
       "weight": 1.0
     },
     {
@@ -33634,7 +33634,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L504",
+      "source_location": "L502",
       "weight": 1.0
     },
     {
@@ -33645,7 +33645,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L513",
+      "source_location": "L511",
       "weight": 1.0
     },
     {
@@ -33656,7 +33656,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L519",
+      "source_location": "L517",
       "weight": 1.0
     },
     {
@@ -33667,7 +33667,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L525",
+      "source_location": "L523",
       "weight": 1.0
     },
     {
@@ -33678,7 +33678,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/pages/reader-page.tsx",
-      "source_location": "L529",
+      "source_location": "L527",
       "weight": 1.0
     },
     {
@@ -37238,10 +37238,10 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L505",
+      "source_location": "L506",
       "weight": 1.0
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e06bb14e16ca637ebd6314c3b64ee0b5571a9fc2"
+  "built_at_commit": "ebd0598342eb00f7bd2dcdd9062eed0ece6749b1"
 }

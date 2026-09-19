@@ -91,7 +91,7 @@ export function BookIndexPage() {
   }, [chapters.length, hasMoreChapters, isLoadingMoreChapters, lastVirtualItem?.index, loadMore])
 
   if (!publication) return null
-  const closeIndex = () => { closeBook(); navigate(readerPath(publication.key), { replace: true }) }
+  const closeIndex = () => { void closeBook().then(() => navigate(readerPath(publication.key), { replace: true })) }
   const jumpToChapter = (chapterId: string) => navigate(readerPath(publication.key, chapterId))
   const readerMetadataAvailable = readerPublicationKey === publication.key && (readerKnownChapterCount !== undefined || readerChapterIndexKnowledge !== undefined)
   const knownChapterCount = readerMetadataAvailable ? readerKnownChapterCount : publication.knownChapterCount

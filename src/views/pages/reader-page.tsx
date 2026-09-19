@@ -269,14 +269,12 @@ export function ReaderPage() {
 
   const leaveReader = useCallback(() => {
     closeControls()
-    closeBook()
-    window.history.back()
+    void closeBook().then(() => window.history.back())
   }, [closeBook, closeControls])
   const openChapterIndex = useCallback(() => {
     closeControls()
     if (publication) {
-      closeBook()
-      navigate(indexPath(publication.key), { replace: true })
+      void closeBook().then(() => navigate(indexPath(publication.key), { replace: true }))
     }
   }, [closeBook, closeControls, navigate, publication])
   const retryBoundary = useCallback((direction: 'previous' | 'next', chapterId: string) => {

@@ -47,7 +47,7 @@ interface ReaderViewModel {
   loadMoreChapters: (publication: Publication) => Promise<void>
   selectSection: (publication: Publication, index: number) => void
   ensureImage: (publication: Publication, chapterKey: string, sourceResourceId: string, priority?: number) => Promise<void>
-  closeBook: () => void
+  closeBook: () => Promise<void>
   flushProgress: () => Promise<void>
   setTheme: (theme: ReaderSettings['theme']) => void
   decreaseFontSize: () => void
@@ -235,7 +235,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     const persistProgress = Boolean(requestedChapterId || resume)
     const operationKey = readerOpenOperationKey(publication.key, requestedChapterId, resume)
     const current = get()
-    if (current.publicationKey === publication.key && !requestedChapterId && (current.isLoading || current.isLoadingChapter)) return Promise.resolve()
+    if (resume && current.publicationKey === publication.key && !requestedChapterId && (current.isLoading || current.isLoadingChapter)) return Promise.resolve()
     return runKeyedOperation(openPublicationOperations, operationKey, async () => {
       const requestId = ++latestReaderRequest
       const initial = get()
@@ -247,7 +247,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
         set({ publicationKey: publication.key, chapterIndexKnowledge: undefined, knownChapterCount: undefined, chapters: [], chapterIndex: 0, chapterNextCursor: undefined, chapterCursorPublicationKey: undefined, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator: undefined, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
       }
       if (!sameSession) claimSession()
-      else if ((initial.isLoading || initial.isLoadingChapter) && !requestedChapterId) return
+      else if ((initial.isLoading || initial.isLoadingChapter) && !requestedChapterId && resume) return
 
       const readerPublication = requestedChapterId ? publication : await getLibraryPublication(publication.key).catch(() => undefined) ?? publication
       if (!isCurrentReaderRequest(requestId, latestReaderRequest)) return
@@ -266,7 +266,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
         }
         if (resume) return
       }
-      if (sameSession && (current.isLoading || current.isLoadingChapter) && !requestedChapterId) return
+      if (sameSession && (current.isLoading || current.isLoadingChapter) && !requestedChapterId && resume) return
       if (sameSession) claimSession()
       if (get().publicationKey !== key || !isCurrentReaderRequest(requestId, latestReaderRequest)) return
       const resumeLocator = resume ? readerPublication.progress?.locator : undefined
@@ -498,9 +498,10 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     // Clearing deduplication entries does not cancel running promises; request guards reject their commits.
     openPublicationOperations.clear()
     resetReadingIntent()
-    void flushProgress().catch(() => undefined)
+    const flushing = flushProgress().catch(() => undefined)
     releaseReaderChapters(get().readerChapters)
     set({ publicationKey: undefined, chapterIndexKnowledge: undefined, knownChapterCount: undefined, chapters: [], chapterNextCursor: undefined, chapterCursorPublicationKey: undefined, isLoadingMoreChapters: false, readerChapters: [], isLoadingPreviousChapter: false, isLoadingNextChapter: false, sections: [], chapterIndex: 0, sectionIndex: 0, resumeLocator: undefined, isLoading: false, isLoadingChapter: false, error: undefined })
+    return flushing
   },
   flushProgress,
   setTheme: (theme) => {

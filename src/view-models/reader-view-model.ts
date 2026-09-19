@@ -74,6 +74,10 @@ let progressWrite: Promise<void> = Promise.resolve()
 const openPublicationOperations = new Map<string, Promise<void>>()
 let latestReaderRequest = 0
 
+export function readerOpenOperationKey(publicationKey: string, requestedChapterId?: string): string {
+  return `${publicationKey}:${requestedChapterId ?? ''}`
+}
+
 export function isCurrentReaderRequest(requestId: number, currentRequestId: number): boolean {
   return requestId === currentRequestId
 }
@@ -219,7 +223,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     try { set({ settings: await loadReaderSettings() }) } catch { set({ settings: initialSettings }) }
   },
   openPublication: (publication, requestedChapterId) => {
-    const operationKey = `${publication.key}:${requestedChapterId ?? ''}`
+    const operationKey = readerOpenOperationKey(publication.key, requestedChapterId)
     return runKeyedOperation(openPublicationOperations, operationKey, async () => {
       const requestId = ++latestReaderRequest
       const readerPublication = requestedChapterId ? publication : await getLibraryPublication(publication.key).catch(() => undefined) ?? publication
@@ -290,7 +294,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     const requestId = ++latestReaderRequest
     const forwardNavigation = index > get().chapterIndex
     await flushProgress()
-    if (get().publicationKey !== publication.key) return
+    if (!isCurrentReaderRequest(requestId, latestReaderRequest) || get().publicationKey !== publication.key) return
     const chapter = get().chapters[index]
     resetReadingIntent()
     releaseReaderChapters(get().readerChapters)

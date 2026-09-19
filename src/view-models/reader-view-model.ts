@@ -86,8 +86,8 @@ export function isCurrentReaderRequest(requestId: number, currentRequestId: numb
   return requestId === currentRequestId
 }
 
-export function isReaderContentRenderable(routePublicationKey: string, readerPublicationKey: string | undefined, isLoading: boolean, isLoadingChapter: boolean): boolean {
-  return routePublicationKey === readerPublicationKey && !isLoading && !isLoadingChapter
+export function isReaderContentRenderable(routePublicationKey: string, readerPublicationKey: string | undefined, isLoading: boolean, isLoadingChapter: boolean, requestedChapterId?: string, activeChapterId?: string): boolean {
+  return routePublicationKey === readerPublicationKey && (!requestedChapterId || requestedChapterId === activeChapterId) && !isLoading && !isLoadingChapter
 }
 
 let readingIntentTimer: number | undefined

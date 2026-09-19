@@ -174,6 +174,11 @@ describe('reader request and render gates', () => {
     expect(isReaderContentRenderable('publication-b', 'publication-b', false, true)).toBe(false)
   })
 
+  it('does not render stale content while a requested chapter is pending', () => {
+    expect(isReaderContentRenderable('publication-b', 'publication-b', false, false, 'chapter-2', 'chapter-1')).toBe(false)
+    expect(isReaderContentRenderable('publication-b', 'publication-b', false, false, 'chapter-2', 'chapter-2')).toBe(true)
+  })
+
   it('renders content only after the matching chapter finishes loading', () => {
     expect(isReaderContentRenderable('publication-b', 'publication-b', false, false)).toBe(true)
   })

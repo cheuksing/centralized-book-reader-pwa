@@ -77,7 +77,7 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve, reject }
 }
 
-const DEFAULT_DATABASE_NAME = 'bookshelf-prototype-v9'
+const DEFAULT_DATABASE_NAME = 'bookshelf-prototype-v10'
 const ACTIVE_DATABASE_FILE = 'bookshelf-active-generation.json'
 const ACTIVE_DATABASE_POINTER_VERSION = 2
 let databasePromise: Promise<ReaderDatabase> | undefined
@@ -166,7 +166,12 @@ async function createDatabase(databaseName: string): Promise<ReaderDatabase> {
         },
       },
     },
-    chapterCaches: { schema: chapterCacheSchema },
+    chapterCaches: {
+      schema: chapterCacheSchema,
+      migrationStrategies: {
+        1: (document) => ({ ...document, createdAt: document.createdAt ?? document.updatedAt }),
+      },
+    },
     chapters: { schema: chapterSchema },
     downloadJobs: { schema: downloadJobSchema },
     publicationBookmarks: { schema: publicationBookmarkSchema },

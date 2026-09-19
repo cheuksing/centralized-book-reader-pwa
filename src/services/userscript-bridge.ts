@@ -1,6 +1,9 @@
 export const USER_SCRIPT_CHANNEL = 'bookshelf-cors-bridge'
 export const USER_SCRIPT_PROTOCOL = 1
-export const USER_SCRIPT_URL = 'https://cheuksing.github.io/centralized-book-reader-pwa/userscripts/bookshelf-cors.user.js'
+const CONTROLLER_USER_SCRIPT_URL = 'https://cheuksing.github.io/centralized-book-reader-pwa/userscripts/bookshelf-cors.user.js'
+export const USER_SCRIPT_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? `${window.location.origin}/userscripts/bookshelf-cors.user.js`
+  : CONTROLLER_USER_SCRIPT_URL
 
 export type UserScriptStatus =
   | { kind: 'ready'; scriptVersion: string }

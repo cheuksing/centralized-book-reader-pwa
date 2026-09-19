@@ -2,6 +2,7 @@ import {
   USER_SCRIPT_CHANNEL,
   USER_SCRIPT_PROTOCOL,
   bridgeFailureKind,
+  isBridgeMessage,
   isCompatibleProtocol,
   matchesBridgeResponse,
   responseFromBridge,
@@ -36,15 +37,39 @@ export class RemoteError extends Error {
 
 const PROBE_TIMEOUT_MS = 5_000
 const REQUEST_TIMEOUT_MS = 30_000
+const BRIDGE_LOG_PREFIX = '[Bookshelf userscript bridge]'
 
 export async function detectUserScript(): Promise<UserScriptStatus> {
-  if (typeof window === 'undefined' || !window.postMessage) return { kind: 'unsupported' }
+  console.debug(BRIDGE_LOG_PREFIX, 'Starting userscript detection.', {
+    origin: typeof window === 'undefined' ? undefined : window.location.origin,
+    channel: USER_SCRIPT_CHANNEL,
+    expectedProtocol: USER_SCRIPT_PROTOCOL,
+  })
+  if (typeof window === 'undefined' || !window.postMessage) {
+    console.warn(BRIDGE_LOG_PREFIX, 'Userscript detection is unsupported: window.postMessage is unavailable.')
+    return { kind: 'unsupported' }
+  }
   try {
     const message = await waitForBridgeMessage('probe', PROBE_TIMEOUT_MS)
-    if (message.type !== 'probe-result') return { kind: 'missing' }
-    if (!isCompatibleProtocol(message)) return { kind: 'outdated', scriptVersion: message.scriptVersion }
-    return typeof message.scriptVersion === 'string' ? { kind: 'ready', scriptVersion: message.scriptVersion } : { kind: 'outdated' }
-  } catch {
+    console.debug(BRIDGE_LOG_PREFIX, 'Received probe response.', {
+      type: message.type,
+      protocol: message.protocol,
+      requestId: message.requestId,
+      scriptVersion: message.scriptVersion,
+    })
+    if (message.type !== 'probe-result') {
+      console.warn(BRIDGE_LOG_PREFIX, 'Probe returned an unexpected message type.', { type: message.type })
+      return { kind: 'missing' }
+    }
+    if (!isCompatibleProtocol(message)) {
+      console.warn(BRIDGE_LOG_PREFIX, 'Userscript protocol is incompatible.', { expected: USER_SCRIPT_PROTOCOL, received: message.protocol, scriptVersion: message.scriptVersion })
+      return { kind: 'outdated', scriptVersion: message.scriptVersion }
+    }
+    const status = typeof message.scriptVersion === 'string' ? { kind: 'ready' as const, scriptVersion: message.scriptVersion } : { kind: 'outdated' as const }
+    console.debug(BRIDGE_LOG_PREFIX, 'Userscript detection result.', status)
+    return status
+  } catch (error) {
+    console.warn(BRIDGE_LOG_PREFIX, 'Userscript probe failed; treating the bridge as missing.', error instanceof Error ? { name: error.name, message: error.message } : error)
     return { kind: 'missing' }
   }
 }
@@ -111,18 +136,32 @@ export function validateTargetUrl(value: string): URL {
 
 function waitForBridgeMessage(type: BridgeMessage['type'], timeout: number, payload: Pick<BridgeMessage, 'url' | 'accept'> = {}, signal?: AbortSignal): Promise<BridgeMessage> {
   const requestId = crypto.randomUUID()
+  console.debug(BRIDGE_LOG_PREFIX, 'Waiting for bridge response.', { type, requestId, timeout, origin: location.origin, accept: payload.accept })
   return new Promise((resolve, reject) => {
     const onMessage = (event: MessageEvent<unknown>) => {
+      if (isBridgeMessage(event.data) && event.data.channel === USER_SCRIPT_CHANNEL) {
+        console.debug(BRIDGE_LOG_PREFIX, 'Observed bridge message.', {
+          expectedType: type,
+          type: event.data.type,
+          protocol: event.data.protocol,
+          requestId: event.data.requestId,
+          responseOrigin: event.origin,
+          sameSource: event.source === window,
+        })
+      }
       if (!matchesBridgeResponse(event, window, location.origin, requestId) || !expectedResponse(type, event.data.type) || (type !== 'probe' && !isCompatibleProtocol(event.data))) return
+      console.debug(BRIDGE_LOG_PREFIX, 'Accepted bridge response.', { type: event.data.type, requestId })
       cleanup()
       resolve(event.data)
     }
     const onAbort = () => {
+      console.debug(BRIDGE_LOG_PREFIX, 'Bridge request aborted.', { type, requestId })
       window.postMessage({ channel: USER_SCRIPT_CHANNEL, protocol: USER_SCRIPT_PROTOCOL, type: 'cancel', requestId }, location.origin)
       cleanup()
       reject(new DOMException('The remote request was cancelled.', 'AbortError'))
     }
     const timer = window.setTimeout(() => {
+      console.warn(BRIDGE_LOG_PREFIX, 'Bridge response timed out.', { type, requestId, timeout })
       if (type === 'request') window.postMessage({ channel: USER_SCRIPT_CHANNEL, protocol: USER_SCRIPT_PROTOCOL, type: 'cancel', requestId }, location.origin)
       cleanup()
       reject(new DOMException('The remote request timed out.', 'TimeoutError'))
@@ -134,6 +173,7 @@ function waitForBridgeMessage(type: BridgeMessage['type'], timeout: number, payl
     }
     window.addEventListener('message', onMessage)
     signal?.addEventListener('abort', onAbort, { once: true })
+    console.debug(BRIDGE_LOG_PREFIX, 'Posting bridge message.', { type, requestId, origin: location.origin, protocol: USER_SCRIPT_PROTOCOL })
     window.postMessage({ channel: USER_SCRIPT_CHANNEL, protocol: USER_SCRIPT_PROTOCOL, type, requestId, ...payload }, location.origin)
   })
 }

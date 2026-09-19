@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Bookshelf CORS Bridge
 // @namespace    https://github.com/cheuksing/centralized-book-reader-pwa
-// @version      1.0.0
+// @version      1.0.4
 // @description  Fetches approved public Bookshelf sources without sending site cookies or credentials.
 // @match        https://cheuksing.github.io/centralized-book-reader-pwa/*
-// @match        http://localhost/*
+// @match        http://localhost:5173/*
 // @downloadURL  https://cheuksing.github.io/centralized-book-reader-pwa/userscripts/bookshelf-cors.user.js
 // @updateURL    https://cheuksing.github.io/centralized-book-reader-pwa/userscripts/bookshelf-cors.user.js
 // @grant        GM_xmlhttpRequest
+// @inject-into  page
 // @connect      *
 // @run-at       document-start
 // ==/UserScript==
@@ -17,7 +18,9 @@
 
   const CHANNEL = 'bookshelf-cors-bridge'
   const PROTOCOL = 1
-  const VERSION = '1.0.0'
+  const VERSION = '1.0.4'
+  const LOG_PREFIX = '[Bookshelf CORS Bridge]'
+  const pageWindow = typeof unsafeWindow === 'undefined' ? window : unsafeWindow
   const REQUEST_TIMEOUT = 30_000
   const SAFE_HEADERS = ['content-type', 'content-length', 'etag', 'last-modified']
   const BLOCKED_HOSTNAMES = new Set([
@@ -26,11 +29,20 @@
   ])
   const requests = new Map()
 
-  window.addEventListener('message', (event) => {
-    if (event.source !== window || event.origin !== location.origin || !isMessage(event.data)) return
+  console.info(LOG_PREFIX, 'Loaded.', { version: VERSION, origin: pageWindow.location.origin, injectedIntoPage: pageWindow === window })
+
+  pageWindow.addEventListener('message', (event) => {
+    if (event.source !== pageWindow || event.origin !== pageWindow.location.origin || !isMessage(event.data)) return
     const message = event.data
-    if (message.protocol !== PROTOCOL && message.type !== 'probe') return
-    if (message.type === 'probe') return post({ type: 'probe-result', requestId: message.requestId, scriptVersion: VERSION })
+    console.debug(LOG_PREFIX, 'Received bridge message.', { type: message.type, protocol: message.protocol, requestId: message.requestId })
+    if (message.protocol !== PROTOCOL && message.type !== 'probe') {
+      console.warn(LOG_PREFIX, 'Ignoring message with incompatible protocol.', { expected: PROTOCOL, received: message.protocol, type: message.type, requestId: message.requestId })
+      return
+    }
+    if (message.type === 'probe') {
+      console.debug(LOG_PREFIX, 'Responding to probe.', { requestId: message.requestId, protocol: PROTOCOL, scriptVersion: VERSION })
+      return post({ type: 'probe-result', requestId: message.requestId, scriptVersion: VERSION })
+    }
     if (message.type === 'cancel') return cancel(message.requestId)
     if (message.type === 'access') return requestAccess(message.requestId)
     if (message.type === 'request') return request(message)
@@ -46,7 +58,16 @@
   }
 
   function post(message, transfer) {
-    window.postMessage({ channel: CHANNEL, protocol: PROTOCOL, ...message }, location.origin, transfer || [])
+    console.debug(LOG_PREFIX, 'Posting bridge message.', {
+      type: message.type,
+      protocol: PROTOCOL,
+      requestId: message.requestId,
+      scriptVersion: message.scriptVersion,
+      access: message.access,
+      code: message.code,
+      status: message.status,
+    })
+    pageWindow.postMessage({ channel: CHANNEL, protocol: PROTOCOL, ...message }, pageWindow.location.origin, transfer || [])
   }
 
   function request(message) {

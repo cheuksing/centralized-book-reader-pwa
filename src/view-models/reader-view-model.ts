@@ -39,7 +39,7 @@ interface ReaderViewModel {
   error?: string
   initialized: boolean
   initialize: () => Promise<void>
-  openPublication: (publication: Publication, requestedChapterId?: string) => Promise<void>
+  openPublication: (publication: Publication, requestedChapterId?: string, options?: { resume?: boolean }) => Promise<void>
   selectChapter: (publication: Publication, chapterId: string) => Promise<void>
   selectAdjacentChapter: (publication: Publication, direction: 'previous' | 'next', chapterId: string) => Promise<string | undefined>
   loadAdjacentChapter: (publication: Publication, direction: 'previous' | 'next', chapterId: string) => Promise<string | undefined>
@@ -74,8 +74,8 @@ let progressWrite: Promise<void> = Promise.resolve()
 const openPublicationOperations = new Map<string, Promise<void>>()
 let latestReaderRequest = 0
 
-export function readerOpenOperationKey(publicationKey: string, requestedChapterId?: string): string {
-  return `${publicationKey}:${requestedChapterId ?? ''}`
+export function readerOpenOperationKey(publicationKey: string, requestedChapterId?: string, resume = true): string {
+  return `${publicationKey}:${requestedChapterId ?? ''}:${resume ? 'resume' : 'browse'}`
 }
 
 export function canReuseReaderPublication(publicationKey: string, activePublicationKey: string | undefined, isLoading: boolean, isLoadingChapter: boolean, chapterCount: number): boolean {
@@ -230,8 +230,11 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     installPreparationRetryListeners()
     try { set({ settings: await loadReaderSettings() }) } catch { set({ settings: initialSettings }) }
   },
-  openPublication: (publication, requestedChapterId) => {
-    const operationKey = readerOpenOperationKey(publication.key, requestedChapterId)
+  openPublication: (publication, requestedChapterId, options) => {
+    const resume = !requestedChapterId && options?.resume !== false
+    const operationKey = readerOpenOperationKey(publication.key, requestedChapterId, resume)
+    const current = get()
+    if (current.publicationKey === publication.key && !requestedChapterId && (current.isLoading || current.isLoadingChapter)) return Promise.resolve()
     return runKeyedOperation(openPublicationOperations, operationKey, async () => {
       const requestId = ++latestReaderRequest
       const initial = get()
@@ -259,12 +262,12 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
       if (sameSession && (current.isLoading || current.isLoadingChapter) && !requestedChapterId) return
       if (sameSession) claimSession()
       if (get().publicationKey !== key || !isCurrentReaderRequest(requestId, latestReaderRequest)) return
-      const resumeLocator = requestedChapterId ? undefined : readerPublication.progress?.locator
+      const resumeLocator = resume ? readerPublication.progress?.locator : undefined
       set({ chapterIndexKnowledge: readerPublication.chapterIndexKnowledge, knownChapterCount: readerPublication.knownChapterCount, resumeLocator })
       try {
         let chapters = await getLocalChapters(key)
         if (get().publicationKey !== key || !isCurrentReaderRequest(requestId, latestReaderRequest)) return
-        const targetId = requestedChapterId ?? readerPublication.progress?.locator.chapterId
+        const targetId = requestedChapterId ?? (resume ? readerPublication.progress?.locator.chapterId : undefined)
         const paginationKnown = current.chapterCursorPublicationKey === key
         let source = chapters.length === 0 || !paginationKnown ? await getSourceForPublication(key) : undefined
         let cursor = paginationKnown ? get().chapterNextCursor : undefined
@@ -299,7 +302,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
         const chapter = chapters[chapterIndex]
         if (!chapter) throw new Error('No chapter is available.')
         set({ chapters: chapters.map((chapter) => ({ ...chapter })), chapterIndex, readerChapters: [{ chapter, sections: [], loading: true }], isLoading: false, isLoadingChapter: true })
-        const locator = requestedChapterId ? undefined : readerPublication.progress?.locator
+        const locator = resume ? readerPublication.progress?.locator : undefined
         await loadChapter(readerPublication, chapter, false, locator, requestId)
       } catch (error) {
         if (isCurrentReaderRequest(requestId, latestReaderRequest) && get().publicationKey === key) set({ error: error instanceof Error ? error.message : 'Could not open this publication.', isLoading: false, isLoadingChapter: false })
@@ -321,6 +324,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     await loadChapter(publication, chapter, forwardNavigation, undefined, requestId)
   },
   selectAdjacentChapter: async (publication, direction, chapterId) => {
+    const requestId = latestReaderRequest
     const delta = direction === 'previous' ? -1 : 1
     const sourceIndex = get().chapters.findIndex((chapter) => chapter.chapterId === chapterId)
     if (sourceIndex < 0) return undefined
@@ -332,15 +336,17 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
       const beforeCursor = state.chapterNextCursor
       const beforeLength = state.chapters.length
       await get().loadMoreChapters(publication)
+      if (!isCurrentReaderRequest(requestId, latestReaderRequest) || get().publicationKey !== publication.key) return undefined
       const current = get()
       if (current.chapters.length <= targetIndex && current.chapters.length === beforeLength && current.chapterNextCursor === beforeCursor) return undefined
     }
     const target = get().chapters[targetIndex]
-    if (!target || get().publicationKey !== publication.key) return undefined
+    if (!target || !isCurrentReaderRequest(requestId, latestReaderRequest) || get().publicationKey !== publication.key) return undefined
     await get().selectChapter(publication, target.chapterId)
     return target.chapterId
   },
   loadAdjacentChapter: async (publication, direction, chapterId) => {
+    const requestId = latestReaderRequest
     const delta = direction === 'previous' ? -1 : 1
     const sourceIndex = get().chapters.findIndex((chapter) => chapter.chapterId === chapterId)
     if (sourceIndex < 0) return undefined
@@ -352,11 +358,12 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
       if (state.chapterCursorPublicationKey !== publication.key || !state.chapterNextCursor) break
       const beforeCursor = state.chapterNextCursor
       await get().loadMoreChapters(publication)
+      if (!isCurrentReaderRequest(requestId, latestReaderRequest) || get().publicationKey !== publication.key) return undefined
       const current = get()
       if (current.chapterNextCursor === beforeCursor && current.chapters.length <= targetIndex) break
     }
     const target = get().chapters[targetIndex]
-    if (!target || get().publicationKey !== publication.key) return undefined
+    if (!target || !isCurrentReaderRequest(requestId, latestReaderRequest) || get().publicationKey !== publication.key) return undefined
     const existing = get().readerChapters.find((entry) => entry.chapter.key === target.key)
     if (existing?.loading) return undefined
     if (existing && !existing.error) return target.chapterId
@@ -369,7 +376,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     try {
       const sections = await loadChapterContent(publication, target, { recordAccess: false })
       const current = get()
-      if (current.publicationKey !== publication.key || !current.readerChapters.some((entry) => entry.chapter.key === target.key)) {
+      if (!isCurrentReaderRequest(requestId, latestReaderRequest) || current.publicationKey !== publication.key || !current.readerChapters.some((entry) => entry.chapter.key === target.key)) {
         releaseBookContent(sections)
         return undefined
       }
@@ -377,11 +384,13 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
       return target.chapterId
     } catch (error) {
       const message = error instanceof Error ? error.message : `Could not load the ${direction} chapter.`
-      if (get().publicationKey === publication.key) set({ readerChapters: updateReaderChapter(get().readerChapters, target.key, (entry) => ({ ...entry, loading: false, error: message })) })
+      if (isCurrentReaderRequest(requestId, latestReaderRequest) && get().publicationKey === publication.key) set({ readerChapters: updateReaderChapter(get().readerChapters, target.key, (entry) => ({ ...entry, loading: false, error: message })) })
       return undefined
     } finally {
-      if (direction === 'previous') set({ isLoadingPreviousChapter: false })
-      else set({ isLoadingNextChapter: false })
+      if (isCurrentReaderRequest(requestId, latestReaderRequest) && get().publicationKey === publication.key) {
+        if (direction === 'previous') set({ isLoadingPreviousChapter: false })
+        else set({ isLoadingNextChapter: false })
+      }
     }
   },
   setChapterNextCursor: (chapterCursorPublicationKey, chapterNextCursor) => set({ chapterCursorPublicationKey, chapterNextCursor }),
@@ -389,17 +398,22 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const { chapterNextCursor, chapterCursorPublicationKey, isLoadingMoreChapters } = get()
     if (!chapterNextCursor || chapterCursorPublicationKey !== publication.key || isLoadingMoreChapters) return
+    const requestId = latestReaderRequest
     set({ isLoadingMoreChapters: true, error: undefined })
     try {
       const source = await getSourceForPublication(publication.key)
+      if (!isCurrentReaderRequest(requestId, latestReaderRequest) || get().publicationKey !== publication.key) return
       if (!source) throw new Error('This publication source is no longer installed.')
       const synced = await syncPublication(source, publication.publicationId, chapterNextCursor)
+      if (!isCurrentReaderRequest(requestId, latestReaderRequest) || get().publicationKey !== publication.key) return
       const nextCursor = synced.nextCursor === chapterNextCursor ? undefined : synced.nextCursor
-      if (get().publicationKey === publication.key) set({ chapters: await getLocalChapters(publication.key), chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount, chapterNextCursor: nextCursor, chapterCursorPublicationKey: publication.key })
+      const chapters = await getLocalChapters(publication.key)
+      if (!isCurrentReaderRequest(requestId, latestReaderRequest) || get().publicationKey !== publication.key) return
+      set({ chapters, chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount, chapterNextCursor: nextCursor, chapterCursorPublicationKey: publication.key })
     } catch (error) {
-      if (get().publicationKey === publication.key) set({ error: error instanceof Error ? error.message : 'Could not load more chapters.' })
+      if (isCurrentReaderRequest(requestId, latestReaderRequest) && get().publicationKey === publication.key) set({ error: error instanceof Error ? error.message : 'Could not load more chapters.' })
     } finally {
-      if (get().publicationKey === publication.key) set({ isLoadingMoreChapters: false })
+      if (isCurrentReaderRequest(requestId, latestReaderRequest) && get().publicationKey === publication.key) set({ isLoadingMoreChapters: false })
     }
   },
   selectSection: (publication, index) => {
@@ -419,43 +433,58 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   ensureImage: async (publication, chapterKey, sourceResourceId, priority = 100) => {
     const entry = get().readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
     if (!entry) return
+    const requestId = latestReaderRequest
+    const isCurrent = () => isCurrentReaderRequest(requestId, latestReaderRequest) && get().publicationKey === publication.key
     try {
       let sections: ReaderSection[]
       try {
         await ensureResourceCached(chapterKey, sourceResourceId, priority)
-        const current = get()
-        const latestEntry = current.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
-        if (current.publicationKey !== publication.key || !latestEntry) return
+        const latestEntry = get().readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
+        if (!isCurrent() || !latestEntry) return
         sections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
       } catch (error) {
         if (!isBrowserOnline() || !isCacheReadThroughError(error)) throw error
-        const current = get()
-        const latestEntry = current.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
-        if (current.publicationKey !== publication.key || !latestEntry) return
+        const latestEntry = get().readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
+        if (!isCurrent() || !latestEntry) return
         const recoveredSections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+        if (!isCurrent()) {
+          releaseBookContent(recoveredSections)
+          return
+        }
         if (recoveredSections.some((section) => section.resourceId === sourceResourceId && section.cached)) {
           sections = recoveredSections
         } else {
           releaseBookContent(recoveredSections)
           try {
             await ensureResourceCached(chapterKey, sourceResourceId, priority)
+            if (!isCurrent()) return
             sections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+            if (!isCurrent()) {
+              releaseBookContent(sections)
+              return
+            }
           } catch (retryError) {
             if (!isBrowserOnline() || !isCacheReadThroughError(retryError)) throw retryError
             sections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+            if (!isCurrent()) {
+              releaseBookContent(sections)
+              return
+            }
           }
         }
       }
       const next = get()
       const currentEntry = next.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
-      if (next.publicationKey !== publication.key || !currentEntry) {
+      if (!isCurrent() || !currentEntry) {
         releaseBookContent(sections)
         return
       }
       const active = next.chapters[next.chapterIndex]?.key === chapterKey
       releaseBookContent(currentEntry.sections)
       set({ readerChapters: updateReaderChapter(next.readerChapters, chapterKey, () => ({ chapter: currentEntry.chapter, sections, loading: false })), ...(active ? { sections } : {}) })
-    } catch (error) { set({ error: error instanceof Error ? error.message : 'Could not load this image.' }) }
+    } catch (error) {
+      if (isCurrent()) set({ error: error instanceof Error ? error.message : 'Could not load this image.' })
+    }
   },
   closeBook: () => {
     latestReaderRequest += 1

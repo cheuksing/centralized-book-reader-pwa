@@ -53,7 +53,7 @@ export function BookIndexPage() {
 
   useEffect(() => {
     if (!publication || readerPublicationKey === publication.key) return
-    void openPublication(publication)
+    void openPublication(publication, undefined, { resume: false })
   }, [openPublication, publication, readerPublicationKey])
 
   useLayoutEffect(() => {

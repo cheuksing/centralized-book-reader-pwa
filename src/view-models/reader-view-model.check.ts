@@ -1,5 +1,5 @@
 import { runKeyedOperation } from '@services/book-content-service'
-import { canReuseReaderPublication, isCurrentReaderRequest, readerOpenOperationKey } from './reader-view-model.js'
+import { canReuseReaderPublication, isCurrentReaderRequest, isReaderContentRenderable, readerOpenOperationKey } from './reader-view-model.js'
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
@@ -7,6 +7,10 @@ function assert(condition: unknown, message: string): asserts condition {
 
 assert(isCurrentReaderRequest(4, 4), 'the active reader request must be accepted')
 assert(!isCurrentReaderRequest(3, 4), 'a stale reader request must be ignored')
+assert(!isReaderContentRenderable('publication-b', 'publication-a', false, false), 'a mismatched reader session must not render content')
+assert(!isReaderContentRenderable('publication-b', 'publication-b', true, false), 'an opening reader session must not render content')
+assert(!isReaderContentRenderable('publication-b', 'publication-b', false, true), 'an opening chapter must not render content')
+assert(isReaderContentRenderable('publication-b', 'publication-b', false, false), 'a matching ready reader session may render content')
 assert(readerOpenOperationKey('publication', 'chapter') === readerOpenOperationKey('publication', 'chapter'), 'identical reader opens must use the same key')
 assert(readerOpenOperationKey('publication', 'chapter') !== readerOpenOperationKey('publication', 'other'), 'different chapter opens must not share a key')
 assert(canReuseReaderPublication('publication', 'publication', false, false, 2), 'ready reader state may be reused')

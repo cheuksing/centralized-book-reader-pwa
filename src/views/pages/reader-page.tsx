@@ -7,10 +7,12 @@ import { indexPath } from '@app/routes'
 import type { ReadingLocator } from '@models/database/schemas'
 import type { Chapter, Publication } from '@models/entities/domain'
 import type { ReaderSection } from '@services/book-content-service'
-import { useReaderViewModel, type ReaderChapterContent } from '@view-models/reader-view-model'
+import { isReaderContentRenderable, useReaderViewModel, type ReaderChapterContent } from '@view-models/reader-view-model'
 import { useOnlineStatus } from '../ui/use-online-status'
 
 const emptySections: ReaderSection[] = []
+const emptyChapters: Chapter[] = []
+const emptyReaderChapters: ReaderChapterContent[] = []
 
 export function ReaderPage() {
   const [, navigate] = useLocation()
@@ -18,6 +20,7 @@ export function ReaderPage() {
   const publication = useAppViewModel((state) => state.activePublication)
   const requestedChapterId = searchParams.get('chapter') ?? undefined
   const settings = useReaderViewModel((state) => state.settings)
+  const readerPublicationKey = useReaderViewModel((state) => state.publicationKey)
   const chapters = useReaderViewModel((state) => state.chapters)
   const chapterIndex = useReaderViewModel((state) => state.chapterIndex)
   const chapterNextCursor = useReaderViewModel((state) => state.chapterNextCursor)
@@ -54,10 +57,17 @@ export function ReaderPage() {
   const controlsOpen = searchParams.get('controls') === '1'
   const [readerScrollMargin, setReaderScrollMargin] = useState(0)
   const online = useOnlineStatus()
-  const hasMoreChapters = chapterCursorPublicationKey === publication?.key && Boolean(chapterNextCursor)
-  const getReaderChapterKey = useCallback((index: number) => readerChapters[index]?.chapter.key ?? index, [readerChapters])
+  const readerSessionMatches = publication !== undefined && readerPublicationKey === publication.key
+  const readerContentRenderable = publication ? isReaderContentRenderable(publication.key, readerPublicationKey, isLoading, isLoadingChapter) : false
+  const renderedChapters = readerSessionMatches ? chapters : emptyChapters
+  const renderedChapterIndex = readerSessionMatches ? chapterIndex : 0
+  const renderedReaderChapters = readerSessionMatches ? readerChapters : emptyReaderChapters
+  const renderedResumeLocator = readerSessionMatches ? resumeLocator : undefined
+  const renderedError = readerSessionMatches ? error : undefined
+  const hasMoreChapters = readerSessionMatches && chapterCursorPublicationKey === publication?.key && Boolean(chapterNextCursor)
+  const getReaderChapterKey = useCallback((index: number) => renderedReaderChapters[index]?.chapter.key ?? index, [renderedReaderChapters])
   const readerVirtualizer = useWindowVirtualizer<HTMLDivElement>({
-    count: readerChapters.length,
+    count: renderedReaderChapters.length,
     estimateSize: () => 720,
     getItemKey: getReaderChapterKey,
     overscan: 1,
@@ -65,13 +75,13 @@ export function ReaderPage() {
   })
   const readerVirtualItems = readerVirtualizer.getVirtualItems()
 
-  const chapter = chapters[chapterIndex]
-  const activeEntry = chapter ? readerChapters.find((entry) => entry.chapter.key === chapter.key) : undefined
+  const chapter = renderedChapters[renderedChapterIndex]
+  const activeEntry = chapter ? renderedReaderChapters.find((entry) => entry.chapter.key === chapter.key) : undefined
   const sections = activeEntry?.sections ?? emptySections
-  const hasContent = readerChapters.some((entry) => entry.sections.length > 0)
+  const hasContent = readerContentRenderable && renderedReaderChapters.some((entry) => entry.sections.length > 0)
   const chapterCountKnown = !hasMoreChapters
-  const remainingChapters = chapterCountKnown ? Math.max(0, chapters.length - chapterIndex - 1) : undefined
-  const activeLoadedIndex = activeEntry ? readerChapters.findIndex((entry) => entry.chapter.key === activeEntry.chapter.key) : -1
+  const remainingChapters = chapterCountKnown ? Math.max(0, renderedChapters.length - renderedChapterIndex - 1) : undefined
+  const activeLoadedIndex = activeEntry ? renderedReaderChapters.findIndex((entry) => entry.chapter.key === activeEntry.chapter.key) : -1
 
   useLayoutEffect(() => {
     const canvas = readerCanvasRef.current
@@ -80,7 +90,7 @@ export function ReaderPage() {
     updateScrollMargin()
     window.addEventListener('resize', updateScrollMargin)
     return () => window.removeEventListener('resize', updateScrollMargin)
-  }, [isLoading, isLoadingChapter, publication?.key, readerChapters.length])
+  }, [isLoading, isLoadingChapter, publication?.key, renderedReaderChapters.length])
 
   useLayoutEffect(() => {
     if (requestedChapterId) scrollToPosition(0)
@@ -99,16 +109,16 @@ export function ReaderPage() {
     restoredLocatorRef.current = undefined
   }, [publication?.key, requestedChapterId])
   useEffect(() => {
-    if (!publication || !chapter) return
-    const savedResourceId = resumeLocator?.chapterId === chapter.chapterId ? resumeLocator.resourceId : undefined
+    if (!readerSessionMatches || !publication || !chapter) return
+    const savedResourceId = renderedResumeLocator?.chapterId === chapter.chapterId ? renderedResumeLocator.resourceId : undefined
     const savedIndex = savedResourceId ? sections.findIndex((section) => section.resourceId === savedResourceId) : -1
     const startIndex = savedIndex >= 0 ? savedIndex : 0
     sections.slice(startIndex, startIndex + 4).forEach((section, index) => { if (section.type === 'image' && !section.cached) void ensureImage(publication, chapter.key, section.resourceId, index === 0 ? 100 : 60 - index) })
-  }, [chapter, ensureImage, publication, resumeLocator, sections])
+  }, [chapter, ensureImage, publication, readerSessionMatches, renderedResumeLocator, sections])
   useEffect(() => {
-    const locator = resumeLocator
+    const locator = renderedResumeLocator
     const root = contentRef.current
-    if (!root || !locator || !chapter || locator.chapterId !== chapter.chapterId || sections.length === 0 || isLoading || isLoadingChapter) return
+    if (!readerSessionMatches || !root || !locator || !chapter || locator.chapterId !== chapter.chapterId || sections.length === 0 || isLoading || isLoadingChapter) return
     const restoreKey = `${publication?.key ?? ''}:${chapter.chapterId}:${JSON.stringify(locator)}`
     if (restoredLocatorRef.current) return
     restoringRef.current = true
@@ -130,11 +140,11 @@ export function ReaderPage() {
       if (releaseFrame !== undefined) window.cancelAnimationFrame(releaseFrame)
       restoringRef.current = false
     }
-  }, [chapter, isLoading, isLoadingChapter, publication, resumeLocator, sections])
+  }, [chapter, isLoading, isLoadingChapter, publication, readerSessionMatches, renderedResumeLocator, sections])
   useEffect(() => {
-    const locator = resumeLocator
+    const locator = renderedResumeLocator
     const root = contentRef.current
-    if (typeof ResizeObserver === 'undefined' || !root || !locator || !chapter || locator.chapterId !== chapter.chapterId || sections.length === 0) return
+    if (!readerSessionMatches || typeof ResizeObserver === 'undefined' || !root || !locator || !chapter || locator.chapterId !== chapter.chapterId || sections.length === 0) return
     const restoreKey = `${publication?.key ?? ''}:${chapter.chapterId}:${JSON.stringify(locator)}`
     const observer = new ResizeObserver(() => {
       if (userScrolledRef.current || restoringRef.current || restoredLocatorRef.current !== restoreKey) return
@@ -144,7 +154,7 @@ export function ReaderPage() {
     })
     observer.observe(root)
     return () => observer.disconnect()
-  }, [chapter, publication, resumeLocator, sections])
+  }, [chapter, publication, readerSessionMatches, renderedResumeLocator, sections])
   useEffect(() => {
     const onVisibilityChange = () => { if (document.visibilityState === 'hidden') void flushProgress().catch(() => undefined) }
     document.addEventListener('visibilitychange', onVisibilityChange)
@@ -156,16 +166,16 @@ export function ReaderPage() {
   }, [controlsOpen])
 
   const handleVisibleSection = useCallback((chapterId: string, index: number, element: HTMLElement, section: ReaderSection, chapterRoot: HTMLElement) => {
-    if (!publication || restoringRef.current) return
+    if (!readerSessionMatches || !publication || restoringRef.current) return
     const anchorY = readingAnchorY()
     const bounds = element.getBoundingClientRect()
     if (bounds.top > anchorY || bounds.bottom <= anchorY) return
     updateVisibleSection(publication, chapterId, index, locatorForElement(section, element, chapterRoot, chapterId, anchorY))
-  }, [publication, updateVisibleSection])
+  }, [publication, readerSessionMatches, updateVisibleSection])
 
   useEffect(() => {
     const root = contentRef.current
-    if (!publication || !root || readerChapters.length === 0 || isLoading || isLoadingChapter) return
+    if (!readerSessionMatches || !publication || !root || renderedReaderChapters.length === 0 || isLoading || isLoadingChapter) return
     let frame: number | undefined
     const update = () => {
       frame = undefined
@@ -177,7 +187,7 @@ export function ReaderPage() {
       const chapterRoot = element.closest<HTMLElement>('.reader-chapter')
       const chapterId = chapterRoot?.dataset.chapterId
       const index = Number(element.dataset.resourceIndex)
-      const entry = chapterId ? readerChapters.find((candidate) => candidate.chapter.chapterId === chapterId) : undefined
+      const entry = chapterId ? renderedReaderChapters.find((candidate) => candidate.chapter.chapterId === chapterId) : undefined
       const section = Number.isSafeInteger(index) ? entry?.sections[index] : undefined
       if (!chapterRoot || !chapterId || !section) return
       updateVisibleSection(publication, chapterId, index, locatorForElement(section, element, chapterRoot, chapterId, anchorY))
@@ -200,13 +210,13 @@ export function ReaderPage() {
       window.removeEventListener('resize', scheduleUpdate)
       if (frame !== undefined) window.cancelAnimationFrame(frame)
     }
-  }, [isLoading, isLoadingChapter, publication, readerChapters, settings, updateVisibleSection])
+  }, [isLoading, isLoadingChapter, publication, readerSessionMatches, renderedReaderChapters, settings, updateVisibleSection])
 
   const handleChapterBoundary = useCallback((direction: 'previous' | 'next', chapterId: string) => {
-    if (!publication || !online) return
-    const activeChapterId = chapters[chapterIndex]?.chapterId
+    if (!readerSessionMatches || !publication || !online) return
+    const activeChapterId = renderedChapters[renderedChapterIndex]?.chapterId
     if (chapterId !== activeChapterId) return
-    if (direction === 'next' && chapterId === chapters.at(-1)?.chapterId && !hasMoreChapters) return
+    if (direction === 'next' && chapterId === renderedChapters.at(-1)?.chapterId && !hasMoreChapters) return
     if (direction === 'previous' && (chapterNavigationRef.current || !userScrolledRef.current)) return
     const root = contentRef.current
     const anchor = direction === 'previous' && root ? Array.from(root.querySelectorAll<HTMLElement>('.reader-chapter')).find((element) => element.dataset.chapterId === chapterId) : undefined
@@ -220,7 +230,7 @@ export function ReaderPage() {
         else scrollToPosition(before.top + root.scrollHeight - before.height)
       }))
     })
-  }, [chapterIndex, chapters, hasMoreChapters, loadAdjacentChapter, online, publication])
+  }, [hasMoreChapters, loadAdjacentChapter, online, publication, readerSessionMatches, renderedChapterIndex, renderedChapters])
 
   const openControls = useCallback(() => {
     setSearchParams((current) => { current.set('controls', '1'); return current })
@@ -235,7 +245,7 @@ export function ReaderPage() {
   }, [controlsOpen])
 
   const navigateChapter = useCallback(async (direction: 'previous' | 'next') => {
-    if (!publication || !chapter) return
+    if (!readerSessionMatches || !publication || !chapter) return
     chapterNavigationRef.current = true
     userScrolledRef.current = false
     closeControls()
@@ -246,7 +256,7 @@ export function ReaderPage() {
     }
     scrollToPosition(0)
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => { chapterNavigationRef.current = false }))
-  }, [chapter, closeControls, publication, selectAdjacentChapter])
+  }, [chapter, closeControls, publication, readerSessionMatches, selectAdjacentChapter])
 
 
   const handleReaderClick = useCallback((event: MouseEvent<HTMLElement>) => {
@@ -267,34 +277,34 @@ export function ReaderPage() {
     if (publication) navigate(indexPath(publication.key), { replace: true })
   }, [closeControls, navigate, publication])
   const retryBoundary = useCallback((direction: 'previous' | 'next', chapterId: string) => {
-    if (publication && online) void loadAdjacentChapter(publication, direction, chapterId)
-  }, [loadAdjacentChapter, online, publication])
+    if (readerSessionMatches && publication && online) void loadAdjacentChapter(publication, direction, chapterId)
+  }, [loadAdjacentChapter, online, publication, readerSessionMatches])
 
   const effectiveTheme = useMemo(() => settings.theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : settings.theme === 'system' ? 'light' : settings.theme, [settings.theme])
-  const unavailableOffline = error === 'This chapter is unavailable offline.'
+  const unavailableOffline = renderedError === 'This chapter is unavailable offline.'
   if (!publication) return null
 
-  const previousAvailable = chapterIndex > 0
-  const nextAvailable = chapterIndex < chapters.length - 1 || (online && hasMoreChapters)
-  const chapterPosition = chapter ? `Chapter ${chapterIndex + 1}${chapterCountKnown ? ` of ${chapters.length}` : ''}` : 'Preparing chapter'
+  const previousAvailable = renderedChapterIndex > 0
+  const nextAvailable = renderedChapterIndex < renderedChapters.length - 1 || (online && hasMoreChapters)
+  const chapterPosition = chapter ? `Chapter ${renderedChapterIndex + 1}${chapterCountKnown ? ` of ${renderedChapters.length}` : ''}` : 'Preparing chapter'
   const chapterRemaining = chapter ? chapterCountKnown ? `${remainingChapters} ${remainingChapters === 1 ? 'chapter' : 'chapters'} remaining` : 'More chapters available' : ''
 
   return <main className={`reader reader-${effectiveTheme} reader-${settings.contentWidth}`} style={{ fontSize: `${settings.fontSize}px`, lineHeight: settings.lineHeight }}>
     {!online && hasContent && <p className="reader-offline-guidance" role="status">You’re offline. Cached chapters are still available.</p>}
-    {isLoading || isLoadingChapter ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : error && !hasContent ? <section className="reader-status">{unavailableOffline ? <><h1>Chapter unavailable offline</h1><p>This chapter is unavailable offline. Open the chapter index to choose a cached chapter.</p><button className="primary-button" onClick={() => openChapterIndex()} type="button">Open chapter index</button></> : <><h1>Could not prepare this chapter</h1><p>{error}</p><button className="primary-button" onClick={() => void openPublication(publication, requestedChapterId)} type="button">Try again</button></>}<button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : readerChapters.length > 0 ? <article className="reader-content" onClick={handleReaderClick} ref={contentRef}>
+    {!readerSessionMatches || isLoading || isLoadingChapter ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{!readerSessionMatches || isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : renderedError && !hasContent ? <section className="reader-status">{unavailableOffline ? <><h1>Chapter unavailable offline</h1><p>This chapter is unavailable offline. Open the chapter index to choose a cached chapter.</p><button className="primary-button" onClick={() => openChapterIndex()} type="button">Open chapter index</button></> : <><h1>Could not prepare this chapter</h1><p>{renderedError}</p><button className="primary-button" onClick={() => void openPublication(publication, requestedChapterId)} type="button">Try again</button></>}<button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section> : renderedReaderChapters.length > 0 ? <article className="reader-content" onClick={handleReaderClick} ref={contentRef}>
       <button className="visually-hidden reader-controls-trigger" onClick={openControls} ref={controlsTriggerRef} type="button">Open reader controls</button>
       <div className="reader-virtual-canvas" ref={readerCanvasRef} style={{ height: readerVirtualizer.getTotalSize() }}>
         {readerVirtualItems.map((virtualRow) => {
-          const entry = readerChapters[virtualRow.index]
+          const entry = renderedReaderChapters[virtualRow.index]
           if (!entry) return null
           const boundaryDirection = virtualRow.index < activeLoadedIndex ? 'previous' : virtualRow.index > activeLoadedIndex ? 'next' : undefined
-          const entryIndex = chapters.findIndex((candidate) => candidate.key === entry.chapter.key)
-          return <div className="reader-virtual-item" data-index={virtualRow.index} key={entry.chapter.key} ref={readerVirtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - readerScrollMargin}px)`, width: '100%' }}><ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={chapters.length} countKnown={chapterCountKnown} entry={entry} ensureImage={ensureImage} separated={virtualRow.index > 0} onBoundary={handleChapterBoundary} onOpenIndex={openChapterIndex} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} /></div>
+          const entryIndex = renderedChapters.findIndex((candidate) => candidate.key === entry.chapter.key)
+          return <div className="reader-virtual-item" data-index={virtualRow.index} key={entry.chapter.key} ref={readerVirtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - readerScrollMargin}px)`, width: '100%' }}><ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={renderedChapters.length} countKnown={chapterCountKnown} entry={entry} ensureImage={ensureImage} separated={virtualRow.index > 0} onBoundary={handleChapterBoundary} onOpenIndex={openChapterIndex} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} /></div>
         })}
       </div>
     </article> : <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index to choose available content.</p><button className="reader-status-exit" onClick={leaveReader} type="button">Back to bookshelf</button></section>}
-    {error && hasContent && <p className="reader-error" role="alert">{error}</p>}
-    {!isLoading && hasContent && <dialog aria-labelledby="reader-controls-title" className={`reader-controls-dialog${!controlsOpen ? ' is-closing' : ''}`} onCancel={(event) => { event.preventDefault(); closeControls() }} onClick={(event) => { if (event.target === event.currentTarget) closeControls() }} onClose={() => { if (controlsOpen) closeControls() }} ref={controlsRef}>
+    {renderedError && hasContent && <p className="reader-error" role="alert">{renderedError}</p>}
+    {readerContentRenderable && hasContent && <dialog aria-labelledby="reader-controls-title" className={`reader-controls-dialog${!controlsOpen ? ' is-closing' : ''}`} onCancel={(event) => { event.preventDefault(); closeControls() }} onClick={(event) => { if (event.target === event.currentTarget) closeControls() }} onClose={() => { if (controlsOpen) closeControls() }} ref={controlsRef}>
       <div className="reader-controls-panel" onAnimationEnd={finishControlsClose}>
         <div className="reader-controls-heading"><div><p className="reader-controls-kicker">Reader controls</p><h2 id="reader-controls-title">{chapter?.title ?? 'Current chapter'}</h2><p className="reader-controls-meta">{chapterPosition} · {chapterRemaining}</p></div><button className="reader-controls-close" onClick={closeControls} type="button">Close</button></div>
         <div className="reader-chapter-navigation"><button disabled={!previousAvailable || isLoadingPreviousChapter || isLoadingChapter} onClick={() => void navigateChapter('previous')} type="button">← Previous chapter</button><button disabled={!nextAvailable || isLoadingNextChapter || isLoadingMoreChapters || isLoadingChapter} onClick={() => void navigateChapter('next')} type="button">Next chapter →</button></div>

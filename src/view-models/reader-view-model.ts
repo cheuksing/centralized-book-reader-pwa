@@ -86,6 +86,10 @@ export function isCurrentReaderRequest(requestId: number, currentRequestId: numb
   return requestId === currentRequestId
 }
 
+export function isReaderContentRenderable(routePublicationKey: string, readerPublicationKey: string | undefined, isLoading: boolean, isLoadingChapter: boolean): boolean {
+  return routePublicationKey === readerPublicationKey && !isLoading && !isLoadingChapter
+}
+
 let readingIntentTimer: number | undefined
 let readingIntentChapterKey: string | undefined
 let preparationRequestedChapterKey: string | undefined
@@ -230,6 +234,17 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     const operationKey = readerOpenOperationKey(publication.key, requestedChapterId)
     return runKeyedOperation(openPublicationOperations, operationKey, async () => {
       const requestId = ++latestReaderRequest
+      const initial = get()
+      const sameSession = initial.publicationKey === publication.key
+      const claimSession = () => {
+        const current = get()
+        releaseReaderChapters(current.readerChapters)
+        resetReadingIntent()
+        set({ publicationKey: publication.key, chapterIndexKnowledge: undefined, knownChapterCount: undefined, chapters: [], chapterIndex: 0, chapterNextCursor: undefined, chapterCursorPublicationKey: undefined, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator: undefined, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
+      }
+      if (!sameSession) claimSession()
+      else if ((initial.isLoading || initial.isLoadingChapter) && !requestedChapterId) return
+
       const readerPublication = requestedChapterId ? publication : await getLibraryPublication(publication.key).catch(() => undefined) ?? publication
       if (!isCurrentReaderRequest(requestId, latestReaderRequest)) return
       await enterReader(readerPublication)
@@ -241,11 +256,11 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
         else if (requestedChapterId) set({ resumeLocator: undefined, sectionIndex: 0 })
         return
       }
-      releaseReaderChapters(current.readerChapters)
-      resetReadingIntent()
-      const chapterNextCursor = current.chapterCursorPublicationKey === key ? current.chapterNextCursor : undefined
+      if (sameSession && (current.isLoading || current.isLoadingChapter) && !requestedChapterId) return
+      if (sameSession) claimSession()
+      if (get().publicationKey !== key || !isCurrentReaderRequest(requestId, latestReaderRequest)) return
       const resumeLocator = requestedChapterId ? undefined : readerPublication.progress?.locator
-      set({ publicationKey: key, chapterIndexKnowledge: readerPublication.chapterIndexKnowledge, knownChapterCount: readerPublication.knownChapterCount, chapters: [], chapterIndex: 0, chapterNextCursor, chapterCursorPublicationKey: key, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
+      set({ chapterIndexKnowledge: readerPublication.chapterIndexKnowledge, knownChapterCount: readerPublication.knownChapterCount, resumeLocator })
       try {
         let chapters = await getLocalChapters(key)
         if (get().publicationKey !== key || !isCurrentReaderRequest(requestId, latestReaderRequest)) return
@@ -388,6 +403,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     }
   },
   selectSection: (publication, index) => {
+    if (get().publicationKey !== publication.key) return
     const { chapterIndex, chapters, readerChapters } = get()
     const chapter = chapters[chapterIndex]
     const entry = chapter ? readerChapters.find((candidate) => candidate.chapter.key === chapter.key) : undefined
@@ -443,6 +459,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   },
   closeBook: () => {
     latestReaderRequest += 1
+    // Clearing deduplication entries does not cancel running promises; request guards reject their commits.
     openPublicationOperations.clear()
     resetReadingIntent()
     void flushProgress().catch(() => undefined)
@@ -471,6 +488,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     set({ settings }); void saveReaderSettings(settings)
   },
   updateVisibleSection: (publication, chapterId, index, locator) => {
+    if (get().publicationKey !== publication.key) return
     const { chapters, readerChapters } = get()
     const chapterIndex = chapters.findIndex((chapter) => chapter.chapterId === chapterId)
     const entry = readerChapters.find((candidate) => candidate.chapter.chapterId === chapterId)

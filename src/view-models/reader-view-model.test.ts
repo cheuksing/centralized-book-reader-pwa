@@ -511,10 +511,18 @@ describe('reader session lifecycle', () => {
     const activeOpen = useReaderViewModel.getState().openPublication(currentPublication)
     await vi.waitFor(() => expect(mocks.loadChapterContent).toHaveBeenCalledWith(currentPublication, currentChapter))
     const duplicateOpen = useReaderViewModel.getState().openPublication(currentPublication)
-    await duplicateOpen
+    let duplicateSettled = false
+    void duplicateOpen.then(() => { duplicateSettled = true })
+    await flushMicrotasks()
+
+    expect(duplicateSettled).toBe(false)
+    expect(mocks.loadChapterContent).toHaveBeenCalledTimes(1)
+    expect(useReaderViewModel.getState()).toMatchObject({ publicationKey: currentPublication.key, isLoadingChapter: true })
 
     content.resolve([sectionFor('publication-a', currentChapter)])
     await activeOpen
+    await duplicateOpen
+    expect(duplicateSettled).toBe(true)
     expect(useReaderViewModel.getState()).toMatchObject({ publicationKey: currentPublication.key, isLoading: false, isLoadingChapter: false })
   })
 
@@ -575,6 +583,34 @@ describe('reader session lifecycle', () => {
     content.resolve([sectionFor('publication-a', nextChapter)])
     await navigation
     expect(useReaderViewModel.getState().resumeLocator?.chapterId).toBe(nextChapter.chapterId)
+  })
+
+  it('selects a previous adjacent chapter without applying saved progress', async () => {
+    const currentPublication = publication('publication-a')
+    const previousChapter = chapter(currentPublication.key)
+    const currentChapter = chapter(currentPublication.key, 'chapter-2')
+    const currentSection = sectionFor('publication-a', currentChapter)
+    const savedLocator = { type: 'text' as const, chapterId: currentChapter.chapterId, resourceId: 'saved-resource', characterOffset: 42, quote: { exact: 'saved' }, chapterPercentage: 75 }
+    const content = deferred<ReaderSection[]>()
+
+    mocks.loadChapterContent.mockImplementation((_publication: Publication, loadedChapter: Chapter) => loadedChapter.key === previousChapter.key ? content.promise : Promise.resolve([sectionFor('publication-a', loadedChapter)]))
+    useReaderViewModel.setState({
+      publicationKey: currentPublication.key,
+      chapters: [previousChapter, currentChapter],
+      chapterIndex: 1,
+      readerChapters: [{ chapter: currentChapter, sections: [currentSection], loading: false }],
+      sections: [currentSection],
+      resumeLocator: savedLocator,
+      isLoadingChapter: false,
+    })
+
+    const navigation = useReaderViewModel.getState().selectAdjacentChapter(currentPublication, 'previous', currentChapter.chapterId)
+    await vi.waitFor(() => expect(mocks.loadChapterContent).toHaveBeenCalledWith(currentPublication, previousChapter))
+    expect(useReaderViewModel.getState()).toMatchObject({ chapterIndex: 0, resumeLocator: undefined, isLoadingChapter: true })
+
+    content.resolve([sectionFor('publication-a', previousChapter)])
+    await navigation
+    expect(useReaderViewModel.getState().resumeLocator?.chapterId).toBe(previousChapter.chapterId)
   })
 
   it('delegates same-publication requested chapter navigation to selectChapter', async () => {

@@ -235,7 +235,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     const persistProgress = Boolean(requestedChapterId || resume)
     const operationKey = readerOpenOperationKey(publication.key, requestedChapterId, resume)
     const current = get()
-    if (resume && current.publicationKey === publication.key && !requestedChapterId && (current.isLoading || current.isLoadingChapter)) return Promise.resolve()
+    if (resume && current.publicationKey === publication.key && !requestedChapterId && (current.isLoading || current.isLoadingChapter)) return openPublicationOperations.get(operationKey) ?? Promise.resolve()
     return runKeyedOperation(openPublicationOperations, operationKey, async () => {
       const requestId = ++latestReaderRequest
       const initial = get()

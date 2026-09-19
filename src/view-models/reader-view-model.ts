@@ -232,6 +232,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   },
   openPublication: (publication, requestedChapterId, options) => {
     const resume = !requestedChapterId && options?.resume !== false
+    const persistProgress = Boolean(requestedChapterId || resume)
     const operationKey = readerOpenOperationKey(publication.key, requestedChapterId, resume)
     const current = get()
     if (current.publicationKey === publication.key && !requestedChapterId && (current.isLoading || current.isLoadingChapter)) return Promise.resolve()
@@ -255,9 +256,15 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
       const key = readerPublication.key
       const current = get()
       if (canReuseReaderPublication(key, current.publicationKey, current.isLoading, current.isLoadingChapter, current.chapters.length)) {
-        if (requestedChapterId && current.chapters[current.chapterIndex]?.chapterId !== requestedChapterId) await get().selectChapter(readerPublication, requestedChapterId)
-        else if (requestedChapterId) set({ resumeLocator: undefined, sectionIndex: 0 })
-        return
+        if (requestedChapterId && current.chapters[current.chapterIndex]?.chapterId !== requestedChapterId) {
+          await get().selectChapter(readerPublication, requestedChapterId)
+          return
+        }
+        if (requestedChapterId) {
+          set({ resumeLocator: undefined, sectionIndex: 0 })
+          return
+        }
+        if (resume) return
       }
       if (sameSession && (current.isLoading || current.isLoadingChapter) && !requestedChapterId) return
       if (sameSession) claimSession()
@@ -303,7 +310,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
         if (!chapter) throw new Error('No chapter is available.')
         set({ chapters: chapters.map((chapter) => ({ ...chapter })), chapterIndex, readerChapters: [{ chapter, sections: [], loading: true }], isLoading: false, isLoadingChapter: true })
         const locator = resume ? readerPublication.progress?.locator : undefined
-        await loadChapter(readerPublication, chapter, false, locator, requestId)
+        await loadChapter(readerPublication, chapter, false, locator, requestId, persistProgress)
       } catch (error) {
         if (isCurrentReaderRequest(requestId, latestReaderRequest) && get().publicationKey === key) set({ error: error instanceof Error ? error.message : 'Could not open this publication.', isLoading: false, isLoadingChapter: false })
       }
@@ -537,7 +544,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   },
 }))
 
-async function loadChapter(publication: Publication, chapter: ChapterDocument, establishIntent = false, locator?: ReadingLocator, requestId = latestReaderRequest): Promise<void> {
+async function loadChapter(publication: Publication, chapter: ChapterDocument, establishIntent = false, locator?: ReadingLocator, requestId = latestReaderRequest, persistProgress = true): Promise<void> {
   try {
     const sections = await loadChapterContent(publication, chapter)
     const current = useReaderViewModel.getState()
@@ -549,10 +556,10 @@ async function loadChapter(publication: Publication, chapter: ChapterDocument, e
     }
     const requestedResource = locator?.chapterId === chapter.chapterId ? locator.resourceId : undefined
     const sectionIndex = requestedResource ? Math.max(0, sections.findIndex((section) => section.resourceId === requestedResource)) : 0
-    const firstLocator = !locator && sections[sectionIndex] ? { ...locatorFor(sections[sectionIndex], sectionIndex, sections.length), chapterId: chapter.chapterId } : undefined
+    const firstLocator = persistProgress && !locator && sections[sectionIndex] ? { ...locatorFor(sections[sectionIndex], sectionIndex, sections.length), chapterId: chapter.chapterId } : undefined
     useReaderViewModel.setState({ readerChapters: updateReaderChapter(current.readerChapters, chapter.key, () => ({ chapter: entry.chapter, sections, loading: false })), sections, sectionIndex, isLoadingChapter: false, error: undefined, ...(firstLocator ? { resumeLocator: firstLocator } : {}) })
-    beginReadingIntentTimer(publication, chapter.key)
-    if (establishIntent) void establishReadingIntent(publication, chapter.key)
+    if (persistProgress) beginReadingIntentTimer(publication, chapter.key)
+    if (persistProgress && establishIntent) void establishReadingIntent(publication, chapter.key)
     if (firstLocator) queueProgress(publication, firstLocator)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Could not load this chapter.'

@@ -22,10 +22,12 @@ export function BookIndexPage() {
   const chapterNextCursor = useReaderViewModel((state) => state.chapterNextCursor)
   const chapterCursorPublicationKey = useReaderViewModel((state) => state.chapterCursorPublicationKey)
   const openPublication = useReaderViewModel((state) => state.openPublication)
+  const closeBook = useReaderViewModel((state) => state.closeBook)
   const isLoadingMoreChapters = useReaderViewModel((state) => state.isLoadingMoreChapters)
   const loadMoreChapters = useReaderViewModel((state) => state.loadMoreChapters)
   const canvasRef = useRef<HTMLOListElement>(null)
   const centeredChapterRef = useRef<string | undefined>(undefined)
+  const indexOpenPublicationKeyRef = useRef<string | undefined>(undefined)
   const [scrollMargin, setScrollMargin] = useState(0)
   const currentChapterId = readerPublicationKey === publication?.key ? chapters[chapterIndex]?.chapterId : undefined
   const selectedIndex = chapters.findIndex((chapter) => chapter.chapterId === (currentChapterId ?? publication?.progress?.locator.chapterId))
@@ -52,9 +54,10 @@ export function BookIndexPage() {
   const lastVirtualItem = virtualItems.at(-1)
 
   useEffect(() => {
-    if (!publication || readerPublicationKey === publication.key) return
+    if (!publication || indexOpenPublicationKeyRef.current === publication.key) return
+    indexOpenPublicationKeyRef.current = publication.key
     void openPublication(publication, undefined, { resume: false })
-  }, [openPublication, publication, readerPublicationKey])
+  }, [openPublication, publication])
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current
@@ -88,7 +91,7 @@ export function BookIndexPage() {
   }, [chapters.length, hasMoreChapters, isLoadingMoreChapters, lastVirtualItem?.index, loadMore])
 
   if (!publication) return null
-  const closeIndex = () => navigate(readerPath(publication.key), { replace: true })
+  const closeIndex = () => { closeBook(); navigate(readerPath(publication.key), { replace: true }) }
   const jumpToChapter = (chapterId: string) => navigate(readerPath(publication.key, chapterId))
   const readerMetadataAvailable = readerPublicationKey === publication.key && (readerKnownChapterCount !== undefined || readerChapterIndexKnowledge !== undefined)
   const knownChapterCount = readerMetadataAvailable ? readerKnownChapterCount : publication.knownChapterCount

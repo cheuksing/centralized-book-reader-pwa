@@ -274,8 +274,11 @@ export function ReaderPage() {
   }, [closeBook, closeControls])
   const openChapterIndex = useCallback(() => {
     closeControls()
-    if (publication) navigate(indexPath(publication.key), { replace: true })
-  }, [closeControls, navigate, publication])
+    if (publication) {
+      closeBook()
+      navigate(indexPath(publication.key), { replace: true })
+    }
+  }, [closeBook, closeControls, navigate, publication])
   const retryBoundary = useCallback((direction: 'previous' | 'next', chapterId: string) => {
     if (readerSessionMatches && publication && online) void loadAdjacentChapter(publication, direction, chapterId)
   }, [loadAdjacentChapter, online, publication, readerSessionMatches])

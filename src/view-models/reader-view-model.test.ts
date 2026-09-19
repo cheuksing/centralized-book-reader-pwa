@@ -180,7 +180,7 @@ describe('reader request and render gates', () => {
 })
 
 describe('reader session lifecycle', () => {
-  it('opens chapter index browsing without applying saved progress', async () => {
+  it('opens chapter index browsing without applying or writing saved progress', async () => {
     const currentPublication = publication('publication-a')
     const firstChapter = chapter(currentPublication.key)
     const savedChapter = chapter(currentPublication.key, 'chapter-2')
@@ -199,6 +199,38 @@ describe('reader session lifecycle', () => {
 
     content.resolve([sectionFor('publication-a', firstChapter)])
     await opening
+    expect(useReaderViewModel.getState()).toMatchObject({ chapterIndex: 0, resumeLocator: undefined, isLoading: false, isLoadingChapter: false })
+    await useReaderViewModel.getState().flushProgress()
+    expect(mocks.saveReadingProgress).not.toHaveBeenCalled()
+  })
+
+  it('reopens an active same-publication session for index browsing and resumes on return', async () => {
+    const currentPublication = {
+      ...publication('publication-a'),
+      progress: {
+        locator: { type: 'text' as const, chapterId: 'chapter-2', resourceId: 'saved-resource', characterOffset: 42, quote: { exact: 'saved' }, chapterPercentage: 75 },
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
+    }
+    const firstChapter = chapter(currentPublication.key)
+    const savedChapter = chapter(currentPublication.key, 'chapter-2')
+
+    mocks.getLibraryPublication.mockResolvedValue(currentPublication)
+    mocks.getLocalChapters.mockResolvedValue([firstChapter, savedChapter])
+    mocks.loadChapterContent.mockImplementation(async (_publication: Publication, currentChapter: Chapter) => [sectionFor('publication-a', currentChapter)])
+
+    await useReaderViewModel.getState().openPublication(currentPublication)
+    expect(useReaderViewModel.getState()).toMatchObject({ chapterIndex: 1, resumeLocator: currentPublication.progress.locator, isLoading: false, isLoadingChapter: false })
+
+    await useReaderViewModel.getState().openPublication(currentPublication, undefined, { resume: false })
+    expect(useReaderViewModel.getState()).toMatchObject({ chapterIndex: 0, resumeLocator: undefined, isLoading: false, isLoadingChapter: false })
+    expect(useReaderViewModel.getState().readerChapters[0]?.chapter.chapterId).toBe(firstChapter.chapterId)
+    await useReaderViewModel.getState().flushProgress()
+    expect(mocks.saveReadingProgress).not.toHaveBeenCalled()
+
+    useReaderViewModel.getState().closeBook()
+    await useReaderViewModel.getState().openPublication(currentPublication)
+    expect(useReaderViewModel.getState()).toMatchObject({ chapterIndex: 1, resumeLocator: currentPublication.progress.locator, isLoading: false, isLoadingChapter: false })
   })
 
   it('claims and clears a new reader session before awaiting publication entry work', async () => {

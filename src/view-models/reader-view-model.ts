@@ -78,6 +78,10 @@ export function readerOpenOperationKey(publicationKey: string, requestedChapterI
   return `${publicationKey}:${requestedChapterId ?? ''}`
 }
 
+export function canReuseReaderPublication(publicationKey: string, activePublicationKey: string | undefined, isLoading: boolean, isLoadingChapter: boolean, chapterCount: number): boolean {
+  return publicationKey === activePublicationKey && !isLoading && !isLoadingChapter && chapterCount > 0
+}
+
 export function isCurrentReaderRequest(requestId: number, currentRequestId: number): boolean {
   return requestId === currentRequestId
 }
@@ -232,7 +236,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
       if (!isCurrentReaderRequest(requestId, latestReaderRequest)) return
       const key = readerPublication.key
       const current = get()
-      if (current.publicationKey === key && (current.isLoading || current.isLoadingChapter || current.chapters.length > 0)) {
+      if (canReuseReaderPublication(key, current.publicationKey, current.isLoading, current.isLoadingChapter, current.chapters.length)) {
         if (requestedChapterId && current.chapters[current.chapterIndex]?.chapterId !== requestedChapterId) await get().selectChapter(readerPublication, requestedChapterId)
         else if (requestedChapterId) set({ resumeLocator: undefined, sectionIndex: 0 })
         return

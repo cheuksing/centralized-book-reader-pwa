@@ -1,5 +1,5 @@
 import { runKeyedOperation } from '@services/book-content-service'
-import { isCurrentReaderRequest, readerOpenOperationKey } from './reader-view-model.js'
+import { canReuseReaderPublication, isCurrentReaderRequest, readerOpenOperationKey } from './reader-view-model.js'
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
@@ -9,6 +9,9 @@ assert(isCurrentReaderRequest(4, 4), 'the active reader request must be accepted
 assert(!isCurrentReaderRequest(3, 4), 'a stale reader request must be ignored')
 assert(readerOpenOperationKey('publication', 'chapter') === readerOpenOperationKey('publication', 'chapter'), 'identical reader opens must use the same key')
 assert(readerOpenOperationKey('publication', 'chapter') !== readerOpenOperationKey('publication', 'other'), 'different chapter opens must not share a key')
+assert(canReuseReaderPublication('publication', 'publication', false, false, 2), 'ready reader state may be reused')
+assert(!canReuseReaderPublication('publication', 'publication', false, true, 2), 'chapter loads must be handed to the newer reader open')
+assert(!canReuseReaderPublication('publication', 'publication', true, false, 2), 'reader opens must be handed to the newer reader open')
 
 const operations = new Map<string, Promise<void>>()
 let starts = 0

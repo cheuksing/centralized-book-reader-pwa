@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { ChapterDocument, ReadingLocator } from '@models/database/schemas'
 import type { Chapter, Publication, ReaderSettings } from '@models/entities/domain'
-import { loadChapterContent, markChapterAccessed, prepareUpcomingChapters, releaseBookContent, ensureResourceCached, READING_INTENT, type ChapterPreparationResult, type ReaderSection } from '@services/book-content-service'
+import { loadChapterContent, markChapterAccessed, prepareUpcomingChapters, releaseBookContent, ensureResourceCached, READING_INTENT, runKeyedOperation, type ChapterPreparationResult, type ReaderSection } from '@services/book-content-service'
 import { shouldEstablishProgressIntent, shouldRecordVisibleChapterAccess, shouldRetainPreparationIntent } from '@services/cache-preparation'
 import { enterReader, getLibraryPublication, saveReadingProgress } from '@services/library-service'
 import { loadReaderSettings, saveReaderSettings } from '@services/reader-settings-service'
@@ -71,6 +71,13 @@ function locatorFor(section: ReaderSection, sectionIndex: number, sectionCount: 
 }
 
 let progressWrite: Promise<void> = Promise.resolve()
+const openPublicationOperations = new Map<string, Promise<void>>()
+let latestReaderRequest = 0
+
+export function isCurrentReaderRequest(requestId: number, currentRequestId: number): boolean {
+  return requestId === currentRequestId
+}
+
 let readingIntentTimer: number | undefined
 let readingIntentChapterKey: string | undefined
 let preparationRequestedChapterKey: string | undefined
@@ -211,68 +218,76 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     installPreparationRetryListeners()
     try { set({ settings: await loadReaderSettings() }) } catch { set({ settings: initialSettings }) }
   },
-  openPublication: async (publication, requestedChapterId) => {
-    const readerPublication = requestedChapterId ? publication : await getLibraryPublication(publication.key).catch(() => undefined) ?? publication
-    await enterReader(readerPublication)
-    const key = readerPublication.key
-    const current = get()
-    if (current.publicationKey === key && (current.isLoading || current.isLoadingChapter || current.chapters.length > 0)) {
-      if (requestedChapterId && current.chapters[current.chapterIndex]?.chapterId !== requestedChapterId) await get().selectChapter(readerPublication, requestedChapterId)
-      else if (requestedChapterId) set({ resumeLocator: undefined, sectionIndex: 0 })
-      return
-    }
-    releaseReaderChapters(current.readerChapters)
-    resetReadingIntent()
-    const chapterNextCursor = current.chapterCursorPublicationKey === key ? current.chapterNextCursor : undefined
-    const resumeLocator = requestedChapterId ? undefined : readerPublication.progress?.locator
-    set({ publicationKey: key, chapterIndexKnowledge: readerPublication.chapterIndexKnowledge, knownChapterCount: readerPublication.knownChapterCount, chapters: [], chapterIndex: 0, chapterNextCursor, chapterCursorPublicationKey: key, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
-    try {
-      let chapters = await getLocalChapters(key)
-      if (get().publicationKey !== key) return
-      const targetId = requestedChapterId ?? readerPublication.progress?.locator.chapterId
-      const paginationKnown = current.chapterCursorPublicationKey === key
-      let source = chapters.length === 0 || !paginationKnown ? await getSourceForPublication(key) : undefined
-      let cursor = paginationKnown ? get().chapterNextCursor : undefined
-      if (chapters.length === 0 || !paginationKnown) {
-        if (!source) {
-          if (chapters.length === 0) throw new Error('This publication has no cached chapter index.')
-        } else {
-          try {
-            const synced = await syncPublication(source, readerPublication.publicationId)
-            if (get().publicationKey !== key) return
-            set({ chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount })
-            chapters = await getLocalChapters(key)
-            cursor = synced.nextCursor
-          } catch (error) {
-            if (chapters.length === 0) throw error
+  openPublication: (publication, requestedChapterId) => {
+    const operationKey = `${publication.key}:${requestedChapterId ?? ''}`
+    return runKeyedOperation(openPublicationOperations, operationKey, async () => {
+      const requestId = ++latestReaderRequest
+      const readerPublication = requestedChapterId ? publication : await getLibraryPublication(publication.key).catch(() => undefined) ?? publication
+      if (!isCurrentReaderRequest(requestId, latestReaderRequest)) return
+      await enterReader(readerPublication)
+      if (!isCurrentReaderRequest(requestId, latestReaderRequest)) return
+      const key = readerPublication.key
+      const current = get()
+      if (current.publicationKey === key && (current.isLoading || current.isLoadingChapter || current.chapters.length > 0)) {
+        if (requestedChapterId && current.chapters[current.chapterIndex]?.chapterId !== requestedChapterId) await get().selectChapter(readerPublication, requestedChapterId)
+        else if (requestedChapterId) set({ resumeLocator: undefined, sectionIndex: 0 })
+        return
+      }
+      releaseReaderChapters(current.readerChapters)
+      resetReadingIntent()
+      const chapterNextCursor = current.chapterCursorPublicationKey === key ? current.chapterNextCursor : undefined
+      const resumeLocator = requestedChapterId ? undefined : readerPublication.progress?.locator
+      set({ publicationKey: key, chapterIndexKnowledge: readerPublication.chapterIndexKnowledge, knownChapterCount: readerPublication.knownChapterCount, chapters: [], chapterIndex: 0, chapterNextCursor, chapterCursorPublicationKey: key, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
+      try {
+        let chapters = await getLocalChapters(key)
+        if (get().publicationKey !== key || !isCurrentReaderRequest(requestId, latestReaderRequest)) return
+        const targetId = requestedChapterId ?? readerPublication.progress?.locator.chapterId
+        const paginationKnown = current.chapterCursorPublicationKey === key
+        let source = chapters.length === 0 || !paginationKnown ? await getSourceForPublication(key) : undefined
+        let cursor = paginationKnown ? get().chapterNextCursor : undefined
+        if (chapters.length === 0 || !paginationKnown) {
+          if (!source) {
+            if (chapters.length === 0) throw new Error('This publication has no cached chapter index.')
+          } else {
+            try {
+              const synced = await syncPublication(source, readerPublication.publicationId)
+              if (get().publicationKey !== key || !isCurrentReaderRequest(requestId, latestReaderRequest)) return
+              set({ chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount })
+              chapters = await getLocalChapters(key)
+              cursor = synced.nextCursor
+            } catch (error) {
+              if (chapters.length === 0) throw error
+            }
           }
         }
+        while (targetId && !chapters.some((chapter) => chapter.chapterId === targetId) && cursor) {
+          source ??= await getSourceForPublication(key)
+          if (!source) break
+          const synced = await syncPublication(source, readerPublication.publicationId, cursor)
+          if (get().publicationKey !== key || !isCurrentReaderRequest(requestId, latestReaderRequest)) return
+          set({ chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount })
+          chapters = await getLocalChapters(key)
+          cursor = synced.nextCursor === cursor ? undefined : synced.nextCursor
+        }
+        if (!isCurrentReaderRequest(requestId, latestReaderRequest)) return
+        set({ chapterNextCursor: cursor, chapterCursorPublicationKey: key })
+        const targetIndex = targetId ? Math.max(0, chapters.findIndex((chapter) => chapter.chapterId === targetId)) : 0
+        const chapterIndex = targetIndex >= 0 ? targetIndex : 0
+        const chapter = chapters[chapterIndex]
+        if (!chapter) throw new Error('No chapter is available.')
+        set({ chapters: chapters.map((chapter) => ({ ...chapter })), chapterIndex, readerChapters: [{ chapter, sections: [], loading: true }], isLoading: false, isLoadingChapter: true })
+        const locator = requestedChapterId ? undefined : readerPublication.progress?.locator
+        await loadChapter(readerPublication, chapter, false, locator, requestId)
+      } catch (error) {
+        if (isCurrentReaderRequest(requestId, latestReaderRequest) && get().publicationKey === key) set({ error: error instanceof Error ? error.message : 'Could not open this publication.', isLoading: false, isLoadingChapter: false })
       }
-      while (targetId && !chapters.some((chapter) => chapter.chapterId === targetId) && cursor) {
-        source ??= await getSourceForPublication(key)
-        if (!source) break
-        const synced = await syncPublication(source, readerPublication.publicationId, cursor)
-        if (get().publicationKey !== key) return
-        set({ chapterIndexKnowledge: synced.publication.chapterIndexKnowledge, knownChapterCount: synced.publication.knownChapterCount })
-        chapters = await getLocalChapters(key)
-        cursor = synced.nextCursor === cursor ? undefined : synced.nextCursor
-      }
-      set({ chapterNextCursor: cursor, chapterCursorPublicationKey: key })
-      const targetIndex = targetId ? Math.max(0, chapters.findIndex((chapter) => chapter.chapterId === targetId)) : 0
-      const chapterIndex = targetIndex >= 0 ? targetIndex : 0
-      const chapter = chapters[chapterIndex]
-      if (!chapter) throw new Error('No chapter is available.')
-      set({ chapters: chapters.map((chapter) => ({ ...chapter })), chapterIndex, readerChapters: [{ chapter, sections: [], loading: true }], isLoading: false, isLoadingChapter: true })
-      const locator = requestedChapterId ? undefined : readerPublication.progress?.locator
-      await loadChapter(readerPublication, chapter, false, locator)
-    } catch (error) {
-      if (get().publicationKey === key) set({ error: error instanceof Error ? error.message : 'Could not open this publication.', isLoading: false, isLoadingChapter: false })
-    }
+    })
   },
   selectChapter: async (publication, chapterId) => {
     if (get().publicationKey !== publication.key) return
     const index = get().chapters.findIndex((chapter) => chapter.chapterId === chapterId)
     if (index < 0) return
+    const requestId = ++latestReaderRequest
     const forwardNavigation = index > get().chapterIndex
     await flushProgress()
     if (get().publicationKey !== publication.key) return
@@ -280,7 +295,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     resetReadingIntent()
     releaseReaderChapters(get().readerChapters)
     set({ chapterIndex: index, readerChapters: [{ chapter, sections: [], loading: true }], sections: [], resumeLocator: undefined, isLoadingChapter: true, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
-    await loadChapter(publication, chapter, forwardNavigation)
+    await loadChapter(publication, chapter, forwardNavigation, undefined, requestId)
   },
   selectAdjacentChapter: async (publication, direction, chapterId) => {
     const delta = direction === 'previous' ? -1 : 1
@@ -419,6 +434,8 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
     } catch (error) { set({ error: error instanceof Error ? error.message : 'Could not load this image.' }) }
   },
   closeBook: () => {
+    latestReaderRequest += 1
+    openPublicationOperations.clear()
     resetReadingIntent()
     void flushProgress().catch(() => undefined)
     releaseReaderChapters(get().readerChapters)
@@ -465,12 +482,13 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
   },
 }))
 
-async function loadChapter(publication: Publication, chapter: ChapterDocument, establishIntent = false, locator?: ReadingLocator): Promise<void> {
+async function loadChapter(publication: Publication, chapter: ChapterDocument, establishIntent = false, locator?: ReadingLocator, requestId = latestReaderRequest): Promise<void> {
   try {
     const sections = await loadChapterContent(publication, chapter)
     const current = useReaderViewModel.getState()
     const entry = current.readerChapters.find((candidate) => candidate.chapter.key === chapter.key)
-    if (current.publicationKey !== publication.key || !entry) {
+    const activeChapterKey = current.chapters[current.chapterIndex]?.key
+    if (!isCurrentReaderRequest(requestId, latestReaderRequest) || current.publicationKey !== publication.key || activeChapterKey !== chapter.key || !entry) {
       releaseBookContent(sections)
       return
     }
@@ -484,6 +502,7 @@ async function loadChapter(publication: Publication, chapter: ChapterDocument, e
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Could not load this chapter.'
     const current = useReaderViewModel.getState()
-    if (current.publicationKey === publication.key) useReaderViewModel.setState({ readerChapters: updateReaderChapter(current.readerChapters, chapter.key, (entry) => ({ ...entry, loading: false, error: message })), isLoadingChapter: false, error: message })
+    if (!isCurrentReaderRequest(requestId, latestReaderRequest) || current.publicationKey !== publication.key || current.chapters[current.chapterIndex]?.key !== chapter.key) return
+    useReaderViewModel.setState({ readerChapters: updateReaderChapter(current.readerChapters, chapter.key, (entry) => ({ ...entry, loading: false, error: message })), isLoadingChapter: false, error: message })
   }
 }

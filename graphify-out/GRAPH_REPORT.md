@@ -1,17 +1,17 @@
 # Graph Report - centralized-book-reader-pwa  (2026-09-21)
 
 ## Corpus Check
-- 162 files · ~112,038 words
+- 162 files · ~112,713 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 27 file(s) not represented in the graph (top: .scss 18, .diff 5, (none) 3)
+- Unclassified: 26 file(s) not represented in the graph (top: .scss 18, .diff 5, (none) 2)
 
 ## Summary
-- 1534 nodes · 2406 edges · 110 communities (90 shown, 20 thin omitted)
+- 1540 nodes · 2417 edges · 104 communities (83 shown, 21 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.84)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `270d55fc`
+- Built from commit: `032a0e87`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -32,13 +32,10 @@
 - graphify reference: extra exports and benchmark
 - library-service.ts
 - html-selectors-adapter.ts
-- book-index-view-model.ts
 - source-browser-service.test.ts
 - graphify reference: query, path, explain
 - Bookshelf Reader
-- reader-view-model.test.ts
 - cache-policy.ts
-- reader-chapter-controller.test.ts
 - opfs-database.ts
 - app-view-model.ts
 - graphify reference: add a URL and watch a folder
@@ -60,18 +57,15 @@
 - package.json
 - route-commands.ts
 - Subagent-Driven Development
-- useReaderViewModel
-- FakeWindow
 - reader-view-model.ts
+- FakeWindow
 - Bookshelf Reader
 - react
 - architecture-boundary.test.ts
 - Workflow Patterns
 - Ponytail
 - home-page.tsx
-- reader-progress-controller.ts
 - Ponytail Help
-- settings-view-model.test.ts
 - reader-page.tsx
 - remote-fetch-service.ts
 - ponytail-audit/SKILL.md
@@ -152,7 +146,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (110 total, 20 thin omitted)
+## Communities (104 total, 21 thin omitted)
 
 ### Community 0 - "opfs-rx-storage.ts"
 Cohesion: 0.09
@@ -218,10 +212,6 @@ Nodes (28): clampLocator(), clampNumber(), clearHistory(), ensurePublicationCove
 Cohesion: 0.20
 Nodes (14): adapterConfig(), capturePattern(), chapterIndexes, HtmlPublicationFields, HtmlSelectorField, HtmlSelectorsAdapter, normalizeKind(), optionalField() (+6 more)
 
-### Community 16 - "book-index-view-model.ts"
-Cohesion: 0.16
-Nodes (13): ChapterRowModel, deriveChapterRow(), formatChapterCountLabel(), selectBookDetailsPage(), BookIndexErrorAction, BookIndexReaderState, BookIndexViewModel, ChapterJumpIntent (+5 more)
-
 ### Community 17 - "source-browser-service.test.ts"
 Cohesion: 0.29
 Nodes (8): loadCatalogLists(), loadCatalogPage(), loadRemotePublication(), searchSource(), adapter, mocks, publication, source
@@ -234,17 +224,9 @@ Nodes (5): For /graphify explain, For /graphify path, graphify reference: query,
 Cohesion: 0.29
 Nodes (6): Architecture boundaries, Bookshelf Reader, Local commands, Runtime prerequisites, Service responsibilities, Validation commands
 
-### Community 20 - "reader-view-model.test.ts"
-Cohesion: 0.12
-Nodes (6): cachedChapter(), chapter(), mocks, source, hasPendingPreparation(), mocks
-
 ### Community 21 - "cache-policy.ts"
 Cohesion: 0.16
 Nodes (12): CacheEvictionCandidate, CacheEvictionProtection, ChapterIndexKnowledge, evictionPriority(), evictionTimestamp(), filterEvictionCandidates(), getEvictionCandidates(), orderEvictionCandidates() (+4 more)
-
-### Community 22 - "reader-chapter-controller.test.ts"
-Cohesion: 0.22
-Nodes (9): createReaderChapterController(), isCacheReadThroughError(), locatorFor(), ReaderChapterContent, ReaderChapterController, ReaderChapterControllerDependencies, releaseReaderChapters(), sortReaderChapters() (+1 more)
 
 ### Community 23 - "opfs-database.ts"
 Cohesion: 0.16
@@ -271,7 +253,7 @@ Cohesion: 0.18
 Nodes (8): Fetch the methodology first, If the read is refused, MotionScore performance audit, Runtime audits, If the Motion MCP server is unavailable, Motion, Tiers, Upgrading Motion
 
 ### Community 30 - "vitest"
-Cohesion: 0.27
+Cohesion: 0.18
 Nodes (7): vitest, enqueueImage(), imageRequestsActive(), inFlight, pump(), queue, Task
 
 ### Community 31 - "html-text.ts"
@@ -279,16 +261,16 @@ Cohesion: 0.50
 Nodes (4): BLOCK_ELEMENTS, collectText(), extractHtmlText(), IGNORED_ELEMENTS
 
 ### Community 35 - "sources-service.test.ts"
-Cohesion: 0.14
-Nodes (26): chapterKey(), encodeKey(), publicationKey(), resourceKey(), addSource(), checkSourceUpdate(), getDatabase(), getSource() (+18 more)
+Cohesion: 0.11
+Nodes (30): chapterKey(), encodeKey(), publicationKey(), resourceKey(), addSource(), BundledSourceDefinition, bundledSourceDefinitions, checkSourceUpdate() (+22 more)
 
 ### Community 39 - "storage-service.ts"
 Cohesion: 0.10
 Nodes (35): ACTIVE_PREPARATION_CHECK_INTERVAL_MS, CachedStorageRecord, CachedStorageSummary, shouldCheckActivePreparation(), shouldRefreshStorageOnVisibility(), STORAGE_ESTIMATE_MAX_AGE_MS, summarizeCachedStorage(), clearOfflineCache() (+27 more)
 
 ### Community 40 - "publication-sync-service.test.ts"
-Cohesion: 0.07
-Nodes (42): defaultAppSettings, getCollection(), loadAppSettings(), savePersistenceResult(), appCollection(), documentFor(), mocks, chapterKeyFor() (+34 more)
+Cohesion: 0.12
+Nodes (26): chapterKeyFor(), getDatabase(), getLocalChapters(), getLocalPublication(), getSourceForPublication(), markChapterUpdateAvailable(), persistPublication(), persistPublicationNow() (+18 more)
 
 ### Community 42 - "package.json"
 Cohesion: 0.05
@@ -302,13 +284,9 @@ Nodes (9): detailsIntent(), indexIntent(), PublicationRouteIntent, readerIntent(
 Cohesion: 0.09
 Nodes (18): Implementer Subagent Prompt Template, Scoped Re-Review Prompt Template, 1. Dispatch the implementer, 2. Handle the report, 3. Review the task, 4. The fix loop, 5. Complete the task, Common Rationalizations (+10 more)
 
-### Community 45 - "useReaderViewModel"
-Cohesion: 0.26
-Nodes (7): isCurrentReaderRequest(), isReaderContentRenderable(), readerOpenOperationKey(), ReaderOperation, ReaderSessionIdentity, ReaderSessionPublication, useReaderViewModel
-
-### Community 47 - "reader-view-model.ts"
-Cohesion: 0.24
-Nodes (10): ReaderChapterControllerState, createReaderSettingsController(), defaultReaderSettings, normalizeReaderSettings(), ReaderSettingsController, ReaderSettingsPersistence, installPreparationRetryListeners(), isBrowserOnline() (+2 more)
+### Community 45 - "reader-view-model.ts"
+Cohesion: 0.06
+Nodes (38): createReaderChapterController(), isCacheReadThroughError(), locatorFor(), ReaderChapterContent, ReaderChapterController, ReaderChapterControllerDependencies, ReaderChapterControllerState, releaseReaderChapters() (+30 more)
 
 ### Community 49 - "react"
 Cohesion: 0.12
@@ -330,19 +308,11 @@ Nodes (8): Boundaries, Intensity, Output, Persistence, Ponytail, Rules, The ladd
 Cohesion: 0.19
 Nodes (8): @tanstack/react-virtual, BookIndexPage(), BookIndexPageProps, HomePage(), HomePageProps, LIBRARY_LISTS, InfiniteScrollSentinel(), InfiniteScrollSentinelProps
 
-### Community 54 - "reader-progress-controller.ts"
-Cohesion: 0.18
-Nodes (8): createReaderProgressController(), locatorForSection(), PendingProgress, ReaderProgressController, ReaderProgressControllerOptions, ReaderProgressSession, locator, TimerHandle
-
 ### Community 55 - "Ponytail Help"
 Cohesion: 0.25
 Nodes (7): Configure Default Mode, Deactivate, Levels, More, Ponytail Help, Skills, Update
 
-### Community 56 - "settings-view-model.test.ts"
-Cohesion: 0.22
-Nodes (4): SettingsViewModel, ControlledWindow, defaultSettings, mocks
-
-### Community 57 - "reader-page.tsx"
+### Community 58 - "reader-page.tsx"
 Cohesion: 0.67
 Nodes (3): ReaderPage(), ReaderPageProps, ReaderPageModel
 
@@ -367,8 +337,8 @@ Cohesion: 0.40
 Nodes (4): Boundaries, Honesty boundary, Ponytail Gain, Scoreboard
 
 ### Community 65 - "backup-service.test.ts"
-Cohesion: 0.14
-Nodes (18): bulkInsertOrThrow(), downloadBackup(), getDatabase(), importBackupFile(), publicationMetadataForBackup(), sourceMetadataForBackup(), bookmark, collectionFor() (+10 more)
+Cohesion: 0.07
+Nodes (34): defaultAppSettings, getCollection(), loadAppSettings(), savePersistenceResult(), appCollection(), documentFor(), mocks, bulkInsertOrThrow() (+26 more)
 
 ### Community 66 - "Task 3 implementation report"
 Cohesion: 0.06
@@ -447,16 +417,12 @@ Cohesion: 0.09
 Nodes (21): Build, lint, diagnostics, and diff validation, Build, lint, diagnostics, and diff validation, Build, lint, diagnostics, and diff validation, Concerns, Concerns, Concerns, Files changed, Files changed in this fix round (+13 more)
 
 ### Community 97 - "book-details-view-model.ts"
-Cohesion: 0.22
-Nodes (13): BookDetailsCommandStatus, BookDetailsPageModel, BookDetailsPaginationStatus, BookDetailsStatus, BookDetailsViewModel, currentLoad(), errorMessage(), IndexMetadata (+5 more)
+Cohesion: 0.09
+Nodes (29): BookDetailsCommandStatus, BookDetailsPageModel, BookDetailsPaginationStatus, BookDetailsStatus, BookDetailsViewModel, ChapterRowModel, currentLoad(), deriveChapterRow() (+21 more)
 
 ### Community 98 - "Library and Offline Cache implementation plan"
 Cohesion: 0.22
 Nodes (8): Global constraints, Library and Offline Cache implementation plan, Task 1: Cache data model and pure policy, Task 2: Read-through cache, LRU/quota recovery, and automatic preparation, Task 3: Library information architecture and rows, Task 4: Reader index, details, and offline presentation, Task 5: Settings storage section and lifecycle estimation, Task 6: Integration verification and cleanup
-
-### Community 99 - "source-browser-view-model.test.ts"
-Cohesion: 0.28
-Nodes (4): errorMessage(), mocks, page(), useSourceBrowserViewModel
 
 ### Community 101 - "SDD ledger — plan: docs/library-offline-cache-functional-spec.md"
 Cohesion: 0.20
@@ -475,16 +441,16 @@ Cohesion: 0.14
 Nodes (13): emptySnapshot(), errorMessage(), HomeRow, HomeStatus, HomeView, HomeViewModel, LibraryList, remainingCopy() (+5 more)
 
 ### Community 109 - "settings-view-model.ts"
-Cohesion: 0.27
-Nodes (11): clamp(), errorMessage(), formatBytes(), initialSettingsLabels, isValidStorageUsage(), SettingsInitializationStatus, settingsLabels(), SettingsOperationStatus (+3 more)
+Cohesion: 0.14
+Nodes (15): clamp(), errorMessage(), formatBytes(), initialSettingsLabels, isValidStorageUsage(), SettingsInitializationStatus, settingsLabels(), SettingsOperationStatus (+7 more)
 
 ### Community 110 - "Task 4 implementation report"
 Cohesion: 0.08
 Nodes (23): Build, Build, Changed-file diagnostics, Concerns, Concerns, Diagnostics and whitespace, Diff and graph checks, Existing focused executable checks (+15 more)
 
 ### Community 111 - "sources-page-view-model.ts"
-Cohesion: 0.26
-Nodes (10): state(), SourceBrowserViewModel, composeSourcesPageState(), NormalizedRemotePublication, normalizeRemotePublication(), removeSourceAndCloseBrowser(), SourcesPageState, SourcesPageViewModel (+2 more)
+Cohesion: 0.25
+Nodes (11): errorMessage(), SourceBrowserViewModel, useSourceBrowserViewModel, composeSourcesPageState(), NormalizedRemotePublication, normalizeRemotePublication(), removeSourceAndCloseBrowser(), SourcesPageState (+3 more)
 
 ### Community 114 - "Final review fix wave report"
 Cohesion: 0.20
@@ -515,23 +481,23 @@ Cohesion: 0.50
 Nodes (4): CacheClearInProgressError, withQuotaRecovery(), isQuotaStorageError(), runWithBoundedQuotaRetry()
 
 ## Knowledge Gaps
-- **617 isolated node(s):** `$schema`, `plugins`, `react/rules-of-hooks`, `react/only-export-components`, `probe` (+612 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 791 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **20 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **619 isolated node(s):** `$schema`, `plugins`, `react/rules-of-hooks`, `react/only-export-components`, `probe` (+614 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 794 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **21 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `vitest` connect `vitest` to `sources-page.tsx`, `book-content-service.ts`, `library-service.ts`, `book-index-view-model.ts`, `source-browser-service.test.ts`, `reader-view-model.test.ts`, `reader-chapter-controller.test.ts`, `app-view-model.ts`, `sources-service.test.ts`, `storage-service.ts`, `publication-sync-service.test.ts`, `package.json`, `route-commands.ts`, `useReaderViewModel`, `reader-view-model.ts`, `react`, `architecture-boundary.test.ts`, `reader-progress-controller.ts`, `settings-view-model.test.ts`, `remote-fetch-service.ts`, `backup-service.test.ts`, `cache-preparation.ts`, `app.tsx`, `source-browser-view-model.test.ts`, `sources-view-model.ts`, `home-view-model.ts`, `sources-page-view-model.ts`, `book-content-service.integration.test.ts`, `reader-ui-adapter.test.ts`?**
-  _High betweenness centrality (0.250) - this node is a cross-community bridge._
+- **Why does `vitest` connect `vitest` to `sources-page.tsx`, `book-content-service.ts`, `library-service.ts`, `source-browser-service.test.ts`, `app-view-model.ts`, `sources-service.test.ts`, `storage-service.ts`, `publication-sync-service.test.ts`, `package.json`, `route-commands.ts`, `reader-view-model.ts`, `react`, `architecture-boundary.test.ts`, `remote-fetch-service.ts`, `backup-service.test.ts`, `cache-preparation.ts`, `app.tsx`, `book-details-view-model.ts`, `source-browser-view-model.test.ts`, `sources-view-model.ts`, `home-view-model.ts`, `settings-view-model.ts`, `sources-page-view-model.ts`, `book-content-service.integration.test.ts`, `reader-ui-adapter.test.ts`?**
+  _High betweenness centrality (0.249) - this node is a cross-community bridge._
 - **Why does `rxdb` connect `opfs-database.ts` to `opfs-rx-storage.ts`, `schemas.ts`, `package.json`, `book-content-service.ts`?**
-  _High betweenness centrality (0.069) - this node is a cross-community bridge._
+  _High betweenness centrality (0.070) - this node is a cross-community bridge._
 - **Why does `react` connect `react` to `sources-page.tsx`, `reader-ui-adapter.tsx`, `ContextMenu`, `app.tsx`, `package.json`, `home-page.tsx`, `reader-ui-adapter.test.ts`?**
-  _High betweenness centrality (0.044) - this node is a cross-community bridge._
+  _High betweenness centrality (0.042) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `useReaderViewModel` (e.g. with `.currentRequest()` and `.invalidate()`) actually correct?**
   _`useReaderViewModel` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `$schema`, `plugins`, `react/rules-of-hooks` to the rest of the system?**
-  _617 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _619 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `opfs-rx-storage.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.09230769230769231 - nodes in this community are weakly interconnected._
 - **Should `schemas.ts` be split into smaller, more focused modules?**

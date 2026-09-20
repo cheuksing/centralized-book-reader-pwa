@@ -326,7 +326,7 @@
       "file_type": "code",
       "norm_label": "fakedocument",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L204"
+      "source_location": "L206"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakenode",
@@ -339,7 +339,7 @@
       "file_type": "code",
       "norm_label": "fakenode",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L34"
+      "source_location": "L35"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_faketextnode",
@@ -352,7 +352,7 @@
       "file_type": "code",
       "norm_label": "faketextnode",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L75"
+      "source_location": "L76"
     },
     {
       "id": "src_view_models_sources_view_model_sourceform",
@@ -483,6 +483,32 @@
       "norm_label": "settingsoperationstatus",
       "source_file": "src/view-models/settings-view-model.ts",
       "source_location": "L12"
+    },
+    {
+      "id": "src_view_models_settings_view_model_settingsviewmodel",
+      "label": "SettingsViewModel",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "settingsviewmodel",
+      "source_file": "src/view-models/settings-view-model.ts",
+      "source_location": "L14"
+    },
+    {
+      "id": "src_view_models_settings_view_model_test_controlledwindow",
+      "label": "ControlledWindow",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "controlledwindow",
+      "source_file": "src/view-models/settings-view-model.test.ts",
+      "source_location": "L49"
     },
     {
       "id": "src_models_sources_source_adapter_cataloglist",
@@ -677,7 +703,7 @@
       "file_type": "code",
       "norm_label": "fakeelement",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L98"
+      "source_location": "L99"
     },
     {
       "id": "src_services_book_content_service_integration_test_fakedocument",
@@ -808,97 +834,6 @@
       "norm_label": "htmlselectorsadapter",
       "source_file": "src/models/sources/html-selectors-adapter.ts",
       "source_location": "L12"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_chapterrowmodel",
-      "label": "ChapterRowModel",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "chapterrowmodel",
-      "source_file": "src/view-models/book-details-view-model.ts",
-      "source_location": "L18"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_bookindexerroraction",
-      "label": "BookIndexErrorAction",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "bookindexerroraction",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L7"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_bookindexreaderstate",
-      "label": "BookIndexReaderState",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "bookindexreaderstate",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L13"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_bookindexviewmodel",
-      "label": "BookIndexViewModel",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "bookindexviewmodel",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L36"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_chapterjumpintent",
-      "label": "ChapterJumpIntent",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "chapterjumpintent",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L32"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_readerloadmorechapters",
-      "label": "ReaderLoadMoreChapters",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "readerloadmorechapters",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_readeropenpublication",
-      "label": "ReaderOpenPublication",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "readeropenpublication",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L5"
     },
     {
       "id": "src_views_pages_sources_page_sourcespageprops",
@@ -1044,45 +979,6 @@
       "source_location": "L22"
     },
     {
-      "id": "src_view_models_reader_chapter_controller_readerchaptercontent",
-      "label": "ReaderChapterContent",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "readerchaptercontent",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_readerchaptercontroller",
-      "label": "ReaderChapterController",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "readerchaptercontroller",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L53"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_readerchaptercontrollerdependencies",
-      "label": "ReaderChapterControllerDependencies",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "readerchaptercontrollerdependencies",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L33"
-    },
-    {
       "id": "src_models_database_opfs_database_activereaderinstanceerror",
       "label": "ActiveReaderInstanceError",
       "_callable": true,
@@ -1226,6 +1122,19 @@
       "source_location": "L1"
     },
     {
+      "id": "src_services_sources_service_bundledsourcedefinition",
+      "label": "BundledSourceDefinition",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "sources-service.test.ts",
+      "file_type": "code",
+      "norm_label": "bundledsourcedefinition",
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L7"
+    },
+    {
       "id": "src_services_sources_service_sourcetestresult",
       "label": "SourceTestResult",
       "_callable": true,
@@ -1236,7 +1145,7 @@
       "file_type": "code",
       "norm_label": "sourcetestresult",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L105"
+      "source_location": "L130"
     },
     {
       "id": "src_services_sources_service_test_fakecollection",
@@ -1249,7 +1158,7 @@
       "file_type": "code",
       "norm_label": "fakecollection",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L41"
+      "source_location": "L42"
     },
     {
       "id": "src_services_sources_service_test_fakedocument",
@@ -1262,7 +1171,7 @@
       "file_type": "code",
       "norm_label": "fakedocument",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L35"
+      "source_location": "L36"
     },
     {
       "id": "src_services_sources_service_test_storedrecord",
@@ -1275,7 +1184,7 @@
       "file_type": "code",
       "norm_label": "storedrecord",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L34"
+      "source_location": "L35"
     },
     {
       "id": "src_services_storage_policy_cachedstoragerecord",
@@ -1382,19 +1291,6 @@
       "source_location": "L30"
     },
     {
-      "id": "src_services_reader_settings_service_test_readerdocument",
-      "label": "ReaderDocument",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "readerdocument",
-      "source_file": "src/services/reader-settings-service.test.ts",
-      "source_location": "L13"
-    },
-    {
       "id": "src_app_route_commands_publicationrouteintent",
       "label": "PublicationRouteIntent",
       "_callable": true,
@@ -1421,13 +1317,130 @@
       "source_location": "L1"
     },
     {
+      "id": "src_view_models_reader_chapter_controller_readerchaptercontent",
+      "label": "ReaderChapterContent",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readerchaptercontent",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L6"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_readerchaptercontroller",
+      "label": "ReaderChapterController",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readerchaptercontroller",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L53"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_readerchaptercontrollerdependencies",
+      "label": "ReaderChapterControllerDependencies",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readerchaptercontrollerdependencies",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L33"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_readerchaptercontrollerstate",
+      "label": "ReaderChapterControllerState",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readerchaptercontrollerstate",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L13"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_pendingprogress",
+      "label": "PendingProgress",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "pendingprogress",
+      "source_file": "src/view-models/reader-progress-controller.ts",
+      "source_location": "L34"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_readerprogresscontroller",
+      "label": "ReaderProgressController",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readerprogresscontroller",
+      "source_file": "src/view-models/reader-progress-controller.ts",
+      "source_location": "L22"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_readerprogresscontrolleroptions",
+      "label": "ReaderProgressControllerOptions",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readerprogresscontrolleroptions",
+      "source_file": "src/view-models/reader-progress-controller.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_readerprogresssession",
+      "label": "ReaderProgressSession",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readerprogresssession",
+      "source_file": "src/view-models/reader-progress-controller.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_timerhandle",
+      "label": "TimerHandle",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "timerhandle",
+      "source_file": "src/view-models/reader-progress-controller.ts",
+      "source_location": "L35"
+    },
+    {
       "id": "src_view_models_reader_session_readeroperation",
       "label": "ReaderOperation",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "readeroperation",
       "source_file": "src/view-models/reader-session.ts",
@@ -1440,7 +1453,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "readersessionidentity",
       "source_file": "src/view-models/reader-session.ts",
@@ -1453,37 +1466,11 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "readersessionpublication",
       "source_file": "src/view-models/reader-session.ts",
       "source_location": "L57"
-    },
-    {
-      "id": "src_views_reader_reader_ui_adapter_test_fakewindow",
-      "label": "FakeWindow",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "FakeWindow",
-      "file_type": "code",
-      "norm_label": "fakewindow",
-      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L251"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_readerchaptercontrollerstate",
-      "label": "ReaderChapterControllerState",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "reader-view-model.ts",
-      "file_type": "code",
-      "norm_label": "readerchaptercontrollerstate",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L13"
     },
     {
       "id": "src_view_models_reader_settings_controller_readersettingscontroller",
@@ -1491,7 +1478,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "readersettingscontroller",
@@ -1504,7 +1491,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "readersettingspersistence",
@@ -1517,12 +1504,25 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "readerviewmodel",
       "source_file": "src/view-models/reader-view-model.ts",
       "source_location": "L18"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow",
+      "label": "FakeWindow",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": "fakewindow",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L253"
     },
     {
       "id": "src_views_layouts_tab_layout_tab",
@@ -1574,7 +1574,7 @@
       "file_type": "code",
       "norm_label": "caretdocument",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L351"
+      "source_location": "L347"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_readersurfaceinput",
@@ -1613,7 +1613,7 @@
       "file_type": "code",
       "norm_label": "textcaret",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L350"
+      "source_location": "L346"
     },
     {
       "id": "src_architecture_boundary_test_boundaryviolation",
@@ -1694,103 +1694,12 @@
       "source_location": "L4"
     },
     {
-      "id": "src_view_models_reader_progress_controller_pendingprogress",
-      "label": "PendingProgress",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "pendingprogress",
-      "source_file": "src/view-models/reader-progress-controller.ts",
-      "source_location": "L34"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_readerprogresscontroller",
-      "label": "ReaderProgressController",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "readerprogresscontroller",
-      "source_file": "src/view-models/reader-progress-controller.ts",
-      "source_location": "L22"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_readerprogresscontrolleroptions",
-      "label": "ReaderProgressControllerOptions",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "readerprogresscontrolleroptions",
-      "source_file": "src/view-models/reader-progress-controller.ts",
-      "source_location": "L11"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_readerprogresssession",
-      "label": "ReaderProgressSession",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "readerprogresssession",
-      "source_file": "src/view-models/reader-progress-controller.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_timerhandle",
-      "label": "TimerHandle",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "timerhandle",
-      "source_file": "src/view-models/reader-progress-controller.ts",
-      "source_location": "L35"
-    },
-    {
-      "id": "src_view_models_settings_view_model_settingsviewmodel",
-      "label": "SettingsViewModel",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "settingsviewmodel",
-      "source_file": "src/view-models/settings-view-model.ts",
-      "source_location": "L14"
-    },
-    {
-      "id": "src_view_models_settings_view_model_test_controlledwindow",
-      "label": "ControlledWindow",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "controlledwindow",
-      "source_file": "src/view-models/settings-view-model.test.ts",
-      "source_location": "L49"
-    },
-    {
       "id": "src_views_pages_reader_page_readerpageprops",
       "label": "ReaderPageProps",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 57,
+      "community": 58,
       "community_name": "reader-page.tsx",
       "file_type": "code",
       "norm_label": "readerpageprops",
@@ -1803,7 +1712,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 57,
+      "community": 58,
       "community_name": "reader-page.tsx",
       "file_type": "code",
       "norm_label": "readerpagemodel",
@@ -1978,6 +1887,19 @@
       "norm_label": "storedrecord",
       "source_file": "src/services/backup-service.test.ts",
       "source_location": "L24"
+    },
+    {
+      "id": "src_services_reader_settings_service_test_readerdocument",
+      "label": "ReaderDocument",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "readerdocument",
+      "source_file": "src/services/reader-settings-service.test.ts",
+      "source_location": "L13"
     },
     {
       "id": "src_models_cache_cache_policy_storageestimateinput",
@@ -2552,6 +2474,19 @@
       "source_location": "L26"
     },
     {
+      "id": "src_view_models_book_details_view_model_chapterrowmodel",
+      "label": "ChapterRowModel",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "chapterrowmodel",
+      "source_file": "src/view-models/book-details-view-model.ts",
+      "source_location": "L18"
+    },
+    {
       "id": "src_view_models_book_details_view_model_indexmetadata",
       "label": "IndexMetadata",
       "_callable": true,
@@ -2563,6 +2498,84 @@
       "norm_label": "indexmetadata",
       "source_file": "src/view-models/book-details-view-model.ts",
       "source_location": "L12"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_bookindexerroraction",
+      "label": "BookIndexErrorAction",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "bookindexerroraction",
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L7"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_bookindexreaderstate",
+      "label": "BookIndexReaderState",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "bookindexreaderstate",
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L13"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_bookindexviewmodel",
+      "label": "BookIndexViewModel",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "bookindexviewmodel",
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L36"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_chapterjumpintent",
+      "label": "ChapterJumpIntent",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "chapterjumpintent",
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L32"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_readerloadmorechapters",
+      "label": "ReaderLoadMoreChapters",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readerloadmorechapters",
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L6"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_readeropenpublication",
+      "label": "ReaderOpenPublication",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "readeropenpublication",
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L5"
     },
     {
       "id": "src_models_database_opfs_rx_storage_attachmentkey",
@@ -2970,7 +2983,7 @@
       "file_type": "code",
       "norm_label": ".addeventlistener()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L234"
+      "source_location": "L236"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakedocument_constructor",
@@ -2982,7 +2995,7 @@
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L211"
+      "source_location": "L213"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakedocument_createelementns",
@@ -2994,7 +3007,7 @@
       "file_type": "code",
       "norm_label": ".createelementns()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L226"
+      "source_location": "L228"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakedocument_createtextnode",
@@ -3006,7 +3019,7 @@
       "file_type": "code",
       "norm_label": ".createtextnode()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L230"
+      "source_location": "L232"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakedocument_createtreewalker",
@@ -3018,7 +3031,7 @@
       "file_type": "code",
       "norm_label": ".createtreewalker()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L237"
+      "source_location": "L239"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakedocument_removeeventlistener",
@@ -3030,7 +3043,7 @@
       "file_type": "code",
       "norm_label": ".removeeventlistener()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L235"
+      "source_location": "L237"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakenode_appendchild",
@@ -3042,7 +3055,7 @@
       "file_type": "code",
       "norm_label": ".appendchild()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L40"
+      "source_location": "L41"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakenode_contains",
@@ -3054,7 +3067,7 @@
       "file_type": "code",
       "norm_label": ".contains()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L70"
+      "source_location": "L71"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakenode_insertbefore",
@@ -3066,7 +3079,7 @@
       "file_type": "code",
       "norm_label": ".insertbefore()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L46"
+      "source_location": "L47"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakenode_removechild",
@@ -3078,7 +3091,7 @@
       "file_type": "code",
       "norm_label": ".removechild()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L54"
+      "source_location": "L55"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakenode_textcontent",
@@ -3090,7 +3103,7 @@
       "file_type": "code",
       "norm_label": ".textcontent()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L61"
+      "source_location": "L62"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_faketextnode_constructor",
@@ -3102,7 +3115,7 @@
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L79"
+      "source_location": "L80"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_faketextnode_contains",
@@ -3114,7 +3127,7 @@
       "file_type": "code",
       "norm_label": ".contains()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L93"
+      "source_location": "L94"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_faketextnode_textcontent",
@@ -3126,7 +3139,7 @@
       "file_type": "code",
       "norm_label": ".textcontent()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L85"
+      "source_location": "L86"
     },
     {
       "id": "src_view_models_sources_view_model_closedform",
@@ -3186,7 +3199,7 @@
       "file_type": "code",
       "norm_label": "deferred()",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L256"
+      "source_location": "L300"
     },
     {
       "id": "src_view_models_sources_view_model_test_definition",
@@ -3198,7 +3211,7 @@
       "file_type": "code",
       "norm_label": "definition()",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L29"
+      "source_location": "L31"
     },
     {
       "id": "src_view_models_sources_view_model_test_resetstore",
@@ -3210,7 +3223,7 @@
       "file_type": "code",
       "norm_label": "resetstore()",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L43"
+      "source_location": "L45"
     },
     {
       "id": "src_view_models_sources_view_model_test_source",
@@ -3222,7 +3235,7 @@
       "file_type": "code",
       "norm_label": "source()",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L39"
+      "source_location": "L41"
     },
     {
       "id": "src_view_models_home_view_model_emptysnapshot",
@@ -3405,6 +3418,54 @@
       "source_location": "L72"
     },
     {
+      "id": "src_view_models_settings_view_model_test_deferred",
+      "label": "deferred()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "deferred()",
+      "source_file": "src/view-models/settings-view-model.test.ts",
+      "source_location": "L135"
+    },
+    {
+      "id": "src_view_models_settings_view_model_test_flush",
+      "label": "flush()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "flush()",
+      "source_file": "src/view-models/settings-view-model.test.ts",
+      "source_location": "L129"
+    },
+    {
+      "id": "src_view_models_settings_view_model_test_resetstore",
+      "label": "resetStore()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "resetstore()",
+      "source_file": "src/view-models/settings-view-model.test.ts",
+      "source_location": "L82"
+    },
+    {
+      "id": "src_view_models_settings_view_model_test_stubbrowserwindow",
+      "label": "stubBrowserWindow()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "stubbrowserwindow()",
+      "source_file": "src/view-models/settings-view-model.test.ts",
+      "source_location": "L123"
+    },
+    {
       "id": "src_view_models_settings_view_model_userscriptstatusmessage",
       "label": "userScriptStatusMessage()",
       "_callable": true,
@@ -3501,16 +3562,16 @@
       "source_location": "L62"
     },
     {
-      "id": "src_view_models_reader_chapter_controller_test_state",
-      "label": "state()",
+      "id": "src_view_models_source_browser_view_model_errormessage",
+      "label": "errorMessage()",
       "_callable": true,
       "_origin": "ast",
       "community": 111,
       "community_name": "sources-page-view-model.ts",
       "file_type": "code",
-      "norm_label": "state()",
-      "source_file": "src/view-models/reader-chapter-controller.test.ts",
-      "source_location": "L18"
+      "norm_label": "errormessage()",
+      "source_file": "src/view-models/source-browser-view-model.ts",
+      "source_location": "L23"
     },
     {
       "id": "src_view_models_sources_page_view_model_composesourcespagestate",
@@ -3606,7 +3667,7 @@
       "file_type": "code",
       "norm_label": ".addeventlistener()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L165"
+      "source_location": "L167"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_closest",
@@ -3618,7 +3679,7 @@
       "file_type": "code",
       "norm_label": ".closest()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L189"
+      "source_location": "L191"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_constructor",
@@ -3630,7 +3691,7 @@
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L108"
+      "source_location": "L110"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_firstchild",
@@ -3642,7 +3703,7 @@
       "file_type": "code",
       "norm_label": ".firstchild()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L122"
+      "source_location": "L124"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_focus",
@@ -3654,7 +3715,7 @@
       "file_type": "code",
       "norm_label": ".focus()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L167"
+      "source_location": "L169"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_getattribute",
@@ -3666,7 +3727,7 @@
       "file_type": "code",
       "norm_label": ".getattribute()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L153"
+      "source_location": "L155"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_getboundingclientrect",
@@ -3678,7 +3739,7 @@
       "file_type": "code",
       "norm_label": ".getboundingclientrect()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L169"
+      "source_location": "L171"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_hasattribute",
@@ -3690,7 +3751,7 @@
       "file_type": "code",
       "norm_label": ".hasattribute()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L157"
+      "source_location": "L159"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_lastchild",
@@ -3702,7 +3763,7 @@
       "file_type": "code",
       "norm_label": ".lastchild()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L126"
+      "source_location": "L128"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_matches",
@@ -3714,7 +3775,7 @@
       "file_type": "code",
       "norm_label": ".matches()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L194"
+      "source_location": "L196"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_nodename",
@@ -3726,7 +3787,7 @@
       "file_type": "code",
       "norm_label": ".nodename()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L114"
+      "source_location": "L116"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_parentelement",
@@ -3738,7 +3799,7 @@
       "file_type": "code",
       "norm_label": ".parentelement()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L118"
+      "source_location": "L120"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_queryselector",
@@ -3750,7 +3811,7 @@
       "file_type": "code",
       "norm_label": ".queryselector()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L185"
+      "source_location": "L187"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_queryselectorall",
@@ -3762,7 +3823,7 @@
       "file_type": "code",
       "norm_label": ".queryselectorall()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L173"
+      "source_location": "L175"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_removeattribute",
@@ -3774,7 +3835,7 @@
       "file_type": "code",
       "norm_label": ".removeattribute()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L149"
+      "source_location": "L151"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_removeeventlistener",
@@ -3786,7 +3847,7 @@
       "file_type": "code",
       "norm_label": ".removeeventlistener()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L166"
+      "source_location": "L168"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_setattribute",
@@ -3798,7 +3859,7 @@
       "file_type": "code",
       "norm_label": ".setattribute()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L139"
+      "source_location": "L141"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_setattributens",
@@ -3810,7 +3871,7 @@
       "file_type": "code",
       "norm_label": ".setattributens()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L145"
+      "source_location": "L147"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_textcontent",
@@ -3822,7 +3883,7 @@
       "file_type": "code",
       "norm_label": ".textcontent()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L130"
+      "source_location": "L132"
     },
     {
       "id": "src_services_book_content_service_cachedbytesforresources",
@@ -4626,7 +4687,7 @@
       "file_type": "code",
       "norm_label": ".createelement()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L222"
+      "source_location": "L224"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_fakeelement_remove",
@@ -4638,7 +4699,7 @@
       "file_type": "code",
       "norm_label": ".remove()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L161"
+      "source_location": "L163"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_harness",
@@ -4650,7 +4711,7 @@
       "file_type": "code",
       "norm_label": "harness()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L459"
+      "source_location": "L496"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_publication",
@@ -4662,7 +4723,7 @@
       "file_type": "code",
       "norm_label": "publication()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L269"
+      "source_location": "L277"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_readerinput",
@@ -4674,7 +4735,7 @@
       "file_type": "code",
       "norm_label": "readerinput()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L273"
+      "source_location": "L281"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_renderreaderbody",
@@ -4686,7 +4747,7 @@
       "file_type": "code",
       "norm_label": "renderreaderbody()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L309"
+      "source_location": "L317"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_test_renderreaderbody_harness",
@@ -4698,7 +4759,7 @@
       "file_type": "code",
       "norm_label": "harness()",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L326"
+      "source_location": "L334"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_usereaderuiadapter",
@@ -5277,114 +5338,6 @@
       "source_location": "L90"
     },
     {
-      "id": "src_view_models_book_details_view_model_derivechapterrow",
-      "label": "deriveChapterRow()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "derivechapterrow()",
-      "source_file": "src/view-models/book-details-view-model.ts",
-      "source_location": "L81"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_formatchaptercountlabel",
-      "label": "formatChapterCountLabel()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "formatchaptercountlabel()",
-      "source_file": "src/view-models/book-details-view-model.ts",
-      "source_location": "L76"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_selectbookdetailspage",
-      "label": "selectBookDetailsPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "selectbookdetailspage()",
-      "source_file": "src/view-models/book-details-view-model.ts",
-      "source_location": "L122"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_createbookindexviewmodel",
-      "label": "createBookIndexViewModel()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "createbookindexviewmodel()",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L57"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_errormessage",
-      "label": "errorMessage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "errormessage()",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L9"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_test_chapter",
-      "label": "chapter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "chapter()",
-      "source_file": "src/view-models/book-index-view-model.test.ts",
-      "source_location": "L20"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_test_publication",
-      "label": "publication()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "publication()",
-      "source_file": "src/view-models/book-index-view-model.test.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_test_readerstate",
-      "label": "readerState()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "readerstate()",
-      "source_file": "src/view-models/book-index-view-model.test.ts",
-      "source_location": "L47"
-    },
-    {
-      "id": "src_view_models_reader_session_canreusereaderpublication",
-      "label": "canReuseReaderPublication()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "canreusereaderpublication()",
-      "source_file": "src/view-models/reader-session.ts",
-      "source_location": "L7"
-    },
-    {
       "id": "src_services_source_browser_service_loadcataloglists",
       "label": "loadCatalogLists()",
       "_callable": true,
@@ -5505,162 +5458,6 @@
       "source_location": "L11"
     },
     {
-      "id": "src_view_models_book_details_view_model_test_cachedchapter",
-      "label": "cachedChapter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "cachedchapter()",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L65"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_test_chapter",
-      "label": "chapter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "chapter()",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L50"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_test_deferred",
-      "label": "deferred()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "deferred()",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L88"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_test_publication",
-      "label": "publication()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "publication()",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L35"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_test_resetstore",
-      "label": "resetStore()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "resetstore()",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L84"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_test_settle",
-      "label": "settle()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "settle()",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L98"
-    },
-    {
-      "id": "src_view_models_reader_view_model_haspendingpreparation",
-      "label": "hasPendingPreparation()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "haspendingpreparation()",
-      "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L43"
-    },
-    {
-      "id": "src_view_models_reader_view_model_test_chapter",
-      "label": "chapter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "chapter()",
-      "source_file": "src/view-models/reader-view-model.test.ts",
-      "source_location": "L91"
-    },
-    {
-      "id": "src_view_models_reader_view_model_test_deferred",
-      "label": "deferred()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "deferred()",
-      "source_file": "src/view-models/reader-view-model.test.ts",
-      "source_location": "L67"
-    },
-    {
-      "id": "src_view_models_reader_view_model_test_flushmicrotasks",
-      "label": "flushMicrotasks()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "flushmicrotasks()",
-      "source_file": "src/view-models/reader-view-model.test.ts",
-      "source_location": "L133"
-    },
-    {
-      "id": "src_view_models_reader_view_model_test_imagesectionfor",
-      "label": "imageSectionFor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "imagesectionfor()",
-      "source_file": "src/view-models/reader-view-model.test.ts",
-      "source_location": "L119"
-    },
-    {
-      "id": "src_view_models_reader_view_model_test_publication",
-      "label": "publication()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "publication()",
-      "source_file": "src/view-models/reader-view-model.test.ts",
-      "source_location": "L77"
-    },
-    {
-      "id": "src_view_models_reader_view_model_test_sectionfor",
-      "label": "sectionFor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "sectionfor()",
-      "source_file": "src/view-models/reader-view-model.test.ts",
-      "source_location": "L105"
-    },
-    {
       "id": "src_models_cache_cache_policy_calculateremainingcount",
       "label": "calculateRemainingCount()",
       "_callable": true,
@@ -5779,114 +5576,6 @@
       "norm_label": "requestpersistentstorage()",
       "source_file": "src/models/cache/cache-policy.ts",
       "source_location": "L92"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_createreaderchaptercontroller",
-      "label": "createReaderChapterController()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "createreaderchaptercontroller()",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L62"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_iscachereadthrougherror",
-      "label": "isCacheReadThroughError()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "iscachereadthrougherror()",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L332"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_locatorfor",
-      "label": "locatorFor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "locatorfor()",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L326"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_releasereaderchapters",
-      "label": "releaseReaderChapters()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "releasereaderchapters()",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L314"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_sortreaderchapters",
-      "label": "sortReaderChapters()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "sortreaderchapters()",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L322"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_test_chapter",
-      "label": "chapter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "chapter()",
-      "source_file": "src/view-models/reader-chapter-controller.test.ts",
-      "source_location": "L10"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_test_publication",
-      "label": "publication()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "publication()",
-      "source_file": "src/view-models/reader-chapter-controller.test.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_test_section",
-      "label": "section()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "section()",
-      "source_file": "src/view-models/reader-chapter-controller.test.ts",
-      "source_location": "L14"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_updatereaderchapter",
-      "label": "updateReaderChapter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "updatereaderchapter()",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L318"
     },
     {
       "id": "src_models_database_opfs_database_activatereaderdatabasegeneration",
@@ -6165,6 +5854,42 @@
       "source_location": "L4"
     },
     {
+      "id": "src_view_models_book_index_view_model_test_chapter",
+      "label": "chapter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "vitest",
+      "file_type": "code",
+      "norm_label": "chapter()",
+      "source_file": "src/view-models/book-index-view-model.test.ts",
+      "source_location": "L20"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_test_publication",
+      "label": "publication()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "vitest",
+      "file_type": "code",
+      "norm_label": "publication()",
+      "source_file": "src/view-models/book-index-view-model.test.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_test_readerstate",
+      "label": "readerState()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "vitest",
+      "file_type": "code",
+      "norm_label": "readerstate()",
+      "source_file": "src/view-models/book-index-view-model.test.ts",
+      "source_location": "L47"
+    },
+    {
       "id": "src_models_sources_html_text_collecttext",
       "label": "collectText()",
       "_callable": true,
@@ -6270,7 +5995,7 @@
       "file_type": "code",
       "norm_label": "addsource()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L49"
+      "source_location": "L74"
     },
     {
       "id": "src_services_sources_service_checksourceupdate",
@@ -6282,7 +6007,7 @@
       "file_type": "code",
       "norm_label": "checksourceupdate()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L146"
+      "source_location": "L171"
     },
     {
       "id": "src_services_sources_service_getdatabase",
@@ -6294,7 +6019,7 @@
       "file_type": "code",
       "norm_label": "getdatabase()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L7"
+      "source_location": "L10"
     },
     {
       "id": "src_services_sources_service_getsource",
@@ -6306,7 +6031,7 @@
       "file_type": "code",
       "norm_label": "getsource()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L43"
+      "source_location": "L68"
     },
     {
       "id": "src_services_sources_service_importsourcedefinition",
@@ -6318,7 +6043,7 @@
       "file_type": "code",
       "norm_label": "importsourcedefinition()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L66"
+      "source_location": "L91"
     },
     {
       "id": "src_services_sources_service_normalisehttpsurl",
@@ -6330,7 +6055,7 @@
       "file_type": "code",
       "norm_label": "normalisehttpsurl()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L12"
+      "source_location": "L15"
     },
     {
       "id": "src_services_sources_service_parsesourcedefinition",
@@ -6342,7 +6067,19 @@
       "file_type": "code",
       "norm_label": "parsesourcedefinition()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L23"
+      "source_location": "L26"
+    },
+    {
+      "id": "src_services_sources_service_preloadbundledsources",
+      "label": "preloadBundledSources()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "sources-service.test.ts",
+      "file_type": "code",
+      "norm_label": "preloadbundledsources()",
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L55"
     },
     {
       "id": "src_services_sources_service_removesource",
@@ -6354,7 +6091,19 @@
       "file_type": "code",
       "norm_label": "removesource()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L87"
+      "source_location": "L112"
+    },
+    {
+      "id": "src_services_sources_service_seedbundledsources",
+      "label": "seedBundledSources()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "sources-service.test.ts",
+      "file_type": "code",
+      "norm_label": "seedbundledsources()",
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L40"
     },
     {
       "id": "src_services_sources_service_test_collectionfor",
@@ -6366,7 +6115,7 @@
       "file_type": "code",
       "norm_label": "collectionfor()",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L43"
+      "source_location": "L44"
     },
     {
       "id": "src_services_sources_service_test_databasefor",
@@ -6378,7 +6127,19 @@
       "file_type": "code",
       "norm_label": "databasefor()",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L127"
+      "source_location": "L128"
+    },
+    {
+      "id": "src_services_sources_service_test_deferred",
+      "label": "deferred()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "sources-service.test.ts",
+      "file_type": "code",
+      "norm_label": "deferred()",
+      "source_file": "src/services/sources-service.test.ts",
+      "source_location": "L318"
     },
     {
       "id": "src_services_sources_service_test_definition",
@@ -6390,7 +6151,7 @@
       "file_type": "code",
       "norm_label": "definition()",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L105"
+      "source_location": "L106"
     },
     {
       "id": "src_services_sources_service_test_sourcefor",
@@ -6402,7 +6163,7 @@
       "file_type": "code",
       "norm_label": "sourcefor()",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L115"
+      "source_location": "L116"
     },
     {
       "id": "src_services_sources_service_testsourcedefinition",
@@ -6414,7 +6175,7 @@
       "file_type": "code",
       "norm_label": "testsourcedefinition()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L110"
+      "source_location": "L135"
     },
     {
       "id": "src_services_sources_service_togglesource",
@@ -6426,7 +6187,7 @@
       "file_type": "code",
       "norm_label": "togglesource()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L80"
+      "source_location": "L105"
     },
     {
       "id": "src_services_sources_service_updatesource",
@@ -6438,7 +6199,7 @@
       "file_type": "code",
       "norm_label": "updatesource()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L72"
+      "source_location": "L97"
     },
     {
       "id": "src_services_sources_service_watchsources",
@@ -6450,7 +6211,7 @@
       "file_type": "code",
       "norm_label": "watchsources()",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L35"
+      "source_location": "L60"
     },
     {
       "id": "src_services_storage_policy_shouldcheckactivepreparation",
@@ -6753,66 +6514,6 @@
       "source_location": "L122"
     },
     {
-      "id": "src_services_app_settings_service_getcollection",
-      "label": "getCollection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "getcollection()",
-      "source_file": "src/services/app-settings-service.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "src_services_app_settings_service_loadappsettings",
-      "label": "loadAppSettings()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "loadappsettings()",
-      "source_file": "src/services/app-settings-service.ts",
-      "source_location": "L10"
-    },
-    {
-      "id": "src_services_app_settings_service_savepersistenceresult",
-      "label": "savePersistenceResult()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "savepersistenceresult()",
-      "source_file": "src/services/app-settings-service.ts",
-      "source_location": "L18"
-    },
-    {
-      "id": "src_services_app_settings_service_test_appcollection",
-      "label": "appCollection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "appcollection()",
-      "source_file": "src/services/app-settings-service.test.ts",
-      "source_location": "L25"
-    },
-    {
-      "id": "src_services_app_settings_service_test_documentfor",
-      "label": "documentFor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "documentfor()",
-      "source_file": "src/services/app-settings-service.test.ts",
-      "source_location": "L14"
-    },
-    {
       "id": "src_services_publication_sync_service_chapterkeyfor",
       "label": "chapterKeyFor()",
       "_callable": true,
@@ -7065,66 +6766,6 @@
       "source_location": "L148"
     },
     {
-      "id": "src_services_reader_settings_service_getreadersettingscollection",
-      "label": "getReaderSettingsCollection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "getreadersettingscollection()",
-      "source_file": "src/services/reader-settings-service.ts",
-      "source_location": "L10"
-    },
-    {
-      "id": "src_services_reader_settings_service_loadreadersettings",
-      "label": "loadReaderSettings()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "loadreadersettings()",
-      "source_file": "src/services/reader-settings-service.ts",
-      "source_location": "L15"
-    },
-    {
-      "id": "src_services_reader_settings_service_savereadersettings",
-      "label": "saveReaderSettings()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "savereadersettings()",
-      "source_file": "src/services/reader-settings-service.ts",
-      "source_location": "L34"
-    },
-    {
-      "id": "src_services_reader_settings_service_test_documentfor",
-      "label": "documentFor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "documentfor()",
-      "source_file": "src/services/reader-settings-service.test.ts",
-      "source_location": "L18"
-    },
-    {
-      "id": "src_services_reader_settings_service_test_settingscollection",
-      "label": "settingsCollection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "settingscollection()",
-      "source_file": "src/services/reader-settings-service.test.ts",
-      "source_location": "L32"
-    },
-    {
       "id": "vite_config_spafallback",
       "label": "spaFallback()",
       "_callable": true,
@@ -7233,12 +6874,192 @@
       "source_location": "L3"
     },
     {
+      "id": "src_view_models_reader_chapter_controller_createreaderchaptercontroller",
+      "label": "createReaderChapterController()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "createreaderchaptercontroller()",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L62"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_iscachereadthrougherror",
+      "label": "isCacheReadThroughError()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "iscachereadthrougherror()",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L332"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_locatorfor",
+      "label": "locatorFor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "locatorfor()",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L326"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_releasereaderchapters",
+      "label": "releaseReaderChapters()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "releasereaderchapters()",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L314"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_sortreaderchapters",
+      "label": "sortReaderChapters()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "sortreaderchapters()",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L322"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_test_chapter",
+      "label": "chapter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "chapter()",
+      "source_file": "src/view-models/reader-chapter-controller.test.ts",
+      "source_location": "L10"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_test_publication",
+      "label": "publication()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "publication()",
+      "source_file": "src/view-models/reader-chapter-controller.test.ts",
+      "source_location": "L6"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_test_section",
+      "label": "section()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "section()",
+      "source_file": "src/view-models/reader-chapter-controller.test.ts",
+      "source_location": "L14"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_test_state",
+      "label": "state()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "state()",
+      "source_file": "src/view-models/reader-chapter-controller.test.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_updatereaderchapter",
+      "label": "updateReaderChapter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "updatereaderchapter()",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L318"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_createreaderprogresscontroller",
+      "label": "createReaderProgressController()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "createreaderprogresscontroller()",
+      "source_file": "src/view-models/reader-progress-controller.ts",
+      "source_location": "L37"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_locatorforsection",
+      "label": "locatorForSection()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "locatorforsection()",
+      "source_file": "src/view-models/reader-progress-controller.ts",
+      "source_location": "L158"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_test_chapter",
+      "label": "chapter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "chapter()",
+      "source_file": "src/view-models/reader-progress-controller.test.ts",
+      "source_location": "L10"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_test_publication",
+      "label": "publication()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "publication()",
+      "source_file": "src/view-models/reader-progress-controller.test.ts",
+      "source_location": "L6"
+    },
+    {
+      "id": "src_view_models_reader_session_canreusereaderpublication",
+      "label": "canReuseReaderPublication()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "canreusereaderpublication()",
+      "source_file": "src/view-models/reader-session.ts",
+      "source_location": "L7"
+    },
+    {
       "id": "src_view_models_reader_session_iscurrentreaderrequest",
       "label": "isCurrentReaderRequest()",
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "iscurrentreaderrequest()",
       "source_file": "src/view-models/reader-session.ts",
@@ -7250,7 +7071,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "isreadercontentrenderable()",
       "source_file": "src/view-models/reader-session.ts",
@@ -7262,7 +7083,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "readeropenoperationkey()",
       "source_file": "src/view-models/reader-session.ts",
@@ -7274,7 +7095,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": ".currentrequest()",
       "source_file": "src/view-models/reader-session.ts",
@@ -7286,7 +7107,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": ".has()",
       "source_file": "src/view-models/reader-session.ts",
@@ -7298,7 +7119,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": ".invalidate()",
       "source_file": "src/view-models/reader-session.ts",
@@ -7310,7 +7131,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": ".nextrequest()",
       "source_file": "src/view-models/reader-session.ts",
@@ -7322,102 +7143,18 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": ".run()",
       "source_file": "src/view-models/reader-session.ts",
       "source_location": "L44"
     },
     {
-      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_addeventlistener",
-      "label": ".addEventListener()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "FakeWindow",
-      "file_type": "code",
-      "norm_label": ".addeventlistener()",
-      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L261"
-    },
-    {
-      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_cancelanimationframe",
-      "label": ".cancelAnimationFrame()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "FakeWindow",
-      "file_type": "code",
-      "norm_label": ".cancelanimationframe()",
-      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L264"
-    },
-    {
-      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_constructor",
-      "label": ".constructor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "FakeWindow",
-      "file_type": "code",
-      "norm_label": ".constructor()",
-      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L257"
-    },
-    {
-      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_matchmedia",
-      "label": ".matchMedia()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "FakeWindow",
-      "file_type": "code",
-      "norm_label": ".matchmedia()",
-      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L266"
-    },
-    {
-      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_removeeventlistener",
-      "label": ".removeEventListener()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "FakeWindow",
-      "file_type": "code",
-      "norm_label": ".removeeventlistener()",
-      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L262"
-    },
-    {
-      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_requestanimationframe",
-      "label": ".requestAnimationFrame()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "FakeWindow",
-      "file_type": "code",
-      "norm_label": ".requestanimationframe()",
-      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L263"
-    },
-    {
-      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_scrollto",
-      "label": ".scrollTo()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "FakeWindow",
-      "file_type": "code",
-      "norm_label": ".scrollto()",
-      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L265"
-    },
-    {
       "id": "src_view_models_reader_settings_controller_createreadersettingscontroller",
       "label": "createReaderSettingsController()",
       "_callable": true,
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "createreadersettingscontroller()",
@@ -7429,7 +7166,7 @@
       "label": "normalizeReaderSettings()",
       "_callable": true,
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "normalizereadersettings()",
@@ -7437,11 +7174,23 @@
       "source_location": "L48"
     },
     {
+      "id": "src_view_models_reader_view_model_haspendingpreparation",
+      "label": "hasPendingPreparation()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "haspendingpreparation()",
+      "source_file": "src/view-models/reader-view-model.ts",
+      "source_location": "L43"
+    },
+    {
       "id": "src_view_models_reader_view_model_installpreparationretrylisteners",
       "label": "installPreparationRetryListeners()",
       "_callable": true,
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "installpreparationretrylisteners()",
@@ -7453,7 +7202,7 @@
       "label": "isBrowserOnline()",
       "_callable": true,
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "isbrowseronline()",
@@ -7465,12 +7214,180 @@
       "label": "retryPendingPreparation()",
       "_callable": true,
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "retrypendingpreparation()",
       "source_file": "src/view-models/reader-view-model.ts",
       "source_location": "L47"
+    },
+    {
+      "id": "src_view_models_reader_view_model_test_chapter",
+      "label": "chapter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "chapter()",
+      "source_file": "src/view-models/reader-view-model.test.ts",
+      "source_location": "L91"
+    },
+    {
+      "id": "src_view_models_reader_view_model_test_deferred",
+      "label": "deferred()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "deferred()",
+      "source_file": "src/view-models/reader-view-model.test.ts",
+      "source_location": "L67"
+    },
+    {
+      "id": "src_view_models_reader_view_model_test_flushmicrotasks",
+      "label": "flushMicrotasks()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "flushmicrotasks()",
+      "source_file": "src/view-models/reader-view-model.test.ts",
+      "source_location": "L133"
+    },
+    {
+      "id": "src_view_models_reader_view_model_test_imagesectionfor",
+      "label": "imageSectionFor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "imagesectionfor()",
+      "source_file": "src/view-models/reader-view-model.test.ts",
+      "source_location": "L119"
+    },
+    {
+      "id": "src_view_models_reader_view_model_test_publication",
+      "label": "publication()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "publication()",
+      "source_file": "src/view-models/reader-view-model.test.ts",
+      "source_location": "L77"
+    },
+    {
+      "id": "src_view_models_reader_view_model_test_sectionfor",
+      "label": "sectionFor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "sectionfor()",
+      "source_file": "src/view-models/reader-view-model.test.ts",
+      "source_location": "L105"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_addeventlistener",
+      "label": ".addEventListener()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": ".addeventlistener()",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L264"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_cancelanimationframe",
+      "label": ".cancelAnimationFrame()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": ".cancelanimationframe()",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L272"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_constructor",
+      "label": ".constructor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": ".constructor()",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L260"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_dispatch",
+      "label": ".dispatch()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": ".dispatch()",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L270"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_matchmedia",
+      "label": ".matchMedia()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": ".matchmedia()",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L274"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_removeeventlistener",
+      "label": ".removeEventListener()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": ".removeeventlistener()",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L269"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_requestanimationframe",
+      "label": ".requestAnimationFrame()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": ".requestanimationframe()",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L271"
+    },
+    {
+      "id": "src_views_reader_reader_ui_adapter_test_fakewindow_scrollto",
+      "label": ".scrollTo()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 46,
+      "community_name": "FakeWindow",
+      "file_type": "code",
+      "norm_label": ".scrollto()",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L273"
     },
     {
       "id": "src_views_layouts_tab_layout_tablayout",
@@ -7566,7 +7483,7 @@
       "file_type": "code",
       "norm_label": "clamp()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L453"
+      "source_location": "L449"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_findcaret",
@@ -7578,7 +7495,7 @@
       "file_type": "code",
       "norm_label": "findcaret()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L375"
+      "source_location": "L371"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_findquoteoffset",
@@ -7590,7 +7507,7 @@
       "file_type": "code",
       "norm_label": "findquoteoffset()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L420"
+      "source_location": "L416"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_locatorforelement",
@@ -7602,7 +7519,7 @@
       "file_type": "code",
       "norm_label": "locatorforelement()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L356"
+      "source_location": "L352"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_offsetfornode",
@@ -7614,7 +7531,7 @@
       "file_type": "code",
       "norm_label": "offsetfornode()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L387"
+      "source_location": "L383"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_quoteat",
@@ -7626,7 +7543,7 @@
       "file_type": "code",
       "norm_label": "quoteat()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L398"
+      "source_location": "L394"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_rangeattextoffset",
@@ -7638,7 +7555,7 @@
       "file_type": "code",
       "norm_label": "rangeattextoffset()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L432"
+      "source_location": "L428"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_readinganchory",
@@ -7650,7 +7567,7 @@
       "file_type": "code",
       "norm_label": "readinganchory()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L353"
+      "source_location": "L349"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_restorelocator",
@@ -7662,7 +7579,7 @@
       "file_type": "code",
       "norm_label": "restorelocator()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L400"
+      "source_location": "L396"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_scrolltochapterpercentage",
@@ -7674,7 +7591,7 @@
       "file_type": "code",
       "norm_label": "scrolltochapterpercentage()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L451"
+      "source_location": "L447"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_scrolltoelement",
@@ -7686,7 +7603,7 @@
       "file_type": "code",
       "norm_label": "scrolltoelement()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L450"
+      "source_location": "L446"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_scrolltoposition",
@@ -7698,7 +7615,7 @@
       "file_type": "code",
       "norm_label": "scrolltoposition()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L452"
+      "source_location": "L448"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_scrolltotextoffset",
@@ -7710,7 +7627,7 @@
       "file_type": "code",
       "norm_label": "scrolltotextoffset()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L449"
+      "source_location": "L445"
     },
     {
       "id": "src_views_reader_reader_ui_adapter_visibleresource",
@@ -7722,7 +7639,7 @@
       "file_type": "code",
       "norm_label": "visibleresource()",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L354"
+      "source_location": "L350"
     },
     {
       "id": "src_architecture_boundary_test_containsjsxsyntax",
@@ -7965,107 +7882,11 @@
       "source_location": "L11"
     },
     {
-      "id": "src_view_models_reader_progress_controller_createreaderprogresscontroller",
-      "label": "createReaderProgressController()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "createreaderprogresscontroller()",
-      "source_file": "src/view-models/reader-progress-controller.ts",
-      "source_location": "L37"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_locatorforsection",
-      "label": "locatorForSection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "locatorforsection()",
-      "source_file": "src/view-models/reader-progress-controller.ts",
-      "source_location": "L158"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_test_chapter",
-      "label": "chapter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "chapter()",
-      "source_file": "src/view-models/reader-progress-controller.test.ts",
-      "source_location": "L10"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_test_publication",
-      "label": "publication()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "publication()",
-      "source_file": "src/view-models/reader-progress-controller.test.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "src_view_models_settings_view_model_test_deferred",
-      "label": "deferred()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "deferred()",
-      "source_file": "src/view-models/settings-view-model.test.ts",
-      "source_location": "L135"
-    },
-    {
-      "id": "src_view_models_settings_view_model_test_flush",
-      "label": "flush()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "flush()",
-      "source_file": "src/view-models/settings-view-model.test.ts",
-      "source_location": "L129"
-    },
-    {
-      "id": "src_view_models_settings_view_model_test_resetstore",
-      "label": "resetStore()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "resetstore()",
-      "source_file": "src/view-models/settings-view-model.test.ts",
-      "source_location": "L82"
-    },
-    {
-      "id": "src_view_models_settings_view_model_test_stubbrowserwindow",
-      "label": "stubBrowserWindow()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "stubbrowserwindow()",
-      "source_file": "src/view-models/settings-view-model.test.ts",
-      "source_location": "L123"
-    },
-    {
       "id": "src_views_pages_reader_page_readerpage",
       "label": "ReaderPage()",
       "_callable": true,
       "_origin": "ast",
-      "community": 57,
+      "community": 58,
       "community_name": "reader-page.tsx",
       "file_type": "code",
       "norm_label": "readerpage()",
@@ -8769,6 +8590,66 @@
       "source_location": "L101"
     },
     {
+      "id": "src_services_app_settings_service_getcollection",
+      "label": "getCollection()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "getcollection()",
+      "source_file": "src/services/app-settings-service.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "src_services_app_settings_service_loadappsettings",
+      "label": "loadAppSettings()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "loadappsettings()",
+      "source_file": "src/services/app-settings-service.ts",
+      "source_location": "L10"
+    },
+    {
+      "id": "src_services_app_settings_service_savepersistenceresult",
+      "label": "savePersistenceResult()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "savepersistenceresult()",
+      "source_file": "src/services/app-settings-service.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "src_services_app_settings_service_test_appcollection",
+      "label": "appCollection()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "appcollection()",
+      "source_file": "src/services/app-settings-service.test.ts",
+      "source_location": "L25"
+    },
+    {
+      "id": "src_services_app_settings_service_test_documentfor",
+      "label": "documentFor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "documentfor()",
+      "source_file": "src/services/app-settings-service.test.ts",
+      "source_location": "L14"
+    },
+    {
       "id": "src_services_backup_service_bulkinsertorthrow",
       "label": "bulkInsertOrThrow()",
       "_callable": true,
@@ -8899,6 +8780,66 @@
       "norm_label": "validatebackup()",
       "source_file": "src/services/backup-service.ts",
       "source_location": "L108"
+    },
+    {
+      "id": "src_services_reader_settings_service_getreadersettingscollection",
+      "label": "getReaderSettingsCollection()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "getreadersettingscollection()",
+      "source_file": "src/services/reader-settings-service.ts",
+      "source_location": "L10"
+    },
+    {
+      "id": "src_services_reader_settings_service_loadreadersettings",
+      "label": "loadReaderSettings()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "loadreadersettings()",
+      "source_file": "src/services/reader-settings-service.ts",
+      "source_location": "L15"
+    },
+    {
+      "id": "src_services_reader_settings_service_savereadersettings",
+      "label": "saveReaderSettings()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "savereadersettings()",
+      "source_file": "src/services/reader-settings-service.ts",
+      "source_location": "L34"
+    },
+    {
+      "id": "src_services_reader_settings_service_test_documentfor",
+      "label": "documentFor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "documentfor()",
+      "source_file": "src/services/reader-settings-service.test.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "src_services_reader_settings_service_test_settingscollection",
+      "label": "settingsCollection()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "settingscollection()",
+      "source_file": "src/services/reader-settings-service.test.ts",
+      "source_location": "L32"
     },
     {
       "id": "src_models_cache_cache_policy_interpretstoragepressure",
@@ -9354,7 +9295,7 @@
       "file_type": "code",
       "norm_label": "publication()",
       "source_file": "src/views/reader/reader-container.test.tsx",
-      "source_location": "L38"
+      "source_location": "L40"
     },
     {
       "id": "src_views_ui_use_online_status_useonlinestatus",
@@ -9681,6 +9622,18 @@
       "source_location": "L98"
     },
     {
+      "id": "src_view_models_book_details_view_model_derivechapterrow",
+      "label": "deriveChapterRow()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "derivechapterrow()",
+      "source_file": "src/view-models/book-details-view-model.ts",
+      "source_location": "L81"
+    },
+    {
       "id": "src_view_models_book_details_view_model_errormessage",
       "label": "errorMessage()",
       "_callable": true,
@@ -9693,6 +9646,18 @@
       "source_location": "L68"
     },
     {
+      "id": "src_view_models_book_details_view_model_formatchaptercountlabel",
+      "label": "formatChapterCountLabel()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "formatchaptercountlabel()",
+      "source_file": "src/view-models/book-details-view-model.ts",
+      "source_location": "L76"
+    },
+    {
       "id": "src_view_models_book_details_view_model_revokeobjecturl",
       "label": "revokeObjectUrl()",
       "_callable": true,
@@ -9703,6 +9668,18 @@
       "norm_label": "revokeobjecturl()",
       "source_file": "src/view-models/book-details-view-model.ts",
       "source_location": "L72"
+    },
+    {
+      "id": "src_view_models_book_details_view_model_selectbookdetailspage",
+      "label": "selectBookDetailsPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "selectbookdetailspage()",
+      "source_file": "src/view-models/book-details-view-model.ts",
+      "source_location": "L122"
     },
     {
       "id": "src_view_models_book_details_view_model_setloadedchapters",
@@ -9729,16 +9706,100 @@
       "source_location": "L94"
     },
     {
-      "id": "src_view_models_source_browser_view_model_errormessage",
+      "id": "src_view_models_book_details_view_model_test_cachedchapter",
+      "label": "cachedChapter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "cachedchapter()",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L65"
+    },
+    {
+      "id": "src_view_models_book_details_view_model_test_chapter",
+      "label": "chapter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "chapter()",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L50"
+    },
+    {
+      "id": "src_view_models_book_details_view_model_test_deferred",
+      "label": "deferred()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "deferred()",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L88"
+    },
+    {
+      "id": "src_view_models_book_details_view_model_test_publication",
+      "label": "publication()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "publication()",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L35"
+    },
+    {
+      "id": "src_view_models_book_details_view_model_test_resetstore",
+      "label": "resetStore()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "resetstore()",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L84"
+    },
+    {
+      "id": "src_view_models_book_details_view_model_test_settle",
+      "label": "settle()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "settle()",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L98"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_createbookindexviewmodel",
+      "label": "createBookIndexViewModel()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "createbookindexviewmodel()",
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L57"
+    },
+    {
+      "id": "src_view_models_book_index_view_model_errormessage",
       "label": "errorMessage()",
       "_callable": true,
       "_origin": "ast",
-      "community": 99,
-      "community_name": "source-browser-view-model.test.ts",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
       "file_type": "code",
       "norm_label": "errormessage()",
-      "source_file": "src/view-models/source-browser-view-model.ts",
-      "source_location": "L23"
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L9"
     },
     {
       "id": "src_view_models_source_browser_view_model_test_deferred",
@@ -10734,6 +10795,39 @@
       "source_location": "L93"
     },
     {
+      "id": "src_view_models_settings_view_model_test",
+      "label": "settings-view-model.test.ts",
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "settings-view-model.test.ts",
+      "source_file": "src/view-models/settings-view-model.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_settings_view_model_test_defaultsettings",
+      "label": "defaultSettings",
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "defaultsettings",
+      "source_file": "src/view-models/settings-view-model.test.ts",
+      "source_location": "L47"
+    },
+    {
+      "id": "src_view_models_settings_view_model_test_mocks",
+      "label": "mocks",
+      "_origin": "ast",
+      "community": 109,
+      "community_name": "settings-view-model.ts",
+      "file_type": "code",
+      "norm_label": "mocks",
+      "source_file": "src/view-models/settings-view-model.test.ts",
+      "source_location": "L5"
+    },
+    {
       "id": "src_view_models_settings_view_model_usesettingsviewmodel",
       "label": "useSettingsViewModel",
       "_origin": "ast",
@@ -11042,6 +11136,28 @@
       "norm_label": "tests and validation",
       "source_file": ".superpowers/sdd/library-offline-cache-functional-spec/task-4-report.md",
       "source_location": "L186"
+    },
+    {
+      "id": "src_view_models_source_browser_view_model",
+      "label": "source-browser-view-model.ts",
+      "_origin": "ast",
+      "community": 111,
+      "community_name": "sources-page-view-model.ts",
+      "file_type": "code",
+      "norm_label": "source-browser-view-model.ts",
+      "source_file": "src/view-models/source-browser-view-model.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_source_browser_view_model_usesourcebrowserviewmodel",
+      "label": "useSourceBrowserViewModel",
+      "_origin": "ast",
+      "community": 111,
+      "community_name": "sources-page-view-model.ts",
+      "file_type": "code",
+      "norm_label": "usesourcebrowserviewmodel",
+      "source_file": "src/view-models/source-browser-view-model.ts",
+      "source_location": "L27"
     },
     {
       "id": "src_view_models_sources_page_view_model",
@@ -11448,28 +11564,6 @@
       "source_location": "L10"
     },
     {
-      "id": "src_view_models_book_index_view_model",
-      "label": "book-index-view-model.ts",
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "book-index-view-model.ts",
-      "source_file": "src/view-models/book-index-view-model.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_view_models_book_index_view_model_test",
-      "label": "book-index-view-model.test.ts",
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "book-index-view-model.ts",
-      "file_type": "code",
-      "norm_label": "book-index-view-model.test.ts",
-      "source_file": "src/view-models/book-index-view-model.test.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "src_services_source_browser_service",
       "label": "source-browser-service.ts",
       "_origin": "ast",
@@ -11780,61 +11874,6 @@
       "source_location": "L1"
     },
     {
-      "id": "src_view_models_book_details_view_model_test",
-      "label": "book-details-view-model.test.ts",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "book-details-view-model.test.ts",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_test_mocks",
-      "label": "mocks",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "mocks",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L4"
-    },
-    {
-      "id": "src_view_models_book_details_view_model_test_source",
-      "label": "source",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "source",
-      "source_file": "src/view-models/book-details-view-model.test.ts",
-      "source_location": "L82"
-    },
-    {
-      "id": "src_view_models_reader_view_model_test",
-      "label": "reader-view-model.test.ts",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "reader-view-model.test.ts",
-      "source_file": "src/view-models/reader-view-model.test.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_view_models_reader_view_model_test_mocks",
-      "label": "mocks",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "reader-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "mocks",
-      "source_file": "src/view-models/reader-view-model.test.ts",
-      "source_location": "L5"
-    },
-    {
       "id": "src_models_cache_cache_policy",
       "label": "cache-policy.ts",
       "_origin": "ast",
@@ -11843,28 +11882,6 @@
       "file_type": "code",
       "norm_label": "cache-policy.ts",
       "source_file": "src/models/cache/cache-policy.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller",
-      "label": "reader-chapter-controller.ts",
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "reader-chapter-controller.ts",
-      "source_file": "src/view-models/reader-chapter-controller.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_view_models_reader_chapter_controller_test",
-      "label": "reader-chapter-controller.test.ts",
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "reader-chapter-controller.test.ts",
-      "file_type": "code",
-      "norm_label": "reader-chapter-controller.test.ts",
-      "source_file": "src/view-models/reader-chapter-controller.test.ts",
       "source_location": "L1"
     },
     {
@@ -12597,6 +12614,17 @@
       "source_location": "L1"
     },
     {
+      "id": "src_view_models_book_index_view_model_test",
+      "label": "book-index-view-model.test.ts",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "vitest",
+      "file_type": "code",
+      "norm_label": "book-index-view-model.test.ts",
+      "source_file": "src/view-models/book-index-view-model.test.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "ref_vitest",
       "label": "vitest",
       "_origin": "ast",
@@ -12768,6 +12796,17 @@
       "source_location": "L1"
     },
     {
+      "id": "src_services_sources_service_bundledsourcedefinitions",
+      "label": "bundledSourceDefinitions",
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "sources-service.test.ts",
+      "file_type": "code",
+      "norm_label": "bundledsourcedefinitions",
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L8"
+    },
+    {
       "id": "src_services_sources_service_test",
       "label": "sources-service.test.ts",
       "_origin": "ast",
@@ -12787,7 +12826,7 @@
       "file_type": "code",
       "norm_label": "adapter",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L142"
+      "source_location": "L143"
     },
     {
       "id": "src_services_sources_service_test_mocks",
@@ -12798,7 +12837,7 @@
       "file_type": "code",
       "norm_label": "mocks",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L18"
+      "source_location": "L19"
     },
     {
       "id": "tsconfig",
@@ -13312,61 +13351,6 @@
       "source_location": "L15"
     },
     {
-      "id": "opfs_database",
-      "label": "@models/database/opfs-database",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "confidence": "EXTRACTED",
-      "file_type": "code",
-      "norm_label": "@models/database/opfs-database",
-      "source_file": "@models/database/opfs-database"
-    },
-    {
-      "id": "src_services_app_settings_service",
-      "label": "app-settings-service.ts",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "app-settings-service.ts",
-      "source_file": "src/services/app-settings-service.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_services_app_settings_service_defaultappsettings",
-      "label": "defaultAppSettings",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "defaultappsettings",
-      "source_file": "src/services/app-settings-service.ts",
-      "source_location": "L3"
-    },
-    {
-      "id": "src_services_app_settings_service_test",
-      "label": "app-settings-service.test.ts",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "app-settings-service.test.ts",
-      "source_file": "src/services/app-settings-service.test.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_services_app_settings_service_test_mocks",
-      "label": "mocks",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "mocks",
-      "source_file": "src/services/app-settings-service.test.ts",
-      "source_location": "L4"
-    },
-    {
       "id": "src_services_publication_sync_service",
       "label": "publication-sync-service.ts",
       "_origin": "ast",
@@ -13431,61 +13415,6 @@
       "norm_label": "source",
       "source_file": "src/services/publication-sync-service.test.ts",
       "source_location": "L89"
-    },
-    {
-      "id": "src_services_reader_settings_service",
-      "label": "reader-settings-service.ts",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "reader-settings-service.ts",
-      "source_file": "src/services/reader-settings-service.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_services_reader_settings_service_defaultreadersettings",
-      "label": "defaultReaderSettings",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "defaultreadersettings",
-      "source_file": "src/services/reader-settings-service.ts",
-      "source_location": "L3"
-    },
-    {
-      "id": "src_services_reader_settings_service_test",
-      "label": "reader-settings-service.test.ts",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "reader-settings-service.test.ts",
-      "source_file": "src/services/reader-settings-service.test.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_services_reader_settings_service_test_mocks",
-      "label": "mocks",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "mocks",
-      "source_file": "src/services/reader-settings-service.test.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "src_services_reader_settings_service_test_validstoredsettings",
-      "label": "validStoredSettings",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "publication-sync-service.test.ts",
-      "file_type": "code",
-      "norm_label": "validstoredsettings",
-      "source_file": "src/services/reader-settings-service.test.ts",
-      "source_location": "L44"
     },
     {
       "id": "src_vite_env_d",
@@ -14306,11 +14235,66 @@
       "source_location": "L1"
     },
     {
+      "id": "src_view_models_reader_chapter_controller",
+      "label": "reader-chapter-controller.ts",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "reader-chapter-controller.ts",
+      "source_file": "src/view-models/reader-chapter-controller.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_reader_chapter_controller_test",
+      "label": "reader-chapter-controller.test.ts",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "reader-chapter-controller.test.ts",
+      "source_file": "src/view-models/reader-chapter-controller.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller",
+      "label": "reader-progress-controller.ts",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "reader-progress-controller.ts",
+      "source_file": "src/view-models/reader-progress-controller.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_test",
+      "label": "reader-progress-controller.test.ts",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "reader-progress-controller.test.ts",
+      "source_file": "src/view-models/reader-progress-controller.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_reader_progress_controller_test_locator",
+      "label": "locator",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "locator",
+      "source_file": "src/view-models/reader-progress-controller.test.ts",
+      "source_location": "L14"
+    },
+    {
       "id": "src_view_models_reader_session",
       "label": "reader-session.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "reader-session.ts",
       "source_file": "src/view-models/reader-session.ts",
@@ -14321,28 +14305,17 @@
       "label": "reader-session.test.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": "useReaderViewModel",
+      "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "reader-session.test.ts",
       "source_file": "src/view-models/reader-session.test.ts",
       "source_location": "L1"
     },
     {
-      "id": "src_view_models_reader_view_model_usereaderviewmodel",
-      "label": "useReaderViewModel",
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "useReaderViewModel",
-      "file_type": "code",
-      "norm_label": "usereaderviewmodel",
-      "source_file": "src/view-models/reader-view-model.ts",
-      "source_location": "L67"
-    },
-    {
       "id": "src_view_models_reader_settings_controller",
       "label": "reader-settings-controller.ts",
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "reader-settings-controller.ts",
@@ -14353,7 +14326,7 @@
       "id": "src_view_models_reader_settings_controller_defaultreadersettings",
       "label": "defaultReaderSettings",
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "defaultreadersettings",
@@ -14364,7 +14337,7 @@
       "id": "src_view_models_reader_settings_controller_test",
       "label": "reader-settings-controller.test.ts",
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "reader-settings-controller.test.ts",
@@ -14375,12 +14348,45 @@
       "id": "src_view_models_reader_view_model",
       "label": "reader-view-model.ts",
       "_origin": "ast",
-      "community": 47,
+      "community": 45,
       "community_name": "reader-view-model.ts",
       "file_type": "code",
       "norm_label": "reader-view-model.ts",
       "source_file": "src/view-models/reader-view-model.ts",
       "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_reader_view_model_test",
+      "label": "reader-view-model.test.ts",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "reader-view-model.test.ts",
+      "source_file": "src/view-models/reader-view-model.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_reader_view_model_test_mocks",
+      "label": "mocks",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "mocks",
+      "source_file": "src/view-models/reader-view-model.test.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "src_view_models_reader_view_model_usereaderviewmodel",
+      "label": "useReaderViewModel",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "reader-view-model.ts",
+      "file_type": "code",
+      "norm_label": "usereaderviewmodel",
+      "source_file": "src/view-models/reader-view-model.ts",
+      "source_location": "L67"
     },
     {
       "id": "context",
@@ -14876,39 +14882,6 @@
       "source_location": "L17"
     },
     {
-      "id": "src_view_models_reader_progress_controller",
-      "label": "reader-progress-controller.ts",
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "reader-progress-controller.ts",
-      "source_file": "src/view-models/reader-progress-controller.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_test",
-      "label": "reader-progress-controller.test.ts",
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "reader-progress-controller.test.ts",
-      "source_file": "src/view-models/reader-progress-controller.test.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_view_models_reader_progress_controller_test_locator",
-      "label": "locator",
-      "_origin": "ast",
-      "community": 54,
-      "community_name": "reader-progress-controller.ts",
-      "file_type": "code",
-      "norm_label": "locator",
-      "source_file": "src/view-models/reader-progress-controller.test.ts",
-      "source_location": "L14"
-    },
-    {
       "id": "agents_skills_ponytail_help_skill",
       "label": "ponytail-help/SKILL.md",
       "_origin": "ast",
@@ -15009,43 +14982,10 @@
       "source_location": "L63"
     },
     {
-      "id": "src_view_models_settings_view_model_test",
-      "label": "settings-view-model.test.ts",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "settings-view-model.test.ts",
-      "source_file": "src/view-models/settings-view-model.test.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_view_models_settings_view_model_test_defaultsettings",
-      "label": "defaultSettings",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "defaultsettings",
-      "source_file": "src/view-models/settings-view-model.test.ts",
-      "source_location": "L47"
-    },
-    {
-      "id": "src_view_models_settings_view_model_test_mocks",
-      "label": "mocks",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "settings-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "mocks",
-      "source_file": "src/view-models/settings-view-model.test.ts",
-      "source_location": "L5"
-    },
-    {
       "id": "src_views_pages_reader_page",
       "label": "reader-page.tsx",
       "_origin": "ast",
-      "community": 57,
+      "community": 58,
       "community_name": "reader-page.tsx",
       "file_type": "code",
       "norm_label": "reader-page.tsx",
@@ -15446,6 +15386,61 @@
       "source_location": "L21"
     },
     {
+      "id": "opfs_database",
+      "label": "@models/database/opfs-database",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "confidence": "EXTRACTED",
+      "file_type": "code",
+      "norm_label": "@models/database/opfs-database",
+      "source_file": "@models/database/opfs-database"
+    },
+    {
+      "id": "src_services_app_settings_service",
+      "label": "app-settings-service.ts",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "app-settings-service.ts",
+      "source_file": "src/services/app-settings-service.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_services_app_settings_service_defaultappsettings",
+      "label": "defaultAppSettings",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "defaultappsettings",
+      "source_file": "src/services/app-settings-service.ts",
+      "source_location": "L3"
+    },
+    {
+      "id": "src_services_app_settings_service_test",
+      "label": "app-settings-service.test.ts",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "app-settings-service.test.ts",
+      "source_file": "src/services/app-settings-service.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_services_app_settings_service_test_mocks",
+      "label": "mocks",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "mocks",
+      "source_file": "src/services/app-settings-service.test.ts",
+      "source_location": "L4"
+    },
+    {
       "id": "src_services_backup_service",
       "label": "backup-service.ts",
       "_origin": "ast",
@@ -15543,6 +15538,61 @@
       "norm_label": "source",
       "source_file": "src/services/backup-service.test.ts",
       "source_location": "L63"
+    },
+    {
+      "id": "src_services_reader_settings_service",
+      "label": "reader-settings-service.ts",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "reader-settings-service.ts",
+      "source_file": "src/services/reader-settings-service.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_services_reader_settings_service_defaultreadersettings",
+      "label": "defaultReaderSettings",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "defaultreadersettings",
+      "source_file": "src/services/reader-settings-service.ts",
+      "source_location": "L3"
+    },
+    {
+      "id": "src_services_reader_settings_service_test",
+      "label": "reader-settings-service.test.ts",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "reader-settings-service.test.ts",
+      "source_file": "src/services/reader-settings-service.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_services_reader_settings_service_test_mocks",
+      "label": "mocks",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "mocks",
+      "source_file": "src/services/reader-settings-service.test.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "src_services_reader_settings_service_test_validstoredsettings",
+      "label": "validStoredSettings",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "backup-service.test.ts",
+      "file_type": "code",
+      "norm_label": "validstoredsettings",
+      "source_file": "src/services/reader-settings-service.test.ts",
+      "source_location": "L44"
     },
     {
       "id": "superpowers_sdd_library_offline_cache_functional_spec_task_3_report",
@@ -18156,6 +18206,39 @@
       "source_location": "L173"
     },
     {
+      "id": "src_view_models_book_details_view_model_test",
+      "label": "book-details-view-model.test.ts",
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "book-details-view-model.test.ts",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_view_models_book_details_view_model_test_mocks",
+      "label": "mocks",
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "mocks",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L4"
+    },
+    {
+      "id": "src_view_models_book_details_view_model_test_source",
+      "label": "source",
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "source",
+      "source_file": "src/view-models/book-details-view-model.test.ts",
+      "source_location": "L82"
+    },
+    {
       "id": "src_view_models_book_details_view_model_usebookdetailsviewmodel",
       "label": "useBookDetailsViewModel",
       "_origin": "ast",
@@ -18165,6 +18248,17 @@
       "norm_label": "usebookdetailsviewmodel",
       "source_file": "src/view-models/book-details-view-model.ts",
       "source_location": "L191"
+    },
+    {
+      "id": "src_view_models_book_index_view_model",
+      "label": "book-index-view-model.ts",
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "book-details-view-model.ts",
+      "file_type": "code",
+      "norm_label": "book-index-view-model.ts",
+      "source_file": "src/view-models/book-index-view-model.ts",
+      "source_location": "L1"
     },
     {
       "id": "superpowers_sdd_library_offline_cache_functional_spec_implementation_plan",
@@ -18275,17 +18369,6 @@
       "source_location": "L50"
     },
     {
-      "id": "src_view_models_source_browser_view_model",
-      "label": "source-browser-view-model.ts",
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "source-browser-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "source-browser-view-model.ts",
-      "source_file": "src/view-models/source-browser-view-model.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "src_view_models_source_browser_view_model_test",
       "label": "source-browser-view-model.test.ts",
       "_origin": "ast",
@@ -18306,17 +18389,6 @@
       "norm_label": "mocks",
       "source_file": "src/view-models/source-browser-view-model.test.ts",
       "source_location": "L5"
-    },
-    {
-      "id": "src_view_models_source_browser_view_model_usesourcebrowserviewmodel",
-      "label": "useSourceBrowserViewModel",
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "source-browser-view-model.test.ts",
-      "file_type": "code",
-      "norm_label": "usesourcebrowserviewmodel",
-      "source_file": "src/view-models/source-browser-view-model.ts",
-      "source_location": "L27"
     }
   ],
   "links": [
@@ -22589,7 +22661,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L50",
+      "source_location": "L75",
       "weight": 1.0
     },
     {
@@ -22601,7 +22673,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L51",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -22613,7 +22685,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L58",
+      "source_location": "L83",
       "weight": 1.0
     },
     {
@@ -22625,7 +22697,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L148",
+      "source_location": "L173",
       "weight": 1.0
     },
     {
@@ -22637,7 +22709,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L44",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
@@ -22649,7 +22721,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L67",
+      "source_location": "L92",
       "weight": 1.0
     },
     {
@@ -22661,7 +22733,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L69",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -22673,7 +22745,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L31",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service_preloadbundledsources",
+      "target": "src_services_sources_service_seedbundledsources",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -22685,7 +22769,31 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L88",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service_seedbundledsources",
+      "target": "src_services_sources_service_getdatabase",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service_seedbundledsources",
+      "target": "src_services_sources_service_parsesourcedefinition",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L46",
       "weight": 1.0
     },
     {
@@ -22697,7 +22805,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L128",
+      "source_location": "L129",
       "weight": 1.0
     },
     {
@@ -22709,7 +22817,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L116",
+      "source_location": "L117",
       "weight": 1.0
     },
     {
@@ -22721,7 +22829,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L116",
+      "source_location": "L117",
       "weight": 1.0
     },
     {
@@ -22733,7 +22841,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L111",
+      "source_location": "L136",
       "weight": 1.0
     },
     {
@@ -22745,7 +22853,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L81",
+      "source_location": "L106",
       "weight": 1.0
     },
     {
@@ -22757,7 +22865,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L73",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -22769,7 +22877,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L74",
+      "source_location": "L99",
       "weight": 1.0
     },
     {
@@ -22781,7 +22889,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L36",
+      "source_location": "L61",
       "weight": 1.0
     },
     {
@@ -23681,7 +23789,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L51",
+      "source_location": "L53",
       "weight": 1.0
     },
     {
@@ -23693,7 +23801,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L40",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -23777,7 +23885,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L361",
+      "source_location": "L357",
       "weight": 1.0
     },
     {
@@ -23789,7 +23897,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L370",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -23801,7 +23909,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L371",
+      "source_location": "L367",
       "weight": 1.0
     },
     {
@@ -23813,7 +23921,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L372",
+      "source_location": "L368",
       "weight": 1.0
     },
     {
@@ -23825,7 +23933,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L393",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -23837,7 +23945,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L403",
+      "source_location": "L399",
       "weight": 1.0
     },
     {
@@ -23849,7 +23957,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L407",
+      "source_location": "L403",
       "weight": 1.0
     },
     {
@@ -23861,7 +23969,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L407",
+      "source_location": "L403",
       "weight": 1.0
     },
     {
@@ -23873,7 +23981,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L407",
+      "source_location": "L403",
       "weight": 1.0
     },
     {
@@ -23885,7 +23993,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L414",
+      "source_location": "L410",
       "weight": 1.0
     },
     {
@@ -23897,7 +24005,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L415",
+      "source_location": "L411",
       "weight": 1.0
     },
     {
@@ -23909,7 +24017,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L417",
+      "source_location": "L413",
       "weight": 1.0
     },
     {
@@ -23921,7 +24029,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L451",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -23933,7 +24041,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L451",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -23945,7 +24053,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L450",
+      "source_location": "L446",
       "weight": 1.0
     },
     {
@@ -23957,7 +24065,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L450",
+      "source_location": "L446",
       "weight": 1.0
     },
     {
@@ -23969,7 +24077,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L449",
+      "source_location": "L445",
       "weight": 1.0
     },
     {
@@ -23981,7 +24089,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L449",
+      "source_location": "L445",
       "weight": 1.0
     },
     {
@@ -23993,7 +24101,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L449",
+      "source_location": "L445",
       "weight": 1.0
     },
     {
@@ -24005,7 +24113,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L23",
+      "source_location": "L24",
       "weight": 1.0
     },
     {
@@ -24017,7 +24125,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L414",
+      "source_location": "L422",
+      "weight": 1.0
+    },
+    {
+      "source": "src_views_reader_reader_ui_adapter_test",
+      "target": "src_views_reader_reader_ui_adapter_test_fakewindow_dispatch",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L456",
       "weight": 1.0
     },
     {
@@ -24029,7 +24149,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L471",
+      "source_location": "L508",
       "weight": 1.0
     },
     {
@@ -24041,7 +24161,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L482",
+      "source_location": "L519",
       "weight": 1.0
     },
     {
@@ -24053,7 +24173,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L214",
+      "source_location": "L216",
       "weight": 1.0
     },
     {
@@ -24065,7 +24185,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L215",
+      "source_location": "L217",
       "weight": 1.0
     },
     {
@@ -24077,7 +24197,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L218",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -24089,7 +24209,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L223",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -24101,7 +24221,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L227",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -24113,7 +24233,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L231",
+      "source_location": "L233",
       "weight": 1.0
     },
     {
@@ -24125,7 +24245,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L190",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -24137,7 +24257,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L186",
+      "source_location": "L188",
       "weight": 1.0
     },
     {
@@ -24149,7 +24269,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L177",
+      "source_location": "L179",
       "weight": 1.0
     },
     {
@@ -24161,7 +24281,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L146",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -24173,7 +24293,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -24185,7 +24305,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L67",
+      "source_location": "L68",
       "weight": 1.0
     },
     {
@@ -24197,7 +24317,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L67",
+      "source_location": "L68",
       "weight": 1.0
     },
     {
@@ -24209,7 +24329,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L465",
+      "source_location": "L502",
       "weight": 1.0
     },
     {
@@ -24221,7 +24341,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L466",
+      "source_location": "L503",
       "weight": 1.0
     },
     {
@@ -24233,7 +24353,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L274",
+      "source_location": "L282",
       "weight": 1.0
     },
     {
@@ -24245,7 +24365,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L311",
+      "source_location": "L319",
       "weight": 1.0
     },
     {
@@ -24257,7 +24377,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L323",
+      "source_location": "L331",
       "weight": 1.0
     },
     {
@@ -24269,7 +24389,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L324",
+      "source_location": "L332",
       "weight": 1.0
     },
     {
@@ -24281,7 +24401,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L327",
+      "source_location": "L335",
       "weight": 1.0
     },
     {
@@ -24293,7 +24413,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L339",
+      "source_location": "L347",
       "weight": 1.0
     },
     {
@@ -24305,7 +24425,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L327",
+      "source_location": "L335",
       "weight": 1.0
     },
     {
@@ -24317,7 +24437,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L328",
+      "source_location": "L336",
       "weight": 1.0
     },
     {
@@ -24329,7 +24449,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L121",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -24341,7 +24461,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L152",
+      "source_location": "L151",
       "weight": 1.0
     },
     {
@@ -24353,7 +24473,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L198",
+      "source_location": "L197",
       "weight": 1.0
     },
     {
@@ -24365,7 +24485,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L201",
+      "source_location": "L200",
       "weight": 1.0
     },
     {
@@ -24377,7 +24497,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L213",
+      "source_location": "L212",
       "weight": 1.0
     },
     {
@@ -25097,7 +25217,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L105",
+      "source_location": "L106",
       "weight": 1.0
     },
     {
@@ -25109,7 +25229,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L115",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -25121,7 +25241,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L127",
+      "source_location": "L128",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service_test",
+      "target": "src_services_sources_service_test_deferred",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/services/sources-service.test.ts",
+      "source_location": "L318",
       "weight": 1.0
     },
     {
@@ -25133,7 +25265,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L43",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -25613,7 +25745,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L256",
+      "source_location": "L300",
       "weight": 1.0
     },
     {
@@ -25625,7 +25757,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L29",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -25637,7 +25769,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L39",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -25649,7 +25781,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L43",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -25697,7 +25829,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-container.test.tsx",
-      "source_location": "L38",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -25709,7 +25841,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L204",
+      "source_location": "L206",
       "weight": 1.0
     },
     {
@@ -25721,7 +25853,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L273",
+      "source_location": "L281",
       "weight": 1.0
     },
     {
@@ -25733,7 +25865,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L309",
+      "source_location": "L317",
       "weight": 1.0
     },
     {
@@ -26003,7 +26135,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/views/reader/reader-container.test.tsx",
-      "source_location": "L18",
+      "source_location": "L20",
       "weight": 1.0
     },
     {
@@ -27628,6 +27760,18 @@
     },
     {
       "source": "src_services_sources_service_test",
+      "target": "src_services_sources_service_preloadbundledsources",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/services/sources-service.test.ts",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service_test",
       "target": "src_services_sources_service_removesource",
       "relation": "imports",
       "_origin": "ast",
@@ -28715,7 +28859,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L27",
+      "source_location": "L29",
       "weight": 1.0
     },
     {
@@ -29075,7 +29219,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/views/reader/reader-container.test.tsx",
-      "source_location": "L36",
+      "source_location": "L38",
       "weight": 1.0
     },
     {
@@ -29111,7 +29255,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -29123,7 +29267,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -30427,7 +30571,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/view-models/sources-view-model.test.ts",
-      "source_location": "L27",
+      "source_location": "L29",
       "weight": 1.0
     },
     {
@@ -30910,7 +31054,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/views/reader/reader-container.test.tsx",
-      "source_location": "L36",
+      "source_location": "L38",
       "weight": 1.0
     },
     {
@@ -30995,7 +31139,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L32",
+      "source_location": "L33",
       "type_only": true,
       "weight": 1.0
     },
@@ -31412,7 +31556,7 @@
       "confidence_score": 1.0,
       "context": "type",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L204",
+      "source_location": "L206",
       "weight": 1.0
     },
     {
@@ -31424,7 +31568,7 @@
       "confidence_score": 1.0,
       "context": "type",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L98",
+      "source_location": "L99",
       "weight": 1.0
     },
     {
@@ -31436,7 +31580,7 @@
       "confidence_score": 1.0,
       "context": "type",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L75",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -38888,123 +39032,13 @@
     },
     {
       "source": "src_services_sources_service",
-      "target": "src_services_sources_service_sourcetestresult",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L105",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_testsourcedefinition",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L110",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_normalisehttpsurl",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L12",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_checksourceupdate",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L146",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_parsesourcedefinition",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L23",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_watchsources",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L35",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_getsource",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L43",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_addsource",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L49",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_importsourcedefinition",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L66",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
       "target": "src_services_sources_service_getdatabase",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L7",
-      "weight": 1.0
-    },
-    {
-      "source": "src_services_sources_service",
-      "target": "src_services_sources_service_updatesource",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/services/sources-service.ts",
-      "source_location": "L72",
+      "source_location": "L10",
       "weight": 1.0
     },
     {
@@ -39015,7 +39049,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L80",
+      "source_location": "L105",
       "weight": 1.0
     },
     {
@@ -39026,7 +39060,161 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/services/sources-service.ts",
-      "source_location": "L87",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_sourcetestresult",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_testsourcedefinition",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_normalisehttpsurl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_checksourceupdate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_parsesourcedefinition",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_seedbundledsources",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_preloadbundledsources",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_watchsources",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_getsource",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_bundledsourcedefinition",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_addsource",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_bundledsourcedefinitions",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_importsourcedefinition",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_sources_service",
+      "target": "src_services_sources_service_updatesource",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/services/sources-service.ts",
+      "source_location": "L97",
       "weight": 1.0
     },
     {
@@ -39037,7 +39225,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L142",
+      "source_location": "L143",
       "weight": 1.0
     },
     {
@@ -39048,7 +39236,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0
     },
     {
@@ -39059,7 +39247,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L34",
+      "source_location": "L35",
       "weight": 1.0
     },
     {
@@ -39070,7 +39258,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L35",
+      "source_location": "L36",
       "weight": 1.0
     },
     {
@@ -39081,7 +39269,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L41",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -41330,6 +41518,39 @@
     },
     {
       "source": "src_views_reader_reader_ui_adapter",
+      "target": "src_views_reader_reader_ui_adapter_textcaret",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/views/reader/reader-ui-adapter.tsx",
+      "source_location": "L346",
+      "weight": 1.0
+    },
+    {
+      "source": "src_views_reader_reader_ui_adapter",
+      "target": "src_views_reader_reader_ui_adapter_caretdocument",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/views/reader/reader-ui-adapter.tsx",
+      "source_location": "L347",
+      "weight": 1.0
+    },
+    {
+      "source": "src_views_reader_reader_ui_adapter",
+      "target": "src_views_reader_reader_ui_adapter_readinganchory",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/views/reader/reader-ui-adapter.tsx",
+      "source_location": "L349",
+      "weight": 1.0
+    },
+    {
+      "source": "src_views_reader_reader_ui_adapter",
       "target": "src_views_reader_reader_ui_adapter_readeruiadapterinput",
       "relation": "contains",
       "_origin": "ast",
@@ -41341,7 +41562,7 @@
     },
     {
       "source": "src_views_reader_reader_ui_adapter",
-      "target": "src_views_reader_reader_ui_adapter_textcaret",
+      "target": "src_views_reader_reader_ui_adapter_visibleresource",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -41352,46 +41573,13 @@
     },
     {
       "source": "src_views_reader_reader_ui_adapter",
-      "target": "src_views_reader_reader_ui_adapter_caretdocument",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L351",
-      "weight": 1.0
-    },
-    {
-      "source": "src_views_reader_reader_ui_adapter",
-      "target": "src_views_reader_reader_ui_adapter_readinganchory",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L353",
-      "weight": 1.0
-    },
-    {
-      "source": "src_views_reader_reader_ui_adapter",
-      "target": "src_views_reader_reader_ui_adapter_visibleresource",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L354",
-      "weight": 1.0
-    },
-    {
-      "source": "src_views_reader_reader_ui_adapter",
       "target": "src_views_reader_reader_ui_adapter_locatorforelement",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L356",
+      "source_location": "L352",
       "weight": 1.0
     },
     {
@@ -41402,7 +41590,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L375",
+      "source_location": "L371",
       "weight": 1.0
     },
     {
@@ -41413,7 +41601,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L387",
+      "source_location": "L383",
       "weight": 1.0
     },
     {
@@ -41424,7 +41612,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L398",
+      "source_location": "L394",
       "weight": 1.0
     },
     {
@@ -41435,7 +41623,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L400",
+      "source_location": "L396",
       "weight": 1.0
     },
     {
@@ -41446,7 +41634,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L420",
+      "source_location": "L416",
       "weight": 1.0
     },
     {
@@ -41457,7 +41645,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L432",
+      "source_location": "L428",
       "weight": 1.0
     },
     {
@@ -41468,7 +41656,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L449",
+      "source_location": "L445",
       "weight": 1.0
     },
     {
@@ -41479,7 +41667,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L450",
+      "source_location": "L446",
       "weight": 1.0
     },
     {
@@ -41490,7 +41678,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L451",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -41501,7 +41689,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L452",
+      "source_location": "L448",
       "weight": 1.0
     },
     {
@@ -41512,7 +41700,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.tsx",
-      "source_location": "L453",
+      "source_location": "L449",
       "weight": 1.0
     },
     {
@@ -41545,7 +41733,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L251",
+      "source_location": "L253",
       "weight": 1.0
     },
     {
@@ -41556,7 +41744,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L269",
+      "source_location": "L277",
       "weight": 1.0
     },
     {
@@ -41567,7 +41755,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L34",
+      "source_location": "L35",
       "weight": 1.0
     },
     {
@@ -41578,7 +41766,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L75",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -41600,7 +41788,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L98",
+      "source_location": "L99",
       "weight": 1.0
     },
     {
@@ -41611,7 +41799,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L326",
+      "source_location": "L334",
       "weight": 1.0
     },
     {
@@ -44871,7 +45059,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L211",
+      "source_location": "L213",
       "weight": 1.0
     },
     {
@@ -44882,7 +45070,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L222",
+      "source_location": "L224",
       "weight": 1.0
     },
     {
@@ -44893,7 +45081,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L226",
+      "source_location": "L228",
       "weight": 1.0
     },
     {
@@ -44904,7 +45092,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L230",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -44915,7 +45103,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L234",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -44926,7 +45114,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L235",
+      "source_location": "L237",
       "weight": 1.0
     },
     {
@@ -44937,7 +45125,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L237",
+      "source_location": "L239",
       "weight": 1.0
     },
     {
@@ -44948,7 +45136,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L108",
+      "source_location": "L110",
       "weight": 1.0
     },
     {
@@ -44959,7 +45147,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L114",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -44970,7 +45158,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L118",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -44981,7 +45169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L122",
+      "source_location": "L124",
       "weight": 1.0
     },
     {
@@ -44992,7 +45180,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L126",
+      "source_location": "L128",
       "weight": 1.0
     },
     {
@@ -45003,7 +45191,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L134",
+      "source_location": "L136",
       "weight": 1.0
     },
     {
@@ -45014,7 +45202,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L139",
+      "source_location": "L141",
       "weight": 1.0
     },
     {
@@ -45025,7 +45213,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L145",
+      "source_location": "L147",
       "weight": 1.0
     },
     {
@@ -45036,7 +45224,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L149",
+      "source_location": "L151",
       "weight": 1.0
     },
     {
@@ -45047,7 +45235,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L153",
+      "source_location": "L155",
       "weight": 1.0
     },
     {
@@ -45058,7 +45246,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L157",
+      "source_location": "L159",
       "weight": 1.0
     },
     {
@@ -45069,7 +45257,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L161",
+      "source_location": "L163",
       "weight": 1.0
     },
     {
@@ -45080,7 +45268,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L165",
+      "source_location": "L167",
       "weight": 1.0
     },
     {
@@ -45091,7 +45279,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L166",
+      "source_location": "L168",
       "weight": 1.0
     },
     {
@@ -45102,7 +45290,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L167",
+      "source_location": "L169",
       "weight": 1.0
     },
     {
@@ -45113,7 +45301,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L169",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -45124,7 +45312,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L173",
+      "source_location": "L175",
       "weight": 1.0
     },
     {
@@ -45135,7 +45323,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L185",
+      "source_location": "L187",
       "weight": 1.0
     },
     {
@@ -45146,7 +45334,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L189",
+      "source_location": "L191",
       "weight": 1.0
     },
     {
@@ -45157,7 +45345,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L194",
+      "source_location": "L196",
       "weight": 1.0
     },
     {
@@ -45168,7 +45356,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L40",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -45179,7 +45367,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L46",
+      "source_location": "L47",
       "weight": 1.0
     },
     {
@@ -45190,7 +45378,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L54",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -45201,7 +45389,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L65",
+      "source_location": "L66",
       "weight": 1.0
     },
     {
@@ -45212,7 +45400,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L70",
+      "source_location": "L71",
       "weight": 1.0
     },
     {
@@ -45223,7 +45411,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L79",
+      "source_location": "L80",
       "weight": 1.0
     },
     {
@@ -45234,7 +45422,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L89",
+      "source_location": "L90",
       "weight": 1.0
     },
     {
@@ -45245,7 +45433,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L93",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -45256,7 +45444,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L257",
+      "source_location": "L260",
       "weight": 1.0
     },
     {
@@ -45267,7 +45455,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L261",
+      "source_location": "L264",
       "weight": 1.0
     },
     {
@@ -45278,7 +45466,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L262",
+      "source_location": "L269",
+      "weight": 1.0
+    },
+    {
+      "source": "src_views_reader_reader_ui_adapter_test_fakewindow",
+      "target": "src_views_reader_reader_ui_adapter_test_fakewindow_dispatch",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/views/reader/reader-ui-adapter.test.ts",
+      "source_location": "L270",
       "weight": 1.0
     },
     {
@@ -45289,7 +45488,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L263",
+      "source_location": "L271",
       "weight": 1.0
     },
     {
@@ -45300,7 +45499,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L264",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -45311,7 +45510,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L265",
+      "source_location": "L273",
       "weight": 1.0
     },
     {
@@ -45322,7 +45521,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L266",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -45714,7 +45913,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L242",
+      "source_location": "L289",
       "weight": 1.0
     },
     {
@@ -45762,7 +45961,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L474",
+      "source_location": "L511",
       "weight": 1.0
     },
     {
@@ -45774,7 +45973,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "src/views/reader/reader-ui-adapter.test.ts",
-      "source_location": "L330",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -45846,7 +46045,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/services/sources-service.test.ts",
-      "source_location": "L203",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -45923,5 +46122,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "270d55fc30ed5f636d4286d5143e99d4b8780251"
+  "built_at_commit": "032a0e87d51110fb47047daa86fa452b185d67b4"
 }

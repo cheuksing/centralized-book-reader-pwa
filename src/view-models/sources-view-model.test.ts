@@ -258,6 +258,31 @@ describe('sources view model', () => {
     expect(steps).toEqual(['preload', 'watch'])
   })
 
+  it('keeps the current initialization alive when disposal interrupts deferred preload', async () => {
+    const pendingPreload = deferred<void>()
+    const stopWatching = vi.fn()
+    mocks.preloadBundledSources.mockReturnValue(pendingPreload.promise)
+    mocks.watchSources.mockImplementation(async (onSources: (next: Source[]) => void) => {
+      onSources([])
+      return stopWatching
+    })
+
+    const firstInitialize = useSourcesViewModel.getState().initialize()
+    await Promise.resolve()
+    useSourcesViewModel.getState().dispose()
+    const secondInitialize = useSourcesViewModel.getState().initialize()
+    await Promise.resolve()
+
+    expect(mocks.watchSources).not.toHaveBeenCalled()
+    pendingPreload.resolve()
+    await Promise.all([firstInitialize, secondInitialize])
+
+    expect(useSourcesViewModel.getState()).toMatchObject({ initialized: true, isLoading: false, error: undefined })
+    expect(mocks.watchSources).toHaveBeenCalledOnce()
+    useSourcesViewModel.getState().dispose()
+    expect(stopWatching).toHaveBeenCalledOnce()
+  })
+
   it('stores and cleans up the source watcher lifecycle', async () => {
     const stopWatching = vi.fn()
     mocks.watchSources.mockImplementation(async (onSources: (next: Source[]) => void) => {

@@ -35,7 +35,9 @@ export function parseSourceDefinition(value: unknown): SourceDefinition {
   }
 }
 
-export async function preloadBundledSources(): Promise<void> {
+let bundledPreloadPromise: Promise<void> | undefined
+
+async function seedBundledSources(): Promise<void> {
   const database = await getDatabase()
   for (const bundled of bundledSourceDefinitions) {
     if (await database.sources.findOne(bundled.id).exec()) continue
@@ -48,6 +50,11 @@ export async function preloadBundledSources(): Promise<void> {
       installedAt: new Date().toISOString(),
     })
   }
+}
+
+export function preloadBundledSources(): Promise<void> {
+  bundledPreloadPromise ??= seedBundledSources().finally(() => { bundledPreloadPromise = undefined })
+  return bundledPreloadPromise
 }
 
 export async function watchSources(onSources: (sources: Source[]) => void): Promise<() => void> {

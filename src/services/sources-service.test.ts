@@ -186,6 +186,30 @@ describe('sources service', () => {
     expect(sources.documents[0]).toMatchObject({ id: 'czbooks', name: 'Customized source', customized: true })
   })
 
+  it('coalesces concurrent bundled preloads while the source collection is pending', async () => {
+    const sources = collectionFor()
+    const findOneStarted = deferred<void>()
+    const releaseFindOne = deferred<void>()
+    sources.collection.findOne.mockImplementation(() => ({
+      exec: async () => {
+        findOneStarted.resolve()
+        await releaseFindOne.promise
+        return undefined
+      },
+    }))
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ sources }))
+
+    const firstPreload = preloadBundledSources()
+    await findOneStarted.promise
+    const secondPreload = preloadBundledSources()
+    await Promise.resolve()
+
+    expect(sources.collection.findOne).toHaveBeenCalledOnce()
+    releaseFindOne.resolve()
+    await Promise.all([firstPreload, secondPreload])
+    expect(sources.collection.insert).toHaveBeenCalledOnce()
+  })
+
   it('adds a source, rejects duplicate bases, and imports a fetched definition', async () => {
     const sources = collectionFor()
     const database = databaseFor({ sources })
@@ -290,3 +314,13 @@ describe('sources service', () => {
     await expect(addSource(definition())).rejects.toBe(writeFailure)
   })
 })
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, resolve, reject }
+}

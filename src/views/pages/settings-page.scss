@@ -2,6 +2,7 @@
   background: #edf0e8;
   border-radius: 14px;
   margin-top: 16px;
+  min-height: 220px;
   padding: 18px;
 
   h2 {
@@ -49,6 +50,7 @@
     font-size: 1.1rem;
     font-weight: 700;
     margin: 16px 0;
+    min-height: 1.5em;
   }
 
   .button-row {
@@ -75,6 +77,39 @@
     min-height: 44px;
     width: 100%;
   }
+}
+
+.settings-bridge-group {
+  min-height: 330px;
+}
+
+.settings-reader-group {
+  min-height: 300px;
+}
+
+.settings-storage-group {
+  min-height: 430px;
+}
+
+.settings-backup-group {
+  min-height: 220px;
+}
+
+.settings-retry-row {
+  margin-top: 12px;
+}
+
+.settings-database-status,
+.settings-status-slot {
+  min-height: clamp(7rem, 22vw, 10rem);
+}
+
+.settings-storage-slot {
+  min-height: clamp(3rem, 10vw, 5rem);
+}
+
+.settings-backup-status {
+  min-height: clamp(4rem, 12vw, 6rem);
 }
 
 .file-button {

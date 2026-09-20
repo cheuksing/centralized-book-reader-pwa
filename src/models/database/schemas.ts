@@ -4,6 +4,7 @@ import type { RxJsonSchema } from 'rxdb'
 FormatRegistry.Set('uri', (value) => {
   try { return Boolean(new URL(value).protocol) } catch { return false }
 })
+FormatRegistry.Set('date-time', (value) => Number.isFinite(Date.parse(value)) && value.includes('T'))
 
 export const publicationKindSchema = Type.Unsafe<'book' | 'article' | 'comic'>(Type.String({ enum: ['book', 'article', 'comic'], maxLength: 7 }))
 export const resourceKindSchema = Type.Unsafe<'text' | 'html' | 'image' | 'external-link'>(Type.String({ enum: ['text', 'html', 'image', 'external-link'], maxLength: 13 }))

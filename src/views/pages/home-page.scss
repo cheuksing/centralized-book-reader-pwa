@@ -31,6 +31,10 @@
   touch-action: pan-y;
 }
 
+.library-content {
+  min-height: 260px;
+}
+
 .library-book-list,
 .library-empty {
   animation: library-panel-enter .24s cubic-bezier(.22, 1, .36, 1) both;
@@ -48,8 +52,13 @@
   }
 }
 
+.library-error-slot {
+  min-height: clamp(5rem, 18vw, 8rem);
+}
+
 .library-message {
   margin: 24px 0;
+  min-height: clamp(3rem, 8vw, 4.5rem);
 }
 
 .library-empty {

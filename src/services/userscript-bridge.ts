@@ -51,7 +51,7 @@ export function isBridgeMessage(value: unknown): value is BridgeMessage {
   if (!value || typeof value !== 'object') return false
   const message = value as Record<string, unknown>
   return message.channel === USER_SCRIPT_CHANNEL
-    && typeof message.protocol === 'number'
+    && Number.isInteger(message.protocol)
     && messageTypes.has(message.type as BridgeMessage['type'])
     && typeof message.requestId === 'string'
     && message.requestId.length > 0

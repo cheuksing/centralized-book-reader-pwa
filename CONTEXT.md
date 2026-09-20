@@ -1,72 +1,12 @@
 # Bookshelf Reader
 
-Bookshelf Reader is a local-first reader that normalizes publications from user-installed third-party sources into a consistent library and reading experience.
+Bookshelf Reader gives people one place to find and read material from public sources they choose. It turns those sources into a familiar bookshelf, so people can save works, return to recent reading, and continue where they stopped.
 
-## Content
+## Expected behavior
 
-**Publication**:
-A readable work supplied by one source. Its kind is book, article, or comic.
-_Avoid_: Book as an umbrella term, content item
-
-**Chapter**:
-The smallest independently readable and downloadable part of a publication. A publication without natural chapters has one synthetic chapter.
-_Avoid_: Section, episode
-
-**Resource**:
-An ordered text, HTML, image, or external-link item belonging to a chapter.
-_Avoid_: Asset when referring to reader content
-
-**Chapter revision**:
-A source-observable version of a chapter's resources. Replacing a downloaded revision is an explicit user action.
-
-## Sources
-
-**Source**:
-A user-installed provider of publications. A source owns the identities and ordering of its publications and chapters.
-_Avoid_: Repository, feed
-
-**Source definition**:
-A versioned, declarative description of how to retrieve and normalize one source. It contains no executable user code.
-_Avoid_: Plugin, script
-
-**Catalog list**:
-A source-defined, ordered collection used to discover publications, such as latest, popular, completed, or a genre.
-_Avoid_: Category as the general term
-
-## Local library
-
-**Local Library**:
-The union of publications retained through a publication bookmark, reading history, or cached chapter.
-
-**Publication bookmark**:
-An explicit request to keep a publication in the Saved list. It is not a marker inside reader content.
-_Avoid_: Favorite, in-content bookmark
-
-**Saved**:
-The user-facing Library view of publication bookmarks.
-_Avoid_: Bookmarks as a navigation label, Favorite
-
-**Reading history**:
-A recency list of the last 30 publications whose reader pages were entered. Removing an entry does not remove progress or cached content.
-_Avoid_: Progress
-
-**Reading progress**:
-A publication's single current resume position, expressed as a content-based locator. It is independent of history, bookmarks, and cached content.
-_Avoid_: Reading history
-
-**Download**:
-A user-requested operation that makes an entire chapter available offline. It can continue while the user navigates elsewhere in the active app.
-
-**Read-through cache**:
-Content persisted because it was displayed or prefetched around the reader viewport, without an explicit whole-chapter download request.
-
-**Offline cache**:
-App-managed chapter content persisted through reading or automatic preparation. It remains until the user clears it or storage pressure requires least-recently-used eviction.
-_Avoid_: Download when no user-requested download occurred
-
-**Ready ahead**:
-The number of fully cached chapters after the current chapter in source order. It does not mean those chapters are unread.
-_Avoid_: Unread downloads
-
-**Available offline**:
-A chapter whose required reader resources are present locally. A partially cached chapter is available only up to its cached boundary.
+- People add the public sources they want to use and browse the works and chapters those sources provide.
+- Saved works, recent reading, and the current place in a work are separate choices. Removing one does not unexpectedly remove the others.
+- Reading works best while connected. Some chapters may remain available without a connection after they have been read or prepared while the app is active.
+- Nearby chapters may be prepared while the app is open and connected, but the app does not promise background work while it is closed, suspended, or the device is locked.
+- Some sources require the companion browser helper to be installed and enabled on a supported desktop browser.
+- The app keeps the bookshelf and reading information in the browser. A backup can restore the bookshelf, settings, saved works, recent reading, and reading places; downloaded chapter files are not part of that backup.

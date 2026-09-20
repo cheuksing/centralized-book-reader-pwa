@@ -1,3 +1,24 @@
+.sources-content {
+  min-height: 360px;
+}
+
+.sources-status-region {
+  display: grid;
+  gap: 0;
+  min-height: clamp(7rem, 20vw, 10rem);
+}
+
+.source-status-slot {
+  min-height: 1.5em;
+  margin: 0;
+}
+
+.source-form-status-slot,
+.source-loading-slot,
+.source-browser-loading-slot {
+  min-height: clamp(3rem, 8vw, 4.5rem);
+}
+
 .source-form,
 .empty-sources {
   background: #edf0e8;

@@ -1,60 +1,60 @@
 # Bookshelf Reader
 
-A React + Vite local-first PWA for reading publications from user-installed public sources.
+## Architecture boundaries
 
-- **Models** (`src/models`) define sources, publications, chapters, resources, caches, locators, and backup validation.
-- **Services** (`src/services`) own the userscript bridge seam, source sync, OPFS-backed persistence, library projections, content caching, downloads, and backup/restore.
-- **UI** (`src/view/ui`) provides onboarding, source browsing, publication details, chapter management, reader controls, and offline-aware library screens.
+- `src/app` owns application startup, routing, and composition of screen state.
+- Page views in `src/views/pages` render UI through `src/view-models`; they do not import services or database modules directly.
+- View models coordinate screen state and user actions.
+- Services own application operations and may use models, but stay independent of React, Zustand, and view modules.
+- Models own domain types, source adapters, cache policy, and RxDB/OPFS persistence.
+- Remote source requests cross the userscript bridge; bridge-facing services validate targets and content and map failures into application errors.
 
-## Current foundation
+## Service responsibilities
 
-- Installable PWA shell with OPFS/RxDB persistence and a Web Locks single-instance guard.
-- A controller-owned userscript bridge is required for anonymous requests to public source JSON, covers, text, HTML, and images.
-- Version 1 declarative source definitions: generic JSON mappings and static HTML selector mappings with optional search/catalog discovery.
-- The ready-to-import czbooks.net definition is at `public/sources/czbooks.json`; it extracts each chapter's `.chapter-detail .content` as plain text.
-- Source-scoped publication/chapter/resource identities, independent bookmarks, Recent history, progress, and downloads.
-- Read-through chapter caching, persisted explicit download jobs, four-slot image coordination, sanitized HTML, and offline reader content.
-- Metadata-only versioned JSON backup. Remote-bridge availability is runtime-probed; jobs, covers, and content attachments are excluded.
-- Browser storage persistence request and usage/quota estimate; the app never evicts reader content automatically.
+| Service | Responsibility |
+| --- | --- |
+| `src/services/app-settings-service.ts` | Loads and saves app-level persistence-request state. |
+| `src/services/backup-service.ts` | Exports metadata-only backups, validates imports/restores, and restores into a new database generation. |
+| `src/services/book-content-service.ts` | Loads, caches, updates, and releases chapter content, including resource fetching and quota-aware preparation. |
+| `src/services/cache-preparation.ts` | Defines offline-preparation gates, chapter windows, openability checks, and bounded storage-recovery policy. |
+| `src/services/image-coordinator.ts` | Deduplicates and priority-queues image requests with at most four concurrent requests. |
+| `src/services/library-service.ts` | Builds library snapshots and manages bookmarks, history, progress, and publication covers. |
+| `src/services/publication-sync-service.ts` | Synchronizes publication and chapter metadata with source adapters and persists local publication changes. |
+| `src/services/reader-settings-service.ts` | Loads and saves global reader display settings with defaults. |
+| `src/services/remote-fetch-service.ts` | Detects and requests userscript access, then fetches validated JSON and blobs through the bridge with application-level error mapping. |
+| `src/services/source-browser-service.ts` | Loads source catalog lists, catalog pages, search results, and remote publication metadata through the selected adapter. |
+| `src/services/sources-service.ts` | Validates and manages installed source definitions, including import, testing, updates, enablement, and removal. |
+| `src/services/storage-policy.ts` | Summarizes cached bytes and decides when storage estimates and active-preparation checks should run. |
+| `src/services/storage-service.ts` | Coordinates persistent-storage requests, storage estimates, offline-cache clearing, and storage lifecycle notifications. |
+| `src/services/userscript-bridge.ts` | Defines the page/userscript protocol, validates bridge messages and HTTPS targets, maps failures, and builds `Response` objects. |
 
-## czbooks.net source
+## Runtime prerequisites
 
-The site is server-rendered HTML rather than a JSON API. After deployment, enter `https://<your-app-host>/sources/czbooks.json` in the Sources page, or paste the contents of `public/sources/czbooks.json` as a source definition. The definition searches `/s/{query}?q={query}`, reads publication chapters from `#chapter-list a`, fetches `/n/{publicationId}/{chapterId}`, and stores only text selected from `.chapter-detail .content`.
+- Node.js 20.19+ or 22.12+ and npm for local development and validation.
+- A desktop browser with the PWA APIs used by the app, including service workers, Web Locks, OPFS, and storage-estimate/persistence APIs.
+- Remote sources additionally require the separately distributed companion userscript installed and enabled in a compatible userscript manager.
+- `npm run bridge:check` uses POSIX shell commands; Windows users should run it from Git Bash, WSL, or another POSIX-compatible shell.
+- iOS is unsupported; Orion is not verified.
 
-## Run locally
+## Local commands
 
 ```sh
 npm install
 npm run dev
 ```
 
-Validate with:
+To serve a built application locally:
 
 ```sh
 npm run build
-npm run lint
+npm run preview
 ```
 
-## OPFS-backed RxDB storage
+## Validation commands
 
-The project contains a free custom `RxStorage` adapter at `src/models/database/opfs-rx-storage.ts`.
-
-- RxDB's free memory storage supplies Mango querying and conflict handling.
-- The adapter persists a collection snapshot and RxDB attachment blobs in OPFS.
-- Every collection is created through `getReaderDatabase()` in `src/models/database/opfs-database.ts`.
-- The database uses `multiInstance: false` deliberately because the app owns a Web Locks active-instance guard; cross-tab database coordination is not a prototype goal.
-
-This avoids the RxDB Premium OPFS package without silently falling back to IndexedDB/Dexie.
-
-## Remote-access userscript
-
-Remote sources require a separately distributed, controller-owned userscript. This repository does not create or ship that script.
-
-- Install it in Violentmonkey or another compatible desktop-browser userscript manager, grant only the host permissions it needs, and keep it enabled while using remote sources.
-- Update it through the manager's normal update flow or the controller's documented replacement instructions.
-- The script may make only anonymous requests to public sources: it must not send or read cookies, credentials, authorization headers, source API keys, or custom request headers.
-- Browser support is limited to desktop browsers that provide the required PWA APIs and a compatible userscript manager. Verify each browser/manager combination through the controller's release notes; Orion is not verified. iOS is unsupported.
-
-## Background downloads
-
-The application shell is precached by the service worker. Explicit chapter jobs persist resource completion, support pause/cancel/resume, and resume when the app starts or becomes online. They never promise completion while the app is suspended, closed, or the device is locked.
+```sh
+npm test -- --run
+npm run build
+npm run lint
+npm run bridge:check
+```

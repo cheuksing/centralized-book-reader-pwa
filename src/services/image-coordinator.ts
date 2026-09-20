@@ -31,7 +31,7 @@ async function pump(): Promise<void> {
   while (active < 4 && queue.length > 0) {
     const task = queue.shift()!
     active += 1
-    void task.run().then(task.resolve, task.reject).finally(() => {
+    void Promise.resolve().then(task.run).then(task.resolve, task.reject).finally(() => {
       active -= 1
       void pump()
     })

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "oxlint",
     "preview": "vite preview",
     "bridge:check": "rm -rf .tmp/userscript-bridge && tsc --ignoreConfig --target es2023 --module nodenext --moduleResolution nodenext --outDir .tmp/userscript-bridge src/services/userscript-bridge.check.ts && node .tmp/userscript-bridge/userscript-bridge.check.js"

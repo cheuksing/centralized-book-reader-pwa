@@ -1,5 +1,5 @@
 import { Value } from '@sinclair/typebox/value'
-import { PublicationBookmarkDocumentSchema, PublicationDocumentSchema, ReadingHistoryDocumentSchema, ReadingProgressDocumentSchema, ReaderSettingsDocumentSchema, SourceDocumentSchema, type ReaderSettingsDocument } from '@models/database/schemas'
+import { PublicationBookmarkDocumentSchema, PublicationDocumentSchema, ReadingHistoryDocumentSchema, ReadingProgressDocumentSchema, ReaderSettingsDocumentSchema, SourceDocumentSchema, type PublicationDocument, type ReaderSettingsDocument, type SourceDocument } from '@models/database/schemas'
 import { publicationKey } from '@models/entities/keys'
 import type { ReaderBackup } from '@models/entities/domain'
 import { parseBackup, serializeBackup } from '@models/import-export/backup'
@@ -25,11 +25,8 @@ export async function downloadBackup(): Promise<void> {
     version: 2,
     createdAt: new Date().toISOString(),
     settings,
-    sources: sources.map((source) => source.toJSON()),
-    publications: publications.map((publication) => {
-      const value = publication.toJSON()
-      return { ...value, coverState: 'missing' }
-    }),
+    sources: sources.map((source) => sourceMetadataForBackup(source.toJSON())),
+    publications: publications.map((publication) => publicationMetadataForBackup(publication.toJSON())),
     bookmarks: bookmarks.map((bookmark) => bookmark.toJSON()),
     readingHistory: history.map((entry) => entry.toJSON()).sort((left, right) => right.openedAt.localeCompare(left.openedAt)).slice(0, 30),
     readingProgress: progress.map((entry) => entry.toJSON()),
@@ -72,6 +69,39 @@ export async function importBackupFile(file: File): Promise<void> {
   } catch (error) {
     if (!activated) await staged.remove().catch(() => undefined)
     throw error
+  }
+}
+
+function sourceMetadataForBackup(source: SourceDocument): SourceDocument {
+  return {
+    version: source.version,
+    name: source.name,
+    baseUrl: source.baseUrl,
+    adapter: source.adapter,
+    id: source.id,
+    enabled: source.enabled,
+    manifestUrl: source.manifestUrl,
+    customized: source.customized,
+    installedAt: source.installedAt,
+    definitionCheckedAt: source.definitionCheckedAt,
+  }
+}
+
+function publicationMetadataForBackup(publication: PublicationDocument): PublicationDocument {
+  return {
+    key: publication.key,
+    sourceId: publication.sourceId,
+    publicationId: publication.publicationId,
+    title: publication.title,
+    author: publication.author,
+    description: publication.description,
+    coverUrl: publication.coverUrl,
+    kind: publication.kind,
+    chapterIndexKnowledge: publication.chapterIndexKnowledge,
+    knownChapterCount: publication.knownChapterCount,
+    updatedAt: publication.updatedAt,
+    createdAt: publication.createdAt,
+    coverState: 'missing',
   }
 }
 

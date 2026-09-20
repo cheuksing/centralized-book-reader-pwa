@@ -38,10 +38,12 @@
 }
 
 .setup-card {
+  align-content: start;
   background: #edf0e8;
   border-radius: 16px;
   display: grid;
   gap: 13px;
+  min-height: clamp(360px, 72vw, 500px);
   margin-top: 16px;
   min-width: 0;
   padding: 18px;
@@ -70,11 +72,26 @@
   }
 }
 
+.setup-status {
+  min-height: clamp(10rem, 30vw, 14rem);
+}
+
 .setup-success {
   background: #dcefe4;
   border: 1px solid #b7d8c3;
   border-radius: 8px;
   color: #276447;
+  font-size: .82rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 9px 11px;
+}
+
+.setup-pending {
+  background: #f4efd9;
+  border: 1px solid #ded4a9;
+  border-radius: 8px;
+  color: #695b2f;
   font-size: .82rem;
   line-height: 1.4;
   margin: 0;

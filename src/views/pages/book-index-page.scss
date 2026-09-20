@@ -1,4 +1,5 @@
 .index-content {
+  min-height: 420px;
   min-width: 0;
   padding: 16px max(16px, calc(16px + env(safe-area-inset-right))) 45px max(16px, calc(16px + env(safe-area-inset-left)));
 
@@ -12,7 +13,8 @@
 }
 
 .offline-guidance,
-.index-guidance {
+.index-guidance,
+.index-error {
   background: #edf4ee;
   border: 1px solid #cbded0;
   border-radius: 9px;
@@ -27,6 +29,16 @@
   background: #fff4df;
   border-color: #e8d2a8;
   color: #76551d;
+}
+
+.index-error {
+  background: #fff1f0;
+  border-color: #e3b9b5;
+  color: #7a302b;
+
+  p {
+    margin: 0 0 12px;
+  }
 }
 
 .section-index {
@@ -110,8 +122,24 @@
 }
 
 .section-index-virtual {
+  min-height: 216px;
   position: relative;
   width: 100%;
+}
+
+.index-skeleton {
+  align-content: space-around;
+  display: grid;
+  gap: 12px;
+  min-height: 216px;
+  padding: 12px 4px;
+
+  span {
+    background: #e1e4dd;
+    border-radius: 8px;
+    display: block;
+    height: 48px;
+  }
 }
 
 @media (min-width: 521px) {

@@ -29,7 +29,7 @@ export function isBridgeMessage(value) {
         return false;
     const message = value;
     return message.channel === USER_SCRIPT_CHANNEL
-        && typeof message.protocol === 'number'
+        && Number.isInteger(message.protocol)
         && messageTypes.has(message.type)
         && typeof message.requestId === 'string'
         && message.requestId.length > 0

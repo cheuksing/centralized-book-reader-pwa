@@ -1,20 +1,21 @@
 import { create } from 'zustand'
 import { defaultGenericJsonAdapter, type SourceDefinition } from '@models/database/schemas'
 import type { Source } from '@models/entities/domain'
-import { addSource, checkSourceUpdate, importSourceDefinition, removeSource, testSourceDefinition, toggleSource, updateSource, watchSources } from '@services/sources-service'
-import { useSourceBrowserViewModel } from '@view-models/source-browser-view-model'
+import { addSource, checkSourceUpdate, importSourceDefinition, removeSource as removeSourceService, testSourceDefinition, toggleSource as toggleSourceService, updateSource, watchSources } from '@services/sources-service'
 
-type SourceForm = { mode: 'closed' | 'add' | 'edit'; editingId?: string; definitionText: string; manifestUrl: string }
+export type SourceForm = { mode: 'closed' | 'add' | 'edit'; editingId?: string; definitionText: string; manifestUrl: string }
 
-interface SourcesViewModel {
+export interface SourcesViewModel {
   sources: Source[]
   error?: string
   isLoading: boolean
   isSaving: boolean
   initialized: boolean
   form: SourceForm
+  sourceToRemove?: Source
   testStatus?: string
   initialize: () => Promise<void>
+  dispose: () => void
   startAddingSource: () => void
   startEditingSource: (source: Source) => void
   cancelSourceForm: () => void
@@ -23,9 +24,10 @@ interface SourcesViewModel {
   submitSource: () => Promise<void>
   testSource: () => Promise<void>
   toggleSource: (id: string) => Promise<void>
-  removeSource: (id: string) => Promise<void>
+  requestRemove: (source: Source) => void
+  cancelRemove: () => void
+  removeSource: (id: string) => Promise<boolean>
   checkForUpdate: (source: Source) => Promise<void>
-  browseSource: (source: Source) => Promise<void>
 }
 
 function emptyDefinition(): SourceDefinition { return { version: 1, name: '', baseUrl: '', adapter: structuredClone(defaultGenericJsonAdapter) } }
@@ -36,19 +38,30 @@ function definitionFromSource(source: Source): SourceDefinition {
 }
 function errorMessage(error: unknown, fallback: string): string { return error instanceof Error ? error.message : fallback }
 
+type TrackedInitialization = { generation: number; promise: Promise<void> }
+
+let watcherGeneration = 0
+let watcherCleanup: (() => void) | undefined
+let initializationPromise: TrackedInitialization | undefined
+let formGeneration = 0
+let operationGeneration = 0
+
 export const useSourcesViewModel = create<SourcesViewModel>((set, get) => ({
   sources: [],
   isLoading: true,
   isSaving: false,
   initialized: false,
   form: closedForm(),
-  startAddingSource: () => set({ form: { ...closedForm(), mode: 'add' }, error: undefined, testStatus: undefined }),
-  startEditingSource: (source) => set({ form: { mode: 'edit', editingId: source.id, definitionText: JSON.stringify(definitionFromSource(source), null, 2), manifestUrl: '' }, error: undefined, testStatus: undefined }),
-  cancelSourceForm: () => set({ form: closedForm(), testStatus: undefined }),
-  setDefinitionText: (definitionText) => set((state) => ({ form: { ...state.form, definitionText }, testStatus: undefined })),
-  setManifestUrl: (manifestUrl) => set((state) => ({ form: { ...state.form, manifestUrl }, testStatus: undefined })),
+  startAddingSource: () => { formGeneration += 1; set({ form: { ...closedForm(), mode: 'add' }, error: undefined, testStatus: undefined }) },
+  startEditingSource: (source) => { formGeneration += 1; set({ form: { mode: 'edit', editingId: source.id, definitionText: JSON.stringify(definitionFromSource(source), null, 2), manifestUrl: '' }, error: undefined, testStatus: undefined }) },
+  cancelSourceForm: () => { formGeneration += 1; set({ form: closedForm(), testStatus: undefined, error: undefined }) },
+  setDefinitionText: (definitionText) => { formGeneration += 1; set((state) => ({ form: { ...state.form, definitionText }, testStatus: undefined, error: undefined })) },
+  setManifestUrl: (manifestUrl) => { formGeneration += 1; set((state) => ({ form: { ...state.form, manifestUrl }, testStatus: undefined, error: undefined })) },
   submitSource: async () => {
     const { form } = get()
+    const capturedFormGeneration = formGeneration
+    const operationId = ++operationGeneration
+    const isCurrent = () => capturedFormGeneration === formGeneration && operationId === operationGeneration
     set({ isSaving: true, error: undefined })
     try {
       if (form.mode === 'add' && form.manifestUrl.trim()) await importSourceDefinition(form.manifestUrl)
@@ -57,50 +70,90 @@ export const useSourcesViewModel = create<SourcesViewModel>((set, get) => ({
         if (form.mode === 'edit' && form.editingId) await updateSource(form.editingId, definition)
         else await addSource(definition)
       }
-      set({ form: closedForm(), testStatus: undefined })
+      if (isCurrent()) set({ form: closedForm(), testStatus: undefined, error: undefined })
     } catch (error) {
-      set({ error: errorMessage(error, 'Could not save this source.') })
+      if (isCurrent()) set({ error: errorMessage(error, 'Could not save this source.') })
     } finally {
-      set({ isSaving: false })
+      if (operationId === operationGeneration) set({ isSaving: false })
     }
   },
   testSource: async () => {
     const { form } = get()
+    const capturedFormGeneration = formGeneration
+    const operationId = ++operationGeneration
+    const isCurrent = () => capturedFormGeneration === formGeneration && operationId === operationGeneration
     set({ isSaving: true, error: undefined, testStatus: undefined })
     try {
       const result = await testSourceDefinition(JSON.parse(form.definitionText))
-      set({ testStatus: `${result.tested.join(', ')}${result.warnings.length ? ` — ${result.warnings.join(' ')}` : ' passed.'}` })
+      if (isCurrent()) set({ testStatus: `${result.tested.join(', ')}${result.warnings.length ? ` — ${result.warnings.join(' ')}` : ' passed.'}`, error: undefined })
     } catch (error) {
-      set({ error: errorMessage(error, 'The source test failed.') })
+      if (isCurrent()) set({ error: errorMessage(error, 'The source test failed.') })
     } finally {
-      set({ isSaving: false })
+      if (operationId === operationGeneration) set({ isSaving: false })
     }
   },
-  initialize: async () => {
-    if (get().initialized) return
-    set({ initialized: true })
-    try {
-      await watchSources((sources) => set({ sources, isLoading: false, error: undefined }))
-    } catch (error) {
-      set({ error: errorMessage(error, 'Could not open source storage.'), isLoading: false })
-    }
+  initialize: () => {
+    if (initializationPromise?.generation === watcherGeneration) return initializationPromise.promise
+    if (get().initialized) return Promise.resolve()
+    const generation = ++watcherGeneration
+    set({ isLoading: true, error: undefined })
+    const operation = (async () => {
+      try {
+        const unsubscribe = await watchSources((sources) => {
+          if (generation !== watcherGeneration) return
+          set({ sources, isLoading: false, error: undefined })
+        })
+        if (generation !== watcherGeneration) unsubscribe()
+        else {
+          watcherCleanup = unsubscribe
+          set({ initialized: true, isLoading: false })
+        }
+      } catch (error) {
+        if (generation === watcherGeneration) set({ error: errorMessage(error, 'Could not open source storage.'), isLoading: false, initialized: true })
+      }
+    })()
+    let tracked!: Promise<void>
+    tracked = operation.finally(() => {
+      if (initializationPromise?.generation === generation && initializationPromise.promise === tracked) initializationPromise = undefined
+    })
+    initializationPromise = { generation, promise: tracked }
+    return tracked
+  },
+  dispose: () => {
+    watcherGeneration += 1
+    watcherCleanup?.()
+    watcherCleanup = undefined
+    initializationPromise = undefined
+    set({ initialized: false, isLoading: false })
   },
   toggleSource: async (id) => {
-    try { await toggleSource(id); set({ error: undefined }) } catch (error) { set({ error: errorMessage(error, 'Could not update this source.') }) }
+    try {
+      await toggleSourceService(id)
+      set({ error: undefined })
+    } catch (error) {
+      set({ error: errorMessage(error, 'Could not update this source.') })
+    }
   },
+  requestRemove: (source) => set({ sourceToRemove: source }),
+  cancelRemove: () => set({ sourceToRemove: undefined }),
   removeSource: async (id) => {
     try {
-      await removeSource(id)
+      await removeSourceService(id)
       if (get().form.editingId === id) set({ form: closedForm() })
-      if (useSourceBrowserViewModel.getState().selectedSource?.id === id) useSourceBrowserViewModel.getState().closeBrowser()
+      if (get().sourceToRemove?.id === id) set({ sourceToRemove: undefined })
       set({ error: undefined })
-    } catch (error) { set({ error: errorMessage(error, 'Could not remove this source.') }) }
+      return true
+    } catch (error) {
+      set({ error: errorMessage(error, 'Could not remove this source.') })
+      return false
+    }
   },
   checkForUpdate: async (source) => {
     try {
       const result = await checkSourceUpdate(source)
-      set({ testStatus: `${result.summary.join(' ')} Confirm by editing and saving the candidate definition.` })
-    } catch (error) { set({ error: errorMessage(error, 'Could not check this source for updates.') }) }
+      set({ testStatus: `${result.summary.join(' ')} Confirm by editing and saving the candidate definition.`, error: undefined })
+    } catch (error) {
+      set({ error: errorMessage(error, 'Could not check this source for updates.') })
+    }
   },
-  browseSource: async (source) => useSourceBrowserViewModel.getState().selectSource(source),
 }))

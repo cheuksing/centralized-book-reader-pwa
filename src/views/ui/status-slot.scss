@@ -1,0 +1,11 @@
+.status-slot {
+  min-height: clamp(3rem, 8vw, 4.5rem);
+}
+
+.status-slot[data-empty='true'] {
+  visibility: hidden;
+}
+
+.status-slot.visually-hidden {
+  min-height: 1px;
+}

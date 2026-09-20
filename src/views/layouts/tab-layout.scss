@@ -63,7 +63,8 @@
 }
 
 @media (min-width: 721px) {
-  .app-shell {
+  .app-shell,
+  .reader {
     box-shadow: 0 0 45px #192c2414;
     margin-inline: auto;
     max-width: 720px;

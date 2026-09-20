@@ -1,5 +1,5 @@
 .page-transition {
-  animation: page-enter .32s cubic-bezier(.22, 1, .36, 1) both;
+  animation: page-enter .32s cubic-bezier(.22, 1, .36, 1) backwards;
 }
 
 @keyframes page-enter {

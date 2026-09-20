@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { defaultGenericJsonAdapter, type SourceDefinition } from '@models/database/schemas'
 import type { Source } from '@models/entities/domain'
-import { addSource, checkSourceUpdate, importSourceDefinition, removeSource as removeSourceService, testSourceDefinition, toggleSource as toggleSourceService, updateSource, watchSources } from '@services/sources-service'
+import { addSource, checkSourceUpdate, importSourceDefinition, preloadBundledSources, removeSource as removeSourceService, testSourceDefinition, toggleSource as toggleSourceService, updateSource, watchSources } from '@services/sources-service'
 
 export type SourceForm = { mode: 'closed' | 'add' | 'edit'; editingId?: string; definitionText: string; manifestUrl: string }
 
@@ -99,6 +99,8 @@ export const useSourcesViewModel = create<SourcesViewModel>((set, get) => ({
     set({ isLoading: true, error: undefined })
     const operation = (async () => {
       try {
+        await preloadBundledSources()
+        if (generation !== watcherGeneration) return
         const unsubscribe = await watchSources((sources) => {
           if (generation !== watcherGeneration) return
           set({ sources, isLoading: false, error: undefined })

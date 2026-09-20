@@ -5,6 +5,7 @@ import type { CatalogList, ChapterManifest, ChapterPage, PublicationPage, Source
 import {
   addSource,
   checkSourceUpdate,
+  preloadBundledSources,
   getSource,
   importSourceDefinition,
   parseSourceDefinition,
@@ -161,6 +162,28 @@ describe('sources service', () => {
     expect(parsed).toMatchObject({ name: 'Example Source', baseUrl: 'https://source.example/api' })
     expect(() => parseSourceDefinition({ ...definition(), adapter: { type: 'unknown' } })).toThrow('source definition is invalid')
     expect(() => parseSourceDefinition({ ...definition(), baseUrl: 'https://user:password@source.example/api' })).toThrow('credential-free HTTPS URL')
+  })
+
+  it('preloads bundled definitions with their stable ids', async () => {
+    const sources = collectionFor()
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ sources }))
+
+    await preloadBundledSources()
+
+    expect(sources.documents).toHaveLength(1)
+    expect(sources.documents[0]).toMatchObject({ id: 'czbooks', name: '小說狂人 (czbooks.net)', baseUrl: 'https://czbooks.net', enabled: true, customized: false })
+  })
+
+  it('preserves an existing bundled record instead of replacing it', async () => {
+    const existing = sourceFor({ id: 'czbooks', name: 'Customized source', customized: true })
+    const sources = collectionFor([existing])
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ sources }))
+
+    await preloadBundledSources()
+
+    expect(sources.collection.insert).not.toHaveBeenCalled()
+    expect(sources.documents).toHaveLength(1)
+    expect(sources.documents[0]).toMatchObject({ id: 'czbooks', name: 'Customized source', customized: true })
   })
 
   it('adds a source, rejects duplicate bases, and imports a fetched definition', async () => {

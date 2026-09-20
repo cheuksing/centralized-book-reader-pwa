@@ -4,6 +4,9 @@ import type { Source } from '@models/entities/domain'
 import { sourceAdapterFor } from '@models/sources/source-registry'
 import { fetchJsonThroughUserScript } from '@services/remote-fetch-service'
 
+type BundledSourceDefinition = SourceDefinition & { id: string }
+const bundledSourceDefinitions = Object.values(import.meta.glob('../sources/*.json', { eager: true, import: 'default' })) as BundledSourceDefinition[]
+
 async function getDatabase() {
   const { getReaderDatabase } = await import('@models/database/opfs-database')
   return getReaderDatabase()
@@ -29,6 +32,21 @@ export function parseSourceDefinition(value: unknown): SourceDefinition {
     ...definition,
     name: definition.name.trim(),
     baseUrl: normaliseHttpsUrl(definition.baseUrl, 'Source URL'),
+  }
+}
+
+export async function preloadBundledSources(): Promise<void> {
+  const database = await getDatabase()
+  for (const bundled of bundledSourceDefinitions) {
+    if (await database.sources.findOne(bundled.id).exec()) continue
+    const { id, ...definition } = bundled
+    await database.sources.insert({
+      ...parseSourceDefinition(definition),
+      id,
+      enabled: true,
+      customized: false,
+      installedAt: new Date().toISOString(),
+    })
   }
 }
 

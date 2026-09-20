@@ -5,6 +5,7 @@ import type { Source } from '@models/entities/domain'
 const mocks = vi.hoisted(() => ({
   addSource: vi.fn(),
   checkSourceUpdate: vi.fn(),
+  preloadBundledSources: vi.fn(),
   importSourceDefinition: vi.fn(),
   removeSource: vi.fn(),
   testSourceDefinition: vi.fn(),
@@ -16,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@services/sources-service', () => ({
   addSource: mocks.addSource,
   checkSourceUpdate: mocks.checkSourceUpdate,
+  preloadBundledSources: mocks.preloadBundledSources,
   importSourceDefinition: mocks.importSourceDefinition,
   removeSource: mocks.removeSource,
   testSourceDefinition: mocks.testSourceDefinition,
@@ -59,6 +61,7 @@ describe('sources view model', () => {
     vi.clearAllMocks()
     resetStore()
     mocks.addSource.mockResolvedValue(source())
+    mocks.preloadBundledSources.mockResolvedValue(undefined)
     mocks.importSourceDefinition.mockResolvedValue(source())
     mocks.removeSource.mockResolvedValue(undefined)
     mocks.testSourceDefinition.mockResolvedValue({ tested: ['search'], warnings: [] })
@@ -225,10 +228,12 @@ describe('sources view model', () => {
     })
 
     const firstInitialize = useSourcesViewModel.getState().initialize()
+    await Promise.resolve()
     useSourcesViewModel.getState().dispose()
     const secondInitialize = useSourcesViewModel.getState().initialize()
+    await Promise.resolve()
     firstWatch.resolve(firstStop)
-    if (mocks.watchSources.mock.calls.length === 2) secondWatch.resolve(secondStop)
+    secondWatch.resolve(secondStop)
     await Promise.all([firstInitialize, secondInitialize])
 
     expect(mocks.watchSources).toHaveBeenCalledTimes(2)
@@ -237,6 +242,20 @@ describe('sources view model', () => {
     expect(firstStop).toHaveBeenCalledOnce()
     useSourcesViewModel.getState().dispose()
     expect(secondStop).toHaveBeenCalledOnce()
+  })
+
+  it('preloads bundled sources before starting the source watcher', async () => {
+    const steps: string[] = []
+    mocks.preloadBundledSources.mockImplementation(async () => { steps.push('preload') })
+    mocks.watchSources.mockImplementation(async (onSources: (next: Source[]) => void) => {
+      steps.push('watch')
+      onSources([])
+      return vi.fn()
+    })
+
+    await useSourcesViewModel.getState().initialize()
+
+    expect(steps).toEqual(['preload', 'watch'])
   })
 
   it('stores and cleans up the source watcher lifecycle', async () => {

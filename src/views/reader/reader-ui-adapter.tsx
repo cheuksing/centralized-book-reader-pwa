@@ -84,7 +84,6 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
   const restoringRef = useRef(false)
   const userScrolledRef = useRef(false)
   const chapterNavigationRef = useRef(false)
-  const scrollVersionRef = useRef(0)
   const restoredLocatorRef = useRef<string | undefined>(undefined)
   const [readerScrollMargin, setReaderScrollMargin] = useState(0)
   const readerSessionMatches = input.readerPublicationKey === publication.key
@@ -224,10 +223,7 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
       if (frame === undefined) frame = window.requestAnimationFrame(update)
     }
     const onScroll = () => {
-      if (!restoringRef.current && !chapterNavigationRef.current) {
-        userScrolledRef.current = true
-        scrollVersionRef.current += 1
-      }
+      if (!restoringRef.current && !chapterNavigationRef.current) userScrolledRef.current = true
       scheduleUpdate()
     }
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -248,11 +244,11 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
     if (direction === 'previous' && (chapterNavigationRef.current || !userScrolledRef.current)) return
     const root = contentRef.current
     const anchor = direction === 'previous' && root ? Array.from(root.querySelectorAll<HTMLElement>('.reader-chapter')).find((element) => element.dataset.chapterId === chapterId) : undefined
-    const before = direction === 'previous' && root ? { anchorTop: anchor?.getBoundingClientRect().top, height: root.scrollHeight, top: window.scrollY, scrollVersion: scrollVersionRef.current } : undefined
+    const before = direction === 'previous' && root ? { anchorTop: anchor?.getBoundingClientRect().top, height: root.scrollHeight, top: window.scrollY } : undefined
     void onLoadAdjacentChapter(publication, direction, chapterId).then((loadedChapterId) => {
       if (!loadedChapterId || direction !== 'previous' || !before) return
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-        if (contentRef.current !== root || !root || scrollVersionRef.current !== before.scrollVersion) return
+        if (contentRef.current !== root || !root) return
         const currentAnchor = Array.from(root.querySelectorAll<HTMLElement>('.reader-chapter')).find((element) => element.dataset.chapterId === chapterId)
         if (currentAnchor && before.anchorTop !== undefined) scrollToPosition(window.scrollY + currentAnchor.getBoundingClientRect().top - before.anchorTop)
         else scrollToPosition(before.top + root.scrollHeight - before.height)

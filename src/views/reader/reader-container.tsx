@@ -63,8 +63,8 @@ function ReadyReaderContainer({ publication }: { publication: Publication }) {
     }, open ? undefined : { replace: true })
   }, [setSearchParams])
   const onLeave = useCallback(() => {
-    void closeBook().then(() => window.history.back()).catch(() => undefined)
-  }, [closeBook])
+    void closeBook().then(() => navigate('/')).catch(() => undefined)
+  }, [closeBook, navigate])
   const onOpenIndex = useCallback(() => {
     void closeBook().then(() => navigate(indexPath(publication.key), { replace: true })).catch(() => undefined)
   }, [closeBook, navigate, publication.key])

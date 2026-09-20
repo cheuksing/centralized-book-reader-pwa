@@ -5,7 +5,7 @@ import type { ReaderSection } from '@services/book-content-service'
 import type { ReaderChapterContent } from '@view-models/reader-chapter-controller'
 import type { ReaderUiAdapterInput } from './reader-ui-adapter'
 
-const readerChapterMock = vi.hoisted(() => ({ retry: undefined as (() => void) | undefined }))
+const readerChapterMock = vi.hoisted(() => ({ retry: undefined as (() => void) | undefined, boundary: undefined as ((direction: 'previous' | 'next', chapterId: string) => void) | undefined }))
 
 vi.mock('@tanstack/react-virtual', () => ({
   useWindowVirtualizer: ({ count }: { count: number }) => ({
@@ -16,7 +16,8 @@ vi.mock('@tanstack/react-virtual', () => ({
 }))
 
 vi.mock('./reader-chapter-view', () => ({
-  ReaderChapterView: ({ entry, boundaryDirection, onOpenIndex, onRetry }: { entry: ReaderChapterContent; boundaryDirection?: 'previous' | 'next'; onOpenIndex: () => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) => {
+  ReaderChapterView: ({ entry, boundaryDirection, onBoundary, onOpenIndex, onRetry }: { entry: ReaderChapterContent; boundaryDirection?: 'previous' | 'next'; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onOpenIndex: () => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) => {
+    readerChapterMock.boundary = onBoundary
     readerChapterMock.retry = () => onRetry(boundaryDirection ?? 'next', entry.chapter.chapterId)
     if (entry.error) {
       const unavailableOffline = entry.error === 'This chapter is unavailable offline.'
@@ -102,6 +103,7 @@ class FakeElement extends FakeNode {
   readonly dataset: Record<string, string> = {}
   readonly style: Record<string, unknown> & { setProperty: (name: string, value: string) => void } = Object.assign({}, { setProperty: (name: string, value: string) => { this.style[name] = value } })
   className = ''
+  boundingTop = 100
   scrollHeight = 1000
   private value = ''
 
@@ -167,7 +169,7 @@ class FakeElement extends FakeNode {
   focus(): void {}
 
   getBoundingClientRect(): DOMRect {
-    return { top: 100, bottom: 300, left: 0, right: 300, width: 300, height: 200, x: 0, y: 100, toJSON: () => ({}) }
+    return { top: this.boundingTop, bottom: this.boundingTop + 200, left: 0, right: 300, width: 300, height: 200, x: 0, y: this.boundingTop, toJSON: () => ({}) }
   }
 
   querySelectorAll<T extends FakeElement>(selector: string): T[] {
@@ -253,16 +255,22 @@ class FakeWindow {
   scrollY = 0
   readonly HTMLIFrameElement = class {}
   readonly document: FakeDocument
+  private readonly listeners = new Map<string, Set<() => void>>()
 
   constructor(document: FakeDocument) {
     this.document = document
   }
 
-  addEventListener(): void {}
-  removeEventListener(): void {}
+  addEventListener(type: string, listener: () => void): void {
+    const listeners = this.listeners.get(type) ?? new Set<() => void>()
+    listeners.add(listener)
+    this.listeners.set(type, listeners)
+  }
+  removeEventListener(type: string, listener: () => void): void { this.listeners.get(type)?.delete(listener) }
+  dispatch(type: string): void { this.listeners.get(type)?.forEach((listener) => listener()) }
   requestAnimationFrame(callback: FrameRequestCallback): number { queueMicrotask(() => callback(0)); return 1 }
   cancelAnimationFrame(): void {}
-  scrollTo(): void {}
+  scrollTo(options: { top?: number } | number): void { this.scrollY = typeof options === 'number' ? options : options.top ?? this.scrollY }
   matchMedia(): MediaQueryList { return { matches: false } as MediaQueryList }
 }
 
@@ -439,6 +447,35 @@ describe('reader UI adapter surface decisions', () => {
     expect(readerSurfaceMode({ sessionMatches: true, isLoading: false, isLoadingChapter: true, hasContent: true, error: undefined })).toBe('content')
     expect(readerSurfaceMode({ sessionMatches: true, isLoading: true, isLoadingChapter: false, hasContent: false, error: undefined })).toBe('loading')
     expect(readerSurfaceMode({ sessionMatches: true, isLoading: false, isLoadingChapter: false, hasContent: false, error: 'offline' })).toBe('error')
+  })
+
+  it('preserves the current visual position when the previous chapter is prepended', async () => {
+    let fakeWindow: FakeWindow | undefined
+    let anchor: FakeElement | undefined
+    const adjacentLoad = vi.fn(async () => {
+      fakeWindow?.dispatch('scroll')
+      if (anchor) anchor.boundingTop = 320
+      return 'chapter-0'
+    })
+    const adjacentSelection = vi.fn()
+    const input = readerInput(() => undefined, { onLoadAdjacentChapter: adjacentLoad, onSelectAdjacentChapter: adjacentSelection })
+    const rendered = await renderReaderBody(input)
+    try {
+      const currentChapter = input.chapters[0]!
+      anchor = rendered.container.querySelector<FakeElement>('.reader-chapter')!
+      fakeWindow = globalThis.window as unknown as FakeWindow
+      fakeWindow.scrollY = 500
+      fakeWindow.dispatch('scroll')
+
+      readerChapterMock.boundary?.('previous', currentChapter.chapterId)
+      expect(adjacentLoad).toHaveBeenCalledWith(input.publication, 'previous', currentChapter.chapterId)
+      expect(adjacentSelection).not.toHaveBeenCalled()
+
+      await act(async () => { await new Promise<void>((resolve) => setImmediate(resolve)) })
+      expect(fakeWindow.scrollY).toBe(720)
+    } finally {
+      await rendered.cleanup()
+    }
   })
 
   it('updates visible content once and settles after the mounted reader rerenders', async () => {

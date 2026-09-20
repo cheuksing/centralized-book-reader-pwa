@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   online: true,
   searchParams: new URLSearchParams(),
   openPublication: vi.fn(),
+  navigate: vi.fn(),
+  historyBack: vi.fn(),
   setSearchParams: vi.fn(),
   useReaderUiAdapter: vi.fn(),
   input: undefined as ReaderUiAdapterInput | undefined,
@@ -25,7 +27,7 @@ vi.mock('react', async () => {
 
 
 vi.mock('wouter', () => ({
-  useLocation: () => ['/reader/reader', vi.fn()],
+  useLocation: () => ['/reader/reader', mocks.navigate],
   useSearchParams: () => [mocks.searchParams, mocks.setSearchParams],
 }))
 vi.mock('@app/app-view-model', () => ({ useAppViewModel: (selector: (state: { activePublication?: Publication }) => unknown) => selector({ activePublication: mocks.activePublication }) }))
@@ -44,6 +46,9 @@ beforeEach(() => {
   mocks.activePublication = currentPublication
   mocks.searchParams = new URLSearchParams('chapter=chapter-2&controls=1')
   mocks.openPublication.mockReset()
+  mocks.navigate.mockReset()
+  mocks.historyBack.mockReset()
+  vi.stubGlobal('window', { history: { back: mocks.historyBack } })
   mocks.setSearchParams.mockReset()
   mocks.input = undefined
   mocks.useReaderUiAdapter.mockReset()
@@ -79,6 +84,27 @@ beforeEach(() => {
     toggleLineHeight: vi.fn(),
     setContentWidth: vi.fn(),
   }
+})
+
+describe('reader route navigation', () => {
+  it('cleans up before explicitly navigating to the bookshelf root', async () => {
+    let resolveCloseBook!: () => void
+    const closeBookPromise = new Promise<void>((resolve) => { resolveCloseBook = resolve })
+    const closeBook = vi.fn(() => closeBookPromise)
+    mocks.openPublication.mockResolvedValue(false)
+    mocks.readerState = { ...mocks.readerState, closeBook }
+
+    const element = ReaderContainer() as unknown as { type?: unknown; props?: Record<string, unknown> }
+    if (typeof element.type === 'function') (element.type as (props: Record<string, unknown>) => unknown)(element.props ?? {})
+
+    mocks.input?.onLeave()
+    expect(closeBook).toHaveBeenCalledOnce()
+    expect(mocks.navigate).not.toHaveBeenCalled()
+
+    resolveCloseBook()
+    await vi.waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
+    expect(mocks.historyBack).not.toHaveBeenCalled()
+  })
 })
 
 describe('reader route retry', () => {

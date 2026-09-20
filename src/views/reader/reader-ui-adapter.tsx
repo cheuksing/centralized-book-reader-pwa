@@ -341,7 +341,7 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
     style: { fontSize: `${settings.fontSize}px`, lineHeight: settings.lineHeight },
     offlineGuidance: !input.online && hasContent ? <p className="reader-offline-guidance" role="status">You’re offline. Cached chapters are still available.</p> : undefined,
     body,
-    errorBanner: renderedError && hasContent && !activeEntry?.error ? <p className="reader-error" role="alert">{renderedError}</p> : undefined,
+    errorBanner: renderedError && hasContent && activeEntry?.error !== renderedError ? <p className="reader-error" role="alert">{renderedError}</p> : undefined,
     controls,
   }
 }

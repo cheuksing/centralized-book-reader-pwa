@@ -419,6 +419,22 @@ describe('reader UI adapter surface decisions', () => {
     }
   })
 
+  it('shows a different root error alongside an older active-entry error', async () => {
+    const rootError = 'new root failure'
+    const requestedInput = readerInput(() => undefined, { requestedChapterId: 'chapter-1', error: rootError })
+    const requestedChapter = requestedInput.chapters[0]!
+    requestedInput.readerChapters = [{ chapter: requestedChapter, sections: requestedInput.readerChapters[0]!.sections, loading: false, error: 'older entry failure' }]
+
+    const rendered = await renderReaderBody(requestedInput)
+    try {
+      const rootErrorBanner = rendered.container.querySelector('.reader-error')
+      expect(rootErrorBanner).not.toBeNull()
+      expect(rootErrorBanner?.textContent).toContain(rootError)
+    } finally {
+      await rendered.cleanup()
+    }
+  })
+
   it('keeps old reader content visible during a chapter refresh', () => {
     expect(readerSurfaceMode({ sessionMatches: true, isLoading: false, isLoadingChapter: true, hasContent: true, error: undefined })).toBe('content')
     expect(readerSurfaceMode({ sessionMatches: true, isLoading: true, isLoadingChapter: false, hasContent: false, error: undefined })).toBe('loading')

@@ -1,5 +1,6 @@
-.page-transition {
-  animation: page-enter .32s cubic-bezier(.22, 1, .36, 1) backwards;
+.page-transition > :not(.app-shell),
+.page-transition > .app-shell > .content {
+  animation: page-enter .32s cubic-bezier(.22, 1, .36, 1) both;
 }
 
 @keyframes page-enter {

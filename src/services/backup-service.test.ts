@@ -175,6 +175,18 @@ describe('backup service', () => {
     expect(staged.remove).not.toHaveBeenCalled()
   })
 
+  it('cleans the imported generation even when old RxDB removal fails', async () => {
+    const current = databaseFor()
+    const staged = databaseFor()
+    current.remove.mockRejectedValue(new Error('old database removal failed'))
+    mocks.getReaderDatabase.mockResolvedValue(current)
+    mocks.createReaderDatabaseGeneration.mockResolvedValue(staged)
+    mocks.activateReaderDatabaseGeneration.mockResolvedValue(undefined)
+
+    await expect(importBackupFile(new File([JSON.stringify(backup())], 'backup.json'))).resolves.toBeUndefined()
+    await vi.waitFor(() => expect(mocks.removeReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-current-generation'))
+  })
+
   it('removes a failed staged generation and never activates partial data', async () => {
     const current = databaseFor()
     const staged = databaseFor()

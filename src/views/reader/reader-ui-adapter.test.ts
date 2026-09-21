@@ -5,7 +5,7 @@ import type { ReaderSection } from '@services/book-content-service'
 import type { ReaderChapterContent } from '@view-models/reader-chapter-controller'
 import type { ReaderUiAdapterInput } from './reader-ui-adapter'
 
-const readerChapterMock = vi.hoisted(() => ({ retry: undefined as (() => void) | undefined, boundary: undefined as ((direction: 'previous' | 'next', chapterId: string) => void) | undefined }))
+const readerChapterMock = vi.hoisted(() => ({ retry: undefined as (() => void) | undefined, boundary: undefined as ((direction: 'previous' | 'next', chapterId: string) => void) | undefined, showImages: undefined as boolean | undefined }))
 
 vi.mock('@tanstack/react-virtual', () => ({
   useWindowVirtualizer: ({ count }: { count: number }) => ({
@@ -16,8 +16,9 @@ vi.mock('@tanstack/react-virtual', () => ({
 }))
 
 vi.mock('./reader-chapter-view', () => ({
-  ReaderChapterView: ({ entry, boundaryDirection, onBoundary, onOpenIndex, onRetry }: { entry: ReaderChapterContent; boundaryDirection?: 'previous' | 'next'; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onOpenIndex: () => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) => {
+  ReaderChapterView: ({ entry, boundaryDirection, onBoundary, onOpenIndex, onRetry, showImages }: { entry: ReaderChapterContent; boundaryDirection?: 'previous' | 'next'; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onOpenIndex: () => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void; showImages?: boolean }) => {
     readerChapterMock.boundary = onBoundary
+    readerChapterMock.showImages = showImages
     readerChapterMock.retry = () => onRetry(boundaryDirection ?? 'next', entry.chapter.chapterId)
     if (entry.error) {
       const unavailableOffline = entry.error === 'This chapter is unavailable offline.'
@@ -284,7 +285,7 @@ function readerInput(onUpdateVisibleSection: ReaderUiAdapterInput['onUpdateVisib
   const section: ReaderSection = { id: 'resource-1', chapterKey: currentChapter.key, resourceId: 'resource-1', title: 'Text', type: 'text', content: 'Visible content', mimeType: 'text/plain', url: '', cached: true }
   return {
     publication: currentPublication,
-    settings: { theme: 'light', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable' },
+    settings: { theme: 'light', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable', showArticleImages: true },
     readerPublicationKey: currentPublication.key,
     chapters: [currentChapter],
     chapterIndex: 0,
@@ -310,6 +311,7 @@ function readerInput(onUpdateVisibleSection: ReaderUiAdapterInput['onUpdateVisib
     onIncreaseFontSize: () => undefined,
     onToggleLineHeight: () => undefined,
     onSetContentWidth: () => undefined,
+    onSetShowArticleImages: () => undefined,
     ...overrides,
   }
 }
@@ -438,6 +440,18 @@ describe('reader UI adapter surface decisions', () => {
       const rootErrorBanner = rendered.container.querySelector('.reader-error')
       expect(rootErrorBanner).not.toBeNull()
       expect(rootErrorBanner?.textContent).toContain(rootError)
+    } finally {
+      await rendered.cleanup()
+    }
+  })
+
+  it('keeps comic images visible when the article image preference is disabled', async () => {
+    const rendered = await renderReaderBody(readerInput(() => undefined, {
+      publication: { ...publication(), kind: 'comic' },
+      settings: { theme: 'light', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable', showArticleImages: false },
+    }))
+    try {
+      expect(readerChapterMock.showImages).toBe(true)
     } finally {
       await rendered.cleanup()
     }

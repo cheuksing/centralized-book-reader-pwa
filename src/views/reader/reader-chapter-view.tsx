@@ -4,7 +4,7 @@ import type { Publication } from '@models/entities/domain'
 import type { ReaderSection } from '@services/book-content-service'
 import type { ReaderChapterContent } from '@view-models/reader-chapter-controller'
 
-export function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, boundaryDirection, publication, ensureImage, separated, onVisible, onBoundary, onOpenIndex, onRetry }: { entry: ReaderChapterContent; chapterNumber: number; chapterTotal: number; countKnown: boolean; boundaryDirection?: 'previous' | 'next'; publication: Publication; ensureImage: (publication: Publication, chapterKey: string, resourceId: string, priority?: number) => Promise<void>; separated: boolean; onVisible: (chapterId: string, index: number, element: HTMLElement, section: ReaderSection, chapterRoot: HTMLElement) => void; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onOpenIndex: () => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) {
+export function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKnown, boundaryDirection, publication, showImages = true, ensureImage, separated, onVisible, onBoundary, onOpenIndex, onRetry }: { entry: ReaderChapterContent; chapterNumber: number; chapterTotal: number; countKnown: boolean; boundaryDirection?: 'previous' | 'next'; publication: Publication; showImages?: boolean; ensureImage: (publication: Publication, chapterKey: string, resourceId: string, priority?: number) => Promise<void>; separated: boolean; onVisible: (chapterId: string, index: number, element: HTMLElement, section: ReaderSection, chapterRoot: HTMLElement) => void; onBoundary: (direction: 'previous' | 'next', chapterId: string) => void; onOpenIndex: () => void; onRetry: (direction: 'previous' | 'next', chapterId: string) => void }) {
   const chapterRoot = useRef<HTMLElement>(null)
   const startBoundary = useRef<HTMLDivElement>(null)
   const endBoundary = useRef<HTMLDivElement>(null)
@@ -32,17 +32,17 @@ export function ReaderChapterView({ entry, chapterNumber, chapterTotal, countKno
   return <section className={`reader-chapter${separated ? ' reader-chapter-separated' : ''}`} data-chapter-id={entry.chapter.chapterId} ref={chapterRoot}>
     <div aria-hidden="true" className="reader-chapter-boundary" ref={startBoundary} />
     <p className="reader-kicker">Chapter {chapterNumber}{countKnown ? ` of ${chapterTotal}` : ''}{entry.chapter.removedFromSource ? ' · Saved copy — removed from source' : ''}</p><h1>{entry.chapter.title}</h1>
-    {entry.sections.map((section, sectionIndex) => <ReaderSectionView chapter={entry.chapter} ensureImage={ensureImage} index={sectionIndex} key={`${section.chapterKey}:${section.resourceId}`} onVisible={handleVisible} publication={publication} section={section} />)}
+    {entry.sections.map((section, sectionIndex) => <ReaderSectionView chapter={entry.chapter} ensureImage={ensureImage} index={sectionIndex} key={`${section.chapterKey}:${section.resourceId}`} onVisible={handleVisible} publication={publication} section={section} showImages={showImages} />)}
     {entry.error && <div className="reader-boundary-state" role="alert">{unavailableOffline ? <><span>Chapter unavailable offline</span><button onClick={onOpenIndex} type="button">Open chapter index</button></> : <><span>{boundaryDirection ? `Could not load the ${direction} chapter.` : 'Could not reload this chapter.'}</span><button onClick={() => onRetry(direction, entry.chapter.chapterId)} type="button">Retry</button></>}</div>}
     <div aria-hidden="true" className="reader-chapter-boundary" ref={endBoundary} />
   </section>
 }
 
-function ReaderSectionView({ chapter, section, index, publication, ensureImage, onVisible }: { chapter: Chapter; section: ReaderSection; index: number; publication: Publication; ensureImage: (publication: Publication, chapterKey: string, resourceId: string, priority?: number) => Promise<void>; onVisible: (index: number, element: HTMLElement, section: ReaderSection) => void }) {
+function ReaderSectionView({ chapter, section, index, publication, ensureImage, onVisible, showImages }: { chapter: Chapter; section: ReaderSection; index: number; publication: Publication; ensureImage: (publication: Publication, chapterKey: string, resourceId: string, priority?: number) => Promise<void>; onVisible: (index: number, element: HTMLElement, section: ReaderSection) => void; showImages: boolean }) {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
     const element = ref.current
-    if (!element || typeof IntersectionObserver === 'undefined') return
+    if (!element || typeof IntersectionObserver === 'undefined' || (section.type === 'image' && !showImages)) return
     const observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting)) return
       onVisible(index, element, section)
@@ -50,7 +50,8 @@ function ReaderSectionView({ chapter, section, index, publication, ensureImage, 
     }, { rootMargin: '500px 0px' })
     observer.observe(element)
     return () => observer.disconnect()
-  }, [chapter.key, ensureImage, index, onVisible, publication, section])
+  }, [chapter.key, ensureImage, index, onVisible, publication, section, showImages])
+  if (section.type === 'image' && !showImages) return null
   return <section className={`reader-resource resource-${section.type}`} data-resource-id={section.resourceId} data-resource-index={index} ref={ref} aria-label={section.title}>
     {section.type !== 'text' && section.type !== 'html' && <h2>{section.title}</h2>}
     {section.type === 'text' && <div className="cached-text">{section.content}</div>}

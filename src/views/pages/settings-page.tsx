@@ -3,11 +3,17 @@ import { useSettingsViewModel } from '@view-models/settings-view-model'
 import { PageHeader } from '../ui/page-header'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 import { StatusSlot } from '../ui/status-slot'
+import { Tab } from '../ui/tab'
 
 const themeOptions = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
+] as const
+
+const articleImageOptions = [
+  { value: true, label: 'Show' },
+  { value: false, label: 'Hide' },
 ] as const
 
 export function SettingsPage() {
@@ -25,7 +31,13 @@ export function SettingsPage() {
     <section className="settings-group settings-theme-group">
       <h2>Appearance</h2>
       <div aria-label="Theme" className="animated-tab-strip settings-theme-tabs" data-active-tab={model.settings.theme} role="tablist">
-        {themeOptions.map((theme) => <button aria-selected={model.settings.theme === theme.value} className={model.settings.theme === theme.value ? 'is-active' : ''} key={theme.value} onClick={() => { void model.setTheme(theme.value) }} role="tab" type="button">{theme.label}</button>)}
+        {themeOptions.map((theme) => <Tab key={theme.value} onSelect={() => { void model.setTheme(theme.value) }} selected={model.settings.theme === theme.value}>{theme.label}</Tab>)}
+      </div>
+      <div className="settings-option">
+        <span className="settings-option-label">Article images</span>
+        <div aria-label="Article images" className="animated-tab-strip settings-image-tabs" data-active-tab={model.settings.showArticleImages ? 'show' : 'hide'} role="tablist">
+          {articleImageOptions.map((option) => <Tab key={option.label} onSelect={() => { void model.setShowArticleImages(option.value) }} selected={model.settings.showArticleImages === option.value}>{option.label}</Tab>)}
+        </div>
       </div>
       <StatusSlot className="status-note settings-status-slot" message={model.settingsError} role={model.settingsOperationStatus === 'error' ? 'alert' : 'status'} />
     </section>

@@ -4,6 +4,7 @@ import { indexPath } from '@app/routes'
 import { useAppViewModel } from '@app/app-view-model'
 import type { Publication } from '@models/entities/domain'
 import { useReaderViewModel } from '@view-models/reader-view-model'
+import { useSettingsViewModel } from '@view-models/settings-view-model'
 import { ReaderPage } from '../pages/reader-page'
 import { useOnlineStatus } from '../ui/use-online-status'
 import { useReaderUiAdapter, type ReaderUiAdapterInput } from './reader-ui-adapter'
@@ -46,6 +47,8 @@ function ReadyReaderContainer({ publication }: { publication: Publication }) {
   const increaseFontSize = useReaderViewModel((state) => state.increaseFontSize)
   const toggleLineHeight = useReaderViewModel((state) => state.toggleLineHeight)
   const setContentWidth = useReaderViewModel((state) => state.setContentWidth)
+  const showArticleImages = useSettingsViewModel((state) => state.settings.showArticleImages)
+  const setShowArticleImages = useSettingsViewModel((state) => state.setShowArticleImages)
 
   useEffect(() => {
     let cancelled = false
@@ -78,7 +81,7 @@ function ReadyReaderContainer({ publication }: { publication: Publication }) {
   const input: ReaderUiAdapterInput = {
     publication,
     requestedChapterId,
-    settings,
+    settings: { ...settings, showArticleImages },
     readerPublicationKey,
     chapters,
     chapterIndex,
@@ -108,6 +111,7 @@ function ReadyReaderContainer({ publication }: { publication: Publication }) {
     onIncreaseFontSize: increaseFontSize,
     onToggleLineHeight: toggleLineHeight,
     onSetContentWidth: setContentWidth,
+    onSetShowArticleImages: setShowArticleImages,
   }
 
   return <ReaderPage model={useReaderUiAdapter(input)} />

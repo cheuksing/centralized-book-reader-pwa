@@ -73,6 +73,7 @@ describe('reader settings service', () => {
       fontSize: 22,
       lineHeight: 1.8,
       contentWidth: 'wide',
+      showArticleImages: true,
     }
     let findCount = 0
     const collection = {
@@ -86,6 +87,7 @@ describe('reader settings service', () => {
       fontSize: 22,
       lineHeight: 1.8,
       contentWidth: 'wide',
+      showArticleImages: true,
     })
   })
 

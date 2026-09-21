@@ -181,7 +181,12 @@ async function createDatabase(databaseName: string): Promise<ReaderDatabase> {
         1: (document) => document,
       },
     },
-    readerSettings: { schema: readerSettingsSchema },
+    readerSettings: {
+      schema: readerSettingsSchema,
+      migrationStrategies: {
+        1: (document) => ({ ...document, showArticleImages: document.showArticleImages ?? true }),
+      },
+    },
     readingHistory: { schema: readingHistorySchema },
     readingProgress: { schema: readingProgressSchema },
     sources: { schema: sourceSchema },

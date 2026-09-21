@@ -272,9 +272,10 @@ export const ReaderSettingsDocumentSchema = Type.Object({
   fontSize: Type.Number({ minimum: 14, maximum: 28 }),
   lineHeight: Type.Number({ minimum: 1.2, maximum: 2.2 }),
   contentWidth: Type.Unsafe<'compact' | 'comfortable' | 'wide'>(Type.String({ enum: ['compact', 'comfortable', 'wide'], maxLength: 11 })),
+  showArticleImages: Type.Boolean(),
 }, { additionalProperties: false })
 export type ReaderSettingsDocument = Static<typeof ReaderSettingsDocumentSchema>
-export type ReaderSettings = Pick<ReaderSettingsDocument, 'theme' | 'fontSize' | 'lineHeight' | 'contentWidth'>
+export type ReaderSettings = Pick<ReaderSettingsDocument, 'theme' | 'fontSize' | 'lineHeight' | 'contentWidth' | 'showArticleImages'>
 
 export const AppSettingsDocumentSchema = Type.Object({
   id: Type.Unsafe<'app'>(Type.String({ const: 'app', minLength: 3, maxLength: 3 })),
@@ -339,7 +340,7 @@ export const chapterSchema = rxSchema(ChapterDocumentSchema, { title: 'publicati
 export const publicationBookmarkSchema = rxSchema(PublicationBookmarkDocumentSchema, { title: 'publication bookmark', version: 0, primaryKey: 'id', indexes: ['publicationKey'] })
 export const readingHistorySchema = rxSchema(ReadingHistoryDocumentSchema, { title: 'reading history', version: 0, primaryKey: 'id', indexes: [['openedAt', 'publicationKey']] })
 export const readingProgressSchema = rxSchema(ReadingProgressDocumentSchema, { title: 'reading progress', version: 0, primaryKey: 'id', indexes: ['publicationKey', 'updatedAt'] })
-export const readerSettingsSchema = rxSchema(ReaderSettingsDocumentSchema, { title: 'reader settings', version: 0, primaryKey: 'id', indexes: ['scope'] })
+export const readerSettingsSchema = rxSchema(ReaderSettingsDocumentSchema, { title: 'reader settings', version: 1, primaryKey: 'id', indexes: ['scope'] })
 export const appSettingsSchema = rxSchema(AppSettingsDocumentSchema, { title: 'application settings', version: 1, primaryKey: 'id' })
 export const chapterCacheSchema = rxSchema(ChapterCacheDocumentSchema, { title: 'chapter content cache', version: 1, primaryKey: 'key', indexes: [['publicationId', 'state'], ['state', 'lastAccessedAt'], 'state'], attachments: {} })
 export const downloadJobSchema = rxSchema(DownloadJobDocumentSchema, { title: 'explicit chapter download job', version: 0, primaryKey: 'id', indexes: [['chapterKey', 'state'], 'state'] })

@@ -16,6 +16,7 @@ vi.mock('@models/database/opfs-database', () => ({
   activateReaderDatabaseGeneration: mocks.activateReaderDatabaseGeneration,
 }))
 vi.mock('@services/reader-settings-service', () => ({
+  defaultReaderSettings: { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable', showArticleImages: true },
   loadReaderSettings: mocks.loadReaderSettings,
 }))
 
@@ -79,7 +80,7 @@ const publication: PublicationDocument = {
   createdAt: '2026-01-01T00:00:00.000Z',
   coverState: 'available',
 }
-const settings = { theme: 'dark' as const, fontSize: 20, lineHeight: 1.7, contentWidth: 'wide' as const }
+const settings = { theme: 'dark' as const, fontSize: 20, lineHeight: 1.7, contentWidth: 'wide' as const, showArticleImages: true }
 const bookmark = { id: publication.key, publicationKey: publication.key, createdAt: '2026-01-01T00:00:00.000Z' }
 const history = { id: publication.key, publicationKey: publication.key, openedAt: '2026-01-02T00:00:00.000Z' }
 const progress = {

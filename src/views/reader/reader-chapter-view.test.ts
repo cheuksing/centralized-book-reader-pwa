@@ -23,6 +23,10 @@ function textSection(currentChapter: Chapter, content: string): ReaderSection {
   return { id: `${currentChapter.key}:resource`, chapterKey: currentChapter.key, resourceId: 'resource', title: 'Text', type: 'text', content, mimeType: 'text/plain', url: '', cached: true }
 }
 
+function imageSection(currentChapter: Chapter): ReaderSection {
+  return { id: `${currentChapter.key}:image`, chapterKey: currentChapter.key, resourceId: 'image', title: 'Image', type: 'image', objectUrl: 'blob:image', mimeType: 'image/png', url: 'https://source.example/image.png', cached: true }
+}
+
 function findElement(root: unknown, predicate: (element: { type?: unknown; props?: Record<string, unknown> }) => boolean): { type?: unknown; props?: Record<string, unknown> } | undefined {
   if (!root || typeof root !== 'object') return undefined
   const element = root as { type?: unknown; props?: Record<string, unknown> }
@@ -47,6 +51,28 @@ describe('reader image layout contract', () => {
     expect(styles).toContain('.reader-image-slot')
     expect(styles).toContain('aspect-ratio: 4 / 3')
     expect(styles).toContain('object-fit: contain')
+  })
+
+  it('hides image resources when image display is disabled', () => {
+    const currentChapter = chapter()
+    const element = ReaderChapterView({
+      entry: { chapter: currentChapter, sections: [imageSection(currentChapter)], loading: false },
+      chapterNumber: 1,
+      chapterTotal: 1,
+      countKnown: true,
+      publication: { key: 'reader', sourceId: 'source', publicationId: 'reader', title: 'Reader', kind: 'article', createdAt: '2026-01-01T00:00:00.000Z', coverState: 'missing', bookmarked: false, availability: 'available' },
+      showImages: false,
+      ensureImage: async () => undefined,
+      separated: false,
+      onVisible: () => undefined,
+      onBoundary: () => undefined,
+      onOpenIndex: () => undefined,
+      onRetry: () => undefined,
+    })
+
+    const markup = renderToStaticMarkup(element)
+    expect(markup).not.toContain('reader-image-slot')
+    expect(markup).not.toContain('blob:image')
   })
 
   it('keeps stale requested sections visible with a retry action', () => {

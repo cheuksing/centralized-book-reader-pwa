@@ -34,6 +34,7 @@ export interface ReaderViewModel extends ReaderChapterControllerState {
   increaseFontSize: () => void
   toggleLineHeight: () => void
   setContentWidth: (contentWidth: ReaderSettings['contentWidth']) => void
+  setShowArticleImages: (showArticleImages: boolean) => void
   updateVisibleSection: (publication: Publication, chapterId: string, index: number, locator?: ReadingLocator) => void
 }
 
@@ -226,6 +227,7 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => {
     increaseFontSize: () => set({ settings: settingsController.increaseFontSize() }),
     toggleLineHeight: () => set({ settings: settingsController.toggleLineHeight() }),
     setContentWidth: (contentWidth) => set({ settings: settingsController.setContentWidth(contentWidth) }),
+    setShowArticleImages: (showArticleImages) => set({ settings: settingsController.setShowArticleImages(showArticleImages) }),
     updateVisibleSection: (publication, chapterId, index, locator) => {
       if (get().publicationKey !== publication.key) return
       const { chapters: currentChapters, readerChapters } = get()

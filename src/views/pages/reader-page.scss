@@ -152,6 +152,10 @@
   }
 }
 
+.reader-images-hidden .cached-html img {
+  display: none;
+}
+
 .cached-text {
   font-family: Georgia, serif;
   overflow-wrap: anywhere;
@@ -543,7 +547,8 @@
   &.reader-setting-tabs--two {
     --tab-count: 2;
 
-    &[data-active-tab='relaxed'] {
+    &[data-active-tab='relaxed'],
+    &[data-active-tab='hide'] {
       --tab-highlight-index: 1;
     }
   }

@@ -26,7 +26,7 @@ vi.mock('@services/backup-service', () => ({
   resetLocalDatabase: mocks.resetLocalDatabase,
 }))
 vi.mock('@services/reader-settings-service', () => ({
-  defaultReaderSettings: { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable' },
+  defaultReaderSettings: { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable', showArticleImages: true },
   loadReaderSettings: mocks.loadReaderSettings,
   saveReaderSettings: mocks.saveReaderSettings,
 }))
@@ -46,7 +46,7 @@ vi.mock('@services/userscript-bridge', () => ({
 
 import { useSettingsViewModel } from './settings-view-model'
 
-const defaultSettings: ReaderSettings = { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable' }
+const defaultSettings: ReaderSettings = { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable', showArticleImages: true }
 
 type ControlledWindow = {
   location: { reload: ReturnType<typeof vi.fn> }
@@ -232,6 +232,9 @@ describe('settings view model', () => {
 
     await expect(useSettingsViewModel.getState().setLineHeight(0.2)).resolves.toBe(true)
     expect(useSettingsViewModel.getState()).toMatchObject({ settings: { lineHeight: 1.2 }, lineHeightLabel: '1.20' })
+
+    await expect(useSettingsViewModel.getState().setShowArticleImages(false)).resolves.toBe(true)
+    expect(useSettingsViewModel.getState()).toMatchObject({ settings: { showArticleImages: false }, settingsOperationStatus: 'success' })
 
     mocks.saveReaderSettings.mockRejectedValueOnce(new Error('settings write failed'))
     await expect(useSettingsViewModel.getState().setContentWidth('wide')).resolves.toBe(false)

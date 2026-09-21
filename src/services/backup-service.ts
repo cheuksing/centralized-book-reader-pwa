@@ -3,7 +3,7 @@ import { PublicationBookmarkDocumentSchema, PublicationDocumentSchema, ReadingHi
 import { publicationKey } from '@models/entities/keys'
 import type { ReaderBackup } from '@models/entities/domain'
 import { parseBackup, serializeBackup } from '@models/import-export/backup'
-import { loadReaderSettings } from '@services/reader-settings-service'
+import { defaultReaderSettings, loadReaderSettings } from '@services/reader-settings-service'
 import { parseSourceDefinition } from '@services/sources-service'
 
 async function getDatabase() {
@@ -60,8 +60,7 @@ export async function importBackupFile(file: File): Promise<void> {
     await bulkInsertOrThrow(staged.publicationBookmarks, backup.bookmarks)
     await bulkInsertOrThrow(staged.readingHistory, backup.readingHistory.sort((left, right) => right.openedAt.localeCompare(left.openedAt)).slice(0, 30))
     await bulkInsertOrThrow(staged.readingProgress, backup.readingProgress)
-    const settings: ReaderSettingsDocument = { id: 'global', scope: 'global', ...backup.settings }
-    await staged.readerSettings.insert(settings)
+    await staged.readerSettings.insert(readerSettingsDocumentForBackup(backup.settings))
 
     await activateReaderDatabaseGeneration(generationName, staged)
     activated = true
@@ -122,8 +121,12 @@ function publicationMetadataForBackup(publication: PublicationDocument): Publica
   }
 }
 
+function readerSettingsDocumentForBackup(settings: ReaderBackup['settings']): ReaderSettingsDocument {
+  return { id: 'global', scope: 'global', ...settings, showArticleImages: settings.showArticleImages ?? defaultReaderSettings.showArticleImages }
+}
+
 function validateBackup(backup: ReaderBackup): void {
-  if (!Value.Check(ReaderSettingsDocumentSchema, { id: 'global', scope: 'global', ...backup.settings })) throw new Error('Backup reader settings are invalid.')
+  if (!Value.Check(ReaderSettingsDocumentSchema, readerSettingsDocumentForBackup(backup.settings))) throw new Error('Backup reader settings are invalid.')
   const sourceIds = new Set<string>()
   const sourceBases = new Set<string>()
   for (const source of backup.sources) {

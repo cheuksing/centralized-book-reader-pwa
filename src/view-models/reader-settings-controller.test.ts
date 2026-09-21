@@ -12,6 +12,7 @@ describe('reader settings controller', () => {
     expect(controller.setTheme('dark')).toMatchObject({ theme: 'dark' })
     expect(controller.toggleLineHeight()).toMatchObject({ lineHeight: 1.9 })
     expect(controller.setContentWidth('wide')).toMatchObject({ contentWidth: 'wide' })
+    expect(controller.setShowArticleImages(false)).toMatchObject({ showArticleImages: false })
     expect(save).toHaveBeenCalled()
   })
 

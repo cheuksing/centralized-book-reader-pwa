@@ -6,6 +6,7 @@ import type { ReaderSection } from '@services/book-content-service'
 import { isReaderContentRenderable } from '@view-models/reader-session'
 import { ReaderChapterView } from './reader-chapter-view'
 import type { ReaderChapterContent } from '@view-models/reader-chapter-controller'
+import { Tab } from '../ui/tab'
 
 const emptyChapters: Chapter[] = []
 const emptyReaderChapters: ReaderChapterContent[] = []
@@ -26,6 +27,11 @@ const readerContentWidthOptions = [
   { value: 'compact', label: 'Narrow' },
   { value: 'comfortable', label: 'Comfortable' },
   { value: 'wide', label: 'Wide' },
+] as const
+
+const articleImageOptions = [
+  { value: true, label: 'Show' },
+  { value: false, label: 'Hide' },
 ] as const
 
 type ReaderSurfaceMode = 'loading' | 'error' | 'content' | 'empty'
@@ -82,6 +88,7 @@ export interface ReaderUiAdapterInput {
   onIncreaseFontSize: () => void
   onToggleLineHeight: () => void
   onSetContentWidth: (contentWidth: ReaderSettings['contentWidth']) => void
+  onSetShowArticleImages: (showArticleImages: boolean) => void
 }
 
 export function readerSurfaceMode(input: ReaderSurfaceInput): ReaderSurfaceMode {
@@ -123,6 +130,7 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
   const chapterCountKnown = !hasMoreChapters
   const remainingChapters = chapterCountKnown ? Math.max(0, renderedChapters.length - renderedChapterIndex - 1) : undefined
   const activeLoadedIndex = activeEntry ? renderedReaderChapters.findIndex((entry) => entry.chapter.key === activeEntry.chapter.key) : -1
+  const showArticleImages = publication.kind !== 'article' || settings.showArticleImages
 
   useLayoutEffect(() => {
     const canvas = readerCanvasRef.current
@@ -148,9 +156,9 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
     const savedIndex = savedResourceId ? sections.findIndex((section) => section.resourceId === savedResourceId) : -1
     const startIndex = savedIndex >= 0 ? savedIndex : 0
     sections.slice(startIndex, startIndex + 4).forEach((section, index) => {
-      if (section.type === 'image' && !section.cached) void onEnsureImage(publication, chapter.key, section.resourceId, index === 0 ? 100 : 60 - index).catch(() => undefined)
+      if (showArticleImages && section.type === 'image' && !section.cached) void onEnsureImage(publication, chapter.key, section.resourceId, index === 0 ? 100 : 60 - index).catch(() => undefined)
     })
-  }, [chapter, onEnsureImage, publication, readerSessionMatches, renderedResumeLocator, sections])
+  }, [chapter, onEnsureImage, publication, readerSessionMatches, renderedResumeLocator, sections, showArticleImages])
 
   useEffect(() => {
     const locator = renderedResumeLocator
@@ -322,7 +330,7 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
   const body = surface === 'loading' ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{!readerSessionMatches || input.isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button aria-label="Back to bookshelf" className="reader-status-exit" onClick={input.onLeave} title="Back to bookshelf" type="button"><span aria-hidden="true">‹</span></button></section>
     : surface === 'error' ? <section className="reader-status" role="alert">{unavailableOffline ? <><h1>Chapter unavailable offline</h1><p>This chapter is unavailable offline. Open the chapter index to choose a cached chapter.</p><button className="primary-button" onClick={input.onOpenIndex} type="button">Open chapter index</button></> : <><h1>Could not prepare this chapter</h1><p>{renderedError}</p><button className="primary-button" onClick={input.onOpenPublication} type="button">Try again</button></>}<button aria-label="Back to bookshelf" className="reader-status-exit" onClick={input.onLeave} title="Back to bookshelf" type="button"><span aria-hidden="true">‹</span></button></section>
     : surface === 'empty' ? <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index to choose available content.</p><button aria-label="Back to bookshelf" className="reader-status-exit" onClick={input.onLeave} title="Back to bookshelf" type="button"><span aria-hidden="true">‹</span></button></section>
-    : <article className="reader-content" onClick={handleReaderClick} ref={contentRef}>
+    : <article className={`reader-content${showArticleImages ? '' : ' reader-images-hidden'}`} onClick={handleReaderClick} ref={contentRef}>
       <button className="visually-hidden reader-controls-trigger" onClick={openControls} ref={controlsTriggerRef} type="button">Open reader controls</button>
       <div className="reader-virtual-canvas" ref={readerCanvasRef} style={{ height: readerVirtualizer.getTotalSize() }}>
         {readerVirtualItems.map((virtualRow) => {
@@ -330,7 +338,7 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
           if (!entry) return null
           const boundaryDirection = virtualRow.index < activeLoadedIndex ? 'previous' : virtualRow.index > activeLoadedIndex ? 'next' : undefined
           const entryIndex = renderedChapters.findIndex((candidate) => candidate.key === entry.chapter.key)
-          return <div className="reader-virtual-item" data-index={virtualRow.index} key={entry.chapter.key} ref={readerVirtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - readerScrollMargin}px)`, width: '100%' }}><ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={renderedChapters.length} countKnown={chapterCountKnown} entry={entry} onBoundary={handleChapterBoundary} onOpenIndex={input.onOpenIndex} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} ensureImage={input.onEnsureImage} separated={virtualRow.index > 0} /></div>
+          return <div className="reader-virtual-item" data-index={virtualRow.index} key={entry.chapter.key} ref={readerVirtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - readerScrollMargin}px)`, width: '100%' }}><ReaderChapterView boundaryDirection={boundaryDirection} chapterNumber={entryIndex + 1} chapterTotal={renderedChapters.length} countKnown={chapterCountKnown} entry={entry} onBoundary={handleChapterBoundary} onOpenIndex={input.onOpenIndex} onRetry={retryBoundary} onVisible={handleVisibleSection} publication={publication} showImages={showArticleImages} ensureImage={input.onEnsureImage} separated={virtualRow.index > 0} /></div>
         })}
       </div>
     </article>
@@ -340,10 +348,11 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
       <div className="reader-controls-heading"><div><p className="reader-controls-kicker">Reader controls</p><h2 id="reader-controls-title">{chapter?.title ?? 'Current chapter'}</h2><p className="reader-controls-meta">{chapterPosition} · {chapterRemaining}</p></div><button aria-label="Close reader controls" className="reader-controls-close" onClick={closeControls} title="Close" type="button"><span aria-hidden="true">×</span></button></div>
       <nav aria-label="Chapter navigation" className="reader-chapter-navigation"><button aria-label="Previous chapter" className="reader-chapter-arrow" disabled={!previousAvailable || input.isLoadingPreviousChapter || input.isLoadingChapter} onClick={() => void navigateChapter('previous')} title="Previous chapter" type="button"><span aria-hidden="true">‹</span></button><button aria-label="Open chapter index" className="reader-index-button" onClick={input.onOpenIndex} title="Open chapter index" type="button"><span aria-hidden="true">☷</span><span>Index</span></button><button aria-label="Next chapter" className="reader-chapter-arrow" disabled={!nextAvailable || input.isLoadingNextChapter || input.isLoadingMoreChapters || input.isLoadingChapter} onClick={() => void navigateChapter('next')} title="Next chapter" type="button"><span aria-hidden="true">›</span></button></nav>
       <section className="reader-appearance" aria-labelledby="reader-appearance-title"><h3 id="reader-appearance-title">Appearance</h3><div className="reader-control-panel">
-        <div className="reader-control-group"><span>Theme</span><div aria-label="Theme" className="animated-tab-strip reader-setting-tabs" data-active-tab={settings.theme} role="tablist">{readerThemeOptions.map((option) => <button aria-selected={settings.theme === option.value} className={settings.theme === option.value ? 'is-active' : ''} key={option.value} onClick={() => input.onSetTheme(option.value)} role="tab" type="button">{option.label}</button>)}</div></div>
+        <div className="reader-control-group"><span>Theme</span><div aria-label="Theme" className="animated-tab-strip reader-setting-tabs" data-active-tab={settings.theme} role="tablist">{readerThemeOptions.map((option) => <Tab key={option.value} onSelect={() => input.onSetTheme(option.value)} selected={settings.theme === option.value}>{option.label}</Tab>)}</div></div>
         <div className="reader-control-group"><span>Font size</span><div className="reader-control-actions"><button aria-label="Decrease font size" className="reader-stepper-button" disabled={settings.fontSize <= 14} onClick={input.onDecreaseFontSize} type="button"><span aria-hidden="true">A−</span></button><output>{settings.fontSize}px</output><button aria-label="Increase font size" className="reader-stepper-button" disabled={settings.fontSize >= 28} onClick={input.onIncreaseFontSize} type="button"><span aria-hidden="true">A+</span></button></div></div>
-        <div className="reader-control-group"><span>Line spacing</span><div aria-label="Line spacing" className="animated-tab-strip reader-setting-tabs reader-setting-tabs--two" data-active-tab={isStandardLineHeight ? 'standard' : 'relaxed'} role="tablist">{readerLineHeightOptions.map((option) => { const isSelected = option.value === 1.65 ? isStandardLineHeight : !isStandardLineHeight; return <button aria-selected={isSelected} className={isSelected ? 'is-active' : ''} key={option.value} onClick={() => { if (!isSelected) input.onToggleLineHeight() }} role="tab" type="button">{option.label}</button> })}</div></div>
-        <div className="reader-control-group reader-control-group--wide"><span>Content width</span><div aria-label="Content width" className="animated-tab-strip reader-setting-tabs" data-active-tab={settings.contentWidth} role="tablist">{readerContentWidthOptions.map((option) => <button aria-selected={settings.contentWidth === option.value} className={settings.contentWidth === option.value ? 'is-active' : ''} key={option.value} onClick={() => input.onSetContentWidth(option.value)} role="tab" type="button">{option.label}</button>)}</div></div>
+        <div className="reader-control-group"><span>Line spacing</span><div aria-label="Line spacing" className="animated-tab-strip reader-setting-tabs reader-setting-tabs--two" data-active-tab={isStandardLineHeight ? 'standard' : 'relaxed'} role="tablist">{readerLineHeightOptions.map((option) => { const isSelected = option.value === 1.65 ? isStandardLineHeight : !isStandardLineHeight; return <Tab key={option.value} onSelect={() => { if (!isSelected) input.onToggleLineHeight() }} selected={isSelected}>{option.label}</Tab> })}</div></div>
+        <div className="reader-control-group reader-control-group--wide"><span>Content width</span><div aria-label="Content width" className="animated-tab-strip reader-setting-tabs" data-active-tab={settings.contentWidth} role="tablist">{readerContentWidthOptions.map((option) => <Tab key={option.value} onSelect={() => input.onSetContentWidth(option.value)} selected={settings.contentWidth === option.value}>{option.label}</Tab>)}</div></div>
+        <div className="reader-control-group reader-control-group--wide"><span>Article images</span><div aria-label="Article images" className="animated-tab-strip reader-setting-tabs reader-setting-tabs--two reader-setting-tabs--images" data-active-tab={settings.showArticleImages ? 'show' : 'hide'} role="tablist">{articleImageOptions.map((option) => <Tab key={option.label} onSelect={() => input.onSetShowArticleImages(option.value)} selected={settings.showArticleImages === option.value}>{option.label}</Tab>)}</div></div>
       </div></section>
       <button aria-label="Back to bookshelf" className="reader-exit-button" onClick={input.onLeave} title="Back to bookshelf" type="button"><span aria-hidden="true">‹</span></button>
     </div>

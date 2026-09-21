@@ -59,6 +59,7 @@ export interface SettingsViewModel {
   setFontSize: (fontSize: number) => Promise<boolean>
   setLineHeight: (lineHeight: number) => Promise<boolean>
   setContentWidth: (contentWidth: ReaderSettings['contentWidth']) => Promise<boolean>
+  setShowArticleImages: (showArticleImages: boolean) => Promise<boolean>
   requestPersistence: () => Promise<boolean>
   refreshEstimate: () => Promise<boolean>
   requestCacheClear: () => void
@@ -219,6 +220,7 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
     setFontSize: (fontSize) => persist({ ...get().settings, fontSize: clamp(fontSize, 14, 28, get().settings.fontSize) }),
     setLineHeight: (lineHeight) => persist({ ...get().settings, lineHeight: clamp(lineHeight, 1.2, 2.2, get().settings.lineHeight) }),
     setContentWidth: (contentWidth) => persist({ ...get().settings, contentWidth }),
+    setShowArticleImages: (showArticleImages) => persist({ ...get().settings, showArticleImages }),
     requestPersistence: async () => {
       set({ storageOperationStatus: 'loading', storageError: undefined })
       try {

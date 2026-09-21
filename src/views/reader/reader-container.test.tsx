@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
   setSearchParams: vi.fn(),
   useReaderUiAdapter: vi.fn(),
   input: undefined as ReaderUiAdapterInput | undefined,
+  settingsState: { showArticleImages: true },
+  setShowArticleImages: vi.fn(),
 }))
 
 vi.mock('react', async () => {
@@ -32,6 +34,7 @@ vi.mock('wouter', () => ({
 }))
 vi.mock('@app/app-view-model', () => ({ useAppViewModel: (selector: (state: { activePublication?: Publication }) => unknown) => selector({ activePublication: mocks.activePublication }) }))
 vi.mock('@view-models/reader-view-model', () => ({ useReaderViewModel: (selector: (state: Record<string, unknown>) => unknown) => selector(mocks.readerState) }))
+vi.mock('@view-models/settings-view-model', () => ({ useSettingsViewModel: (selector: (state: { settings: { showArticleImages: boolean }; setShowArticleImages: typeof mocks.setShowArticleImages }) => unknown) => selector({ settings: mocks.settingsState, setShowArticleImages: mocks.setShowArticleImages }) }))
 vi.mock('../ui/use-online-status', () => ({ useOnlineStatus: () => mocks.online }))
 vi.mock('./reader-ui-adapter', () => ({ useReaderUiAdapter: mocks.useReaderUiAdapter }))
 
@@ -51,13 +54,15 @@ beforeEach(() => {
   vi.stubGlobal('window', { history: { back: mocks.historyBack } })
   mocks.setSearchParams.mockReset()
   mocks.input = undefined
+  mocks.settingsState = { showArticleImages: true }
+  mocks.setShowArticleImages.mockReset()
   mocks.useReaderUiAdapter.mockReset()
   mocks.useReaderUiAdapter.mockImplementation((input: ReaderUiAdapterInput) => {
     mocks.input = input
     return { className: 'reader', style: { fontSize: '18px', lineHeight: 1.65 }, body: createElement('p', null, 'reader body') }
   })
   mocks.readerState = {
-    settings: { theme: 'light', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable' },
+    settings: { theme: 'light', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable', showArticleImages: true },
     publicationKey: undefined,
     chapters: [],
     chapterIndex: 0,
@@ -83,6 +88,7 @@ beforeEach(() => {
     increaseFontSize: vi.fn(),
     toggleLineHeight: vi.fn(),
     setContentWidth: vi.fn(),
+    setShowArticleImages: vi.fn(),
   }
 })
 

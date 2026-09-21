@@ -1,6 +1,6 @@
 import type { ReaderSettings } from '@models/entities/domain'
 
-export const defaultReaderSettings: ReaderSettings = { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable' }
+export const defaultReaderSettings: ReaderSettings = { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable', showArticleImages: true }
 
 export interface ReaderSettingsController {
   initialize: () => Promise<ReaderSettings>
@@ -10,6 +10,7 @@ export interface ReaderSettingsController {
   increaseFontSize: () => ReaderSettings
   toggleLineHeight: () => ReaderSettings
   setContentWidth: (contentWidth: ReaderSettings['contentWidth']) => ReaderSettings
+  setShowArticleImages: (showArticleImages: boolean) => ReaderSettings
 }
 
 export interface ReaderSettingsPersistence {
@@ -42,6 +43,7 @@ export function createReaderSettingsController(persistence: ReaderSettingsPersis
     increaseFontSize: () => persist({ ...settings, fontSize: Math.min(28, settings.fontSize + 1) }),
     toggleLineHeight: () => persist({ ...settings, lineHeight: settings.lineHeight === 1.65 ? 1.9 : 1.65 }),
     setContentWidth: (contentWidth) => persist({ ...settings, contentWidth }),
+    setShowArticleImages: (showArticleImages) => persist({ ...settings, showArticleImages }),
   }
 }
 
@@ -52,5 +54,6 @@ function normalizeReaderSettings(value: ReaderSettings | undefined): ReaderSetti
     fontSize: Number.isFinite(value.fontSize) ? Math.min(28, Math.max(14, value.fontSize)) : defaultReaderSettings.fontSize,
     lineHeight: Number.isFinite(value.lineHeight) ? Math.min(2.2, Math.max(1.2, value.lineHeight)) : defaultReaderSettings.lineHeight,
     contentWidth: value.contentWidth === 'compact' || value.contentWidth === 'wide' ? value.contentWidth : 'comfortable',
+    showArticleImages: value.showArticleImages !== false,
   }
 }

@@ -185,7 +185,7 @@ function expectedResponse(request: BridgeMessage['type'], response: BridgeMessag
 }
 
 function userScriptStatusError(status: UserScriptStatus): RemoteError {
-  if (status.kind === 'permission-required') return new RemoteError('request-permission-denied', 'The Bookshelf userscript needs remote-request access. Grant it in Settings or your userscript manager.')
+  if (status.kind === 'permission-required') return new RemoteError('request-permission-denied', 'The Bookshelf userscript needs remote-request access. Allow it on the setup page or in your userscript manager.')
   if (status.kind === 'outdated') return new RemoteError('user-script-unavailable', 'Update the Bookshelf CORS Bridge userscript, then check again.')
   return new RemoteError('user-script-unavailable', 'Install and enable the Bookshelf CORS Bridge userscript before browsing remote sources.')
 }
@@ -194,7 +194,7 @@ function remoteErrorForCode(code: BridgeMessage['code']): RemoteError {
   const kind = bridgeFailureKind(code)
   if (kind === 'request-permission-denied') {
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('bookshelf-user-script-permission-denied'))
-    return new RemoteError(kind, 'The userscript does not have permission to contact this public source. Grant remote-request access in Settings or your userscript manager.')
+    return new RemoteError(kind, 'The userscript does not have permission to contact this public source. Allow remote-request access on the setup page or in your userscript manager.')
   }
   if (kind === 'target-rejected') return new RemoteError(kind, 'The userscript rejected this remote target.')
   if (kind === 'aborted') return new RemoteError(kind, 'The remote request was cancelled.')

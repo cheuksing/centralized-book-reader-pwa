@@ -40,7 +40,7 @@ export function App() {
   if (initializationStatus === 'error') return <main className="blocking-page"><h1>Bookshelf cannot open here</h1><p>{initializationError ?? 'Could not initialize Bookshelf.'}</p><button className="primary-button" onClick={() => { void initialize() }} type="button">Try again</button></main>
   if (initializationStatus !== 'ready' || !settingsInitialized) return <main className="blocking-page"><div className="loading-mark">◌</div><h1>Opening Bookshelf</h1><p>Checking local storage and the active app instance…</p></main>
   if (databaseError) return <main className="blocking-page"><h1>Bookshelf cannot open here</h1><p>{databaseError}</p><p className="muted">Close the other Bookshelf tab or use a browser with OPFS and Web Locks support.</p></main>
-  if (userScriptStatus.kind !== 'ready' && userScriptStatus.kind !== 'permission-required') return <UserScriptSetupPage />
+  if (userScriptStatus.kind !== 'ready') return <UserScriptSetupPage />
 
   return <AppRoutes />
 }

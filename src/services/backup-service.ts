@@ -72,6 +72,23 @@ export async function importBackupFile(file: File): Promise<void> {
   }
 }
 
+export async function resetLocalDatabase(): Promise<void> {
+  const current = await getDatabase()
+  const generationName = `bookshelf-prototype-${crypto.randomUUID()}`
+  const { activateReaderDatabaseGeneration, createReaderDatabaseGeneration } = await import('@models/database/opfs-database')
+  const replacement = await createReaderDatabaseGeneration(generationName)
+  let activated = false
+
+  try {
+    await activateReaderDatabaseGeneration(generationName, replacement)
+    activated = true
+    await current.remove()
+  } catch (error) {
+    if (!activated) await replacement.remove().catch(() => undefined)
+    throw error
+  }
+}
+
 function sourceMetadataForBackup(source: SourceDocument): SourceDocument {
   return {
     version: source.version,

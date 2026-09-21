@@ -2,7 +2,6 @@
   background: #edf0e8;
   border-radius: 14px;
   margin-top: 16px;
-  min-height: 220px;
   padding: 18px;
 
   h2 {
@@ -11,46 +10,9 @@
     margin: 0 0 12px;
   }
 
-  label:not(.file-button) {
-    display: grid;
-    font-size: .9rem;
-    font-weight: 650;
-    gap: 7px;
-    margin-top: 14px;
-  }
-
-  select {
-    background: #fff;
-    border: 1px solid #d7ddd6;
-    border-radius: 7px;
-    min-height: 44px;
-    min-width: 0;
-    padding: 9px;
-    width: 100%;
-  }
-
-  output {
-    color: #64736b;
-    font-size: .8rem;
-    font-weight: 500;
-  }
-
-  input[type='range'] {
-    accent-color: #3b795d;
-    min-height: 44px;
-    width: 100%;
-  }
-
   .muted {
     font-size: .85rem;
     margin: 0 0 15px;
-  }
-
-  .storage-size {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 16px 0;
-    min-height: 1.5em;
   }
 
   .button-row {
@@ -63,53 +25,69 @@
     }
   }
 
-  > label {
-    input:not([type='range']),
-    select {
-      min-height: 44px;
-      min-width: 0;
-      width: 100%;
-    }
-  }
-
-  > .primary-button,
   > .danger-button {
     min-height: 44px;
     width: 100%;
   }
 }
 
-.settings-bridge-group {
-  min-height: 330px;
+.settings-theme-tabs {
+  --tab-count: 3;
+  background: #e5e8e0;
+  border-radius: 11px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 6px;
+  padding: 4px;
+
+  &[data-active-tab='light'] {
+    --tab-highlight-index: 1;
+  }
+
+  &[data-active-tab='dark'] {
+    --tab-highlight-index: 2;
+  }
+
+  > button {
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: #627068;
+    font-size: .82rem;
+    font-weight: 750;
+    min-height: 44px;
+    min-width: 0;
+    padding: 9px 5px;
+
+    &.is-active {
+      color: #234f3e;
+    }
+  }
 }
 
-.settings-reader-group {
-  min-height: 300px;
+.storage-size {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 16px 0;
+  min-height: 1.5em;
 }
 
-.settings-storage-group {
-  min-height: 430px;
-}
-
-.settings-backup-group {
-  min-height: 220px;
+.settings-database-status,
+.settings-status-slot,
+.settings-storage-slot,
+.settings-reset-status,
+.settings-backup-status {
+  min-height: 1.5rem;
 }
 
 .settings-retry-row {
   margin-top: 12px;
 }
 
-.settings-database-status,
-.settings-status-slot {
-  min-height: clamp(7rem, 22vw, 10rem);
-}
-
-.settings-storage-slot {
-  min-height: clamp(3rem, 10vw, 5rem);
-}
-
-.settings-backup-status {
-  min-height: clamp(4rem, 12vw, 6rem);
+.settings-reset-group {
+  .muted {
+    max-width: 560px;
+  }
 }
 
 .file-button {
@@ -146,7 +124,6 @@
       }
     }
 
-    > .primary-button,
     > .danger-button {
       width: auto;
     }

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   clearOfflineCache: vi.fn(),
   downloadBackup: vi.fn(),
   importBackupFile: vi.fn(),
+  resetLocalDatabase: vi.fn(),
 }))
 
 vi.mock('@services/app-settings-service', () => ({
@@ -22,6 +23,7 @@ vi.mock('@services/app-settings-service', () => ({
 vi.mock('@services/backup-service', () => ({
   downloadBackup: mocks.downloadBackup,
   importBackupFile: mocks.importBackupFile,
+  resetLocalDatabase: mocks.resetLocalDatabase,
 }))
 vi.mock('@services/reader-settings-service', () => ({
   defaultReaderSettings: { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable' },
@@ -113,6 +115,10 @@ function resetStore(): void {
     backupStatus: 'idle',
     backupMessage: '',
     backupError: undefined,
+    databaseResetConfirmationOpen: false,
+    databaseResetStatus: 'idle',
+    databaseResetMessage: '',
+    databaseResetError: undefined,
     message: '',
     initialized: false,
     fontSizeLabel: '18px',
@@ -158,6 +164,7 @@ describe('settings view model', () => {
     mocks.clearOfflineCache.mockResolvedValue(undefined)
     mocks.downloadBackup.mockResolvedValue(undefined)
     mocks.importBackupFile.mockResolvedValue(undefined)
+    mocks.resetLocalDatabase.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -214,7 +221,7 @@ describe('settings view model', () => {
 
     expect(useSettingsViewModel.getState()).toMatchObject({
       userScriptStatus: { kind: 'permission-required' },
-      userScriptMessage: 'Remote-request access was denied. Open the Violentmonkey Dashboard, select Bookshelf CORS Bridge, review/allow its site or host access in browser extension settings, then return and select Check again. If the manager remembers the denial, reinstall or update the userscript to request access again.',
+      userScriptMessage: 'Remote-request access was denied. Remove Bookshelf CORS Bridge, reinstall the latest userscript, allow its requested site or host access, reload, then check again.',
       userScriptOperationStatus: 'success',
     })
   })
@@ -308,6 +315,25 @@ describe('settings view model', () => {
     expect(useSettingsViewModel.getState()).toMatchObject({ cacheClearStatus: 'error', cacheClearError: 'disk is full' })
   })
 
+  it('confirms and resets local database data before reloading', async () => {
+    await expect(useSettingsViewModel.getState().confirmDatabaseReset()).resolves.toBe(false)
+    useSettingsViewModel.getState().requestDatabaseReset()
+    expect(useSettingsViewModel.getState().databaseResetConfirmationOpen).toBe(true)
+
+    const resetting = useSettingsViewModel.getState().confirmDatabaseReset()
+    expect(useSettingsViewModel.getState()).toMatchObject({ databaseResetConfirmationOpen: false, databaseResetStatus: 'loading' })
+    await expect(resetting).resolves.toBe(true)
+    await flush()
+    expect(mocks.resetLocalDatabase).toHaveBeenCalledOnce()
+    expect(useSettingsViewModel.getState()).toMatchObject({ databaseResetStatus: 'success', databaseResetMessage: 'RxDB and OPFS reset. Reloading Bookshelf…' })
+    expect(window.location.reload).toHaveBeenCalledOnce()
+
+    mocks.resetLocalDatabase.mockRejectedValueOnce(new Error('disk is full'))
+    useSettingsViewModel.getState().requestDatabaseReset()
+    await expect(useSettingsViewModel.getState().confirmDatabaseReset()).resolves.toBe(false)
+    expect(useSettingsViewModel.getState()).toMatchObject({ databaseResetStatus: 'error', databaseResetError: 'disk is full' })
+  })
+
   it('reports backup export and import status without rejecting event commands', async () => {
     await expect(useSettingsViewModel.getState().exportBackup()).resolves.toBe(true)
     expect(useSettingsViewModel.getState()).toMatchObject({ backupStatus: 'success', backupMessage: 'Metadata backup exported. Cached content and browser storage permissions were excluded.' })
@@ -328,7 +354,7 @@ describe('settings view model', () => {
 
   it('moves onboarding checks through loading, success, permission, and error states', async () => {
     const detection = deferred<{ kind: 'ready'; scriptVersion: string }>()
-    mocks.detectUserScript.mockReturnValueOnce(detection.promise)
+    mocks.requestUserScriptAccess.mockReturnValueOnce(detection.promise)
 
     const checking = useSettingsViewModel.getState().checkUserScript()
     expect(useSettingsViewModel.getState()).toMatchObject({ userScriptOperationStatus: 'loading', userScriptMessage: 'Checking the Bookshelf CORS Bridge…' })
@@ -340,7 +366,7 @@ describe('settings view model', () => {
     await expect(useSettingsViewModel.getState().grantUserScriptAccess()).resolves.toBe(true)
     expect(useSettingsViewModel.getState()).toMatchObject({ userScriptStatus: { kind: 'permission-required' }, userScriptOperationStatus: 'success' })
 
-    mocks.detectUserScript.mockRejectedValueOnce(new Error('bridge check failed'))
+    mocks.requestUserScriptAccess.mockRejectedValueOnce(new Error('bridge check failed'))
     await expect(useSettingsViewModel.getState().checkUserScript()).resolves.toBe(false)
     expect(useSettingsViewModel.getState()).toMatchObject({ userScriptOperationStatus: 'error', userScriptError: 'bridge check failed', userScriptMessage: 'bridge check failed' })
   })

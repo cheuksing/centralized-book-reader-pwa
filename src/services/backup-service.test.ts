@@ -19,7 +19,7 @@ vi.mock('@services/reader-settings-service', () => ({
   loadReaderSettings: mocks.loadReaderSettings,
 }))
 
-import { downloadBackup, importBackupFile } from './backup-service'
+import { downloadBackup, importBackupFile, resetLocalDatabase } from './backup-service'
 
 type StoredRecord = Record<string, unknown>
 
@@ -180,6 +180,34 @@ describe('backup service', () => {
     await expect(importBackupFile(new File([JSON.stringify(backup())], 'backup.json'))).rejects.toThrow('Could not restore 1 records')
     expect(staged.remove).toHaveBeenCalledOnce()
     expect(mocks.activateReaderDatabaseGeneration).not.toHaveBeenCalled()
+    expect(current.remove).not.toHaveBeenCalled()
+  })
+
+  it('resets local RxDB and OPFS data by activating an empty generation first', async () => {
+    const current = databaseFor()
+    const replacement = databaseFor()
+    mocks.getReaderDatabase.mockResolvedValue(current)
+    mocks.createReaderDatabaseGeneration.mockResolvedValue(replacement)
+    mocks.activateReaderDatabaseGeneration.mockResolvedValue(undefined)
+
+    await expect(resetLocalDatabase()).resolves.toBeUndefined()
+
+    expect(mocks.createReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-restore-generation')
+    expect(mocks.activateReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-restore-generation', replacement)
+    expect(current.remove).toHaveBeenCalledOnce()
+    expect(replacement.remove).not.toHaveBeenCalled()
+  })
+
+  it('removes the replacement when resetting cannot activate it', async () => {
+    const current = databaseFor()
+    const replacement = databaseFor()
+    const activationFailure = new Error('generation activation failed')
+    mocks.getReaderDatabase.mockResolvedValue(current)
+    mocks.createReaderDatabaseGeneration.mockResolvedValue(replacement)
+    mocks.activateReaderDatabaseGeneration.mockRejectedValue(activationFailure)
+
+    await expect(resetLocalDatabase()).rejects.toBe(activationFailure)
+    expect(replacement.remove).toHaveBeenCalledOnce()
     expect(current.remove).not.toHaveBeenCalled()
   })
 

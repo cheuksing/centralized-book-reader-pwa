@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { ReaderSettings } from '@models/entities/domain'
 import { interpretStoragePressure, type StoragePressure } from '@models/cache/cache-policy'
 import { loadAppSettings } from '@services/app-settings-service'
-import { downloadBackup, importBackupFile } from '@services/backup-service'
+import { downloadBackup, importBackupFile, resetLocalDatabase } from '@services/backup-service'
 import { defaultReaderSettings, loadReaderSettings, saveReaderSettings } from '@services/reader-settings-service'
 import { detectUserScript, requestUserScriptAccess, type UserScriptStatus } from '@services/remote-fetch-service'
 import { USER_SCRIPT_URL } from '@services/userscript-bridge'
@@ -46,6 +46,10 @@ export interface SettingsViewModel {
   backupStatus: SettingsOperationStatus
   backupMessage: string
   backupError?: string
+  databaseResetConfirmationOpen: boolean
+  databaseResetStatus: SettingsOperationStatus
+  databaseResetMessage: string
+  databaseResetError?: string
   message: string
   initialized: boolean
   initialize: () => Promise<boolean>
@@ -63,6 +67,10 @@ export interface SettingsViewModel {
   clearCache: () => Promise<boolean>
   exportBackup: () => Promise<boolean>
   importBackup: (file: File) => Promise<boolean>
+  requestDatabaseReset: () => void
+  cancelDatabaseReset: () => void
+  confirmDatabaseReset: () => Promise<boolean>
+  resetDatabase: () => Promise<boolean>
 }
 
 function errorMessage(error: unknown, fallback: string): string { return error instanceof Error ? error.message : fallback }
@@ -85,7 +93,7 @@ export function formatBytes(value: number): string {
 export function userScriptStatusMessage(status: UserScriptStatus): string {
   if (status.kind === 'ready') return `Installed and enabled (version ${status.scriptVersion}).`
   if (status.kind === 'outdated') return `The installed userscript${status.scriptVersion ? ` (version ${status.scriptVersion})` : ''} is incompatible. Update it, reload, then check again.`
-  if (status.kind === 'permission-required') return 'Remote-request access was denied. Open the Violentmonkey Dashboard, select Bookshelf CORS Bridge, review/allow its site or host access in browser extension settings, then return and select Check again. If the manager remembers the denial, reinstall or update the userscript to request access again.'
+  if (status.kind === 'permission-required') return 'Remote-request access was denied. Remove Bookshelf CORS Bridge, reinstall the latest userscript, allow its requested site or host access, reload, then check again.'
   if (status.kind === 'unsupported') return 'This browser cannot use the Bookshelf userscript bridge.'
   return 'The Bookshelf CORS Bridge is missing or disabled. Install or enable it, reload the page, then check again.'
 }
@@ -144,6 +152,9 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
     cacheClearMessage: '',
     backupStatus: 'idle',
     backupMessage: '',
+    databaseResetConfirmationOpen: false,
+    databaseResetStatus: 'idle',
+    databaseResetMessage: '',
     message: '',
     initialized: false,
     initializationStatus: 'idle',
@@ -183,7 +194,7 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
     checkUserScript: async () => {
       set({ userScriptOperationStatus: 'loading', userScriptError: undefined, userScriptMessage: 'Checking the Bookshelf CORS Bridge…' })
       try {
-        const userScriptStatus = await detectUserScript()
+        const userScriptStatus = await requestUserScriptAccess()
         set({ userScriptStatus, userScriptMessage: userScriptStatusMessage(userScriptStatus), userScriptOperationStatus: 'success', userScriptError: undefined })
         return true
       } catch (error) {
@@ -320,6 +331,28 @@ export const useSettingsViewModel = create<SettingsViewModel>((set, get) => {
       } catch (error) {
         const backupError = errorMessage(error, 'Could not import this backup.')
         set({ backupStatus: 'error', backupError, backupMessage: backupError, message: backupError })
+        return false
+      }
+    },
+    requestDatabaseReset: () => set({ databaseResetConfirmationOpen: true }),
+    cancelDatabaseReset: () => set({ databaseResetConfirmationOpen: false }),
+    confirmDatabaseReset: async () => {
+      if (!get().databaseResetConfirmationOpen) return false
+      set({ databaseResetConfirmationOpen: false })
+      return get().resetDatabase()
+    },
+    resetDatabase: async () => {
+      set({ databaseResetStatus: 'loading', databaseResetError: undefined, databaseResetMessage: 'Resetting RxDB and OPFS…', message: 'Resetting RxDB and OPFS…' })
+      try {
+        await resetLocalDatabase()
+        const databaseResetMessage = 'RxDB and OPFS reset. Reloading Bookshelf…'
+        set({ databaseResetStatus: 'success', databaseResetError: undefined, databaseResetMessage, message: databaseResetMessage })
+        if (typeof window !== 'undefined') window.setTimeout(() => { try { window.location.reload() } catch { /* Browser reload can be unavailable in embedded test contexts. */ } }, 0)
+        return true
+      } catch (error) {
+        const detail = errorMessage(error, 'storage removal failed.')
+        const databaseResetMessage = `Could not reset RxDB and OPFS: ${detail}`
+        set({ databaseResetStatus: 'error', databaseResetError: detail, databaseResetMessage, message: databaseResetMessage })
         return false
       }
     },

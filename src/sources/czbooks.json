@@ -18,6 +18,10 @@
         "title": {
           "selector": ".novel-item-title"
         },
+        "coverUrl": {
+          "selector": ".novel-item-cover-wrapper img",
+          "attribute": "src"
+        },
         "author": {
           "selector": ".novel-item-author a"
         },
@@ -34,6 +38,10 @@
         },
         "author": {
           "selector": ".novel-detail .author a"
+        },
+        "coverUrl": {
+          "selector": ".novel-detail .thumbnail img",
+          "attribute": "src"
         },
         "description": {
           "selector": ".novel-detail .description"

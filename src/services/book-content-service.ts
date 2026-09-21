@@ -132,6 +132,7 @@ async function loadChapterContentNow(publication: PublicationDocument, chapter: 
   const source = await database.sources.findOne(publication.sourceId).exec()
   if (!source) throw new Error('The source for this publication is no longer installed.')
   let cache = await database.chapterCaches.findOne(chapter.key).exec()
+  if (cache) await ensureChapterIndexed(database, chapter)
   const online = isBrowserOnline()
   if (!cache || cache.resources.length === 0) {
     if (!online) throw new Error('This chapter is unavailable offline.')
@@ -263,6 +264,7 @@ async function prepareChapter(publication: PublicationDocument, chapter: Chapter
   const database = await getDatabase()
   const source = await database.sources.findOne(publication.sourceId).exec()
   if (!source) throw new Error('The source for this publication is no longer installed.')
+  await ensureChapterIndexed(database, chapter)
   busyChapterKeys.add(chapter.key)
   nextPreparingChapterKey = chapter.key
   try {
@@ -515,6 +517,13 @@ interface CacheManifest {
   resources: CacheManifestResource[]
 }
 
+async function ensureChapterIndexed(database: Awaited<ReturnType<typeof getDatabase>>, chapter: ChapterDocument): Promise<void> {
+  const existing = await database.chapters.findOne(chapter.key).exec()
+  if (existing) return
+  const { cache: _cache, ...document } = chapter as ChapterDocument & { cache?: unknown }
+  await database.chapters.insert(document)
+}
+
 function cacheResourcesFromManifest(manifest: CacheManifest, previousResources: readonly CachedResourceDocument[] = []): CachedResourceDocument[] {
   const existingByResource = new Map(previousResources.map((resource) => [resource.sourceResourceId, resource]))
   return manifest.resources.map((resource) => {
@@ -548,6 +557,7 @@ async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManif
 
 async function createOrMergeCacheNow(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}, expectedGeneration = cacheClearGeneration): Promise<RxDocument<ChapterCacheDocument>> {
   const database = await getDatabase()
+  await ensureChapterIndexed(database, chapter)
   const existing = await database.chapterCaches.findOne(chapter.key).exec()
   const resources = cacheResourcesFromManifest(manifest, existing?.resources)
   const now = new Date().toISOString()

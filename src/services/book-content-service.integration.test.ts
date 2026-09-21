@@ -241,6 +241,29 @@ describe('book content browser and cache workflows', () => {
     expect(revoked).toEqual(['blob:test-1'])
   })
 
+  it('persists the chapter index entry when content is cached', async () => {
+    const currentChapter = chapter('chapter-1', 0)
+    const sources = collectionFor([source])
+    const chapters = collectionFor()
+    const caches = collectionFor()
+    const database = databaseFor({ sources, chapters, chapterCaches: caches })
+    mocks.getReaderDatabase.mockResolvedValue(database)
+    mocks.sourceAdapterFor.mockReturnValue({
+      getChapterManifest: vi.fn().mockResolvedValue({
+        chapterKey: currentChapter.key,
+        resources: [{ key: 'text-resource', resourceId: 'text', kind: 'text' as const, url: 'https://source.example/text.txt', mimeType: 'text/plain' }],
+      }),
+    })
+    mocks.fetchBlobThroughUserScript.mockResolvedValue({ blob: new Blob(['cached']), contentType: 'text/plain' })
+
+    const service = await loadService()
+    await service.loadChapterContent(publication, currentChapter)
+
+    expect(chapters.documents).toHaveLength(1)
+    expect(chapters.documents[0]).toMatchObject({ key: currentChapter.key, title: currentChapter.title, order: currentChapter.order })
+    expect(chapters.documents[0]).not.toHaveProperty('cache')
+  })
+
   it('rejects a late cache mutation from a newer clear generation', async () => {
     const currentChapter = chapter('chapter-1', 0)
     const cached = cacheFor(currentChapter, [resource('text', 'text', 'https://source.example/text.txt')])

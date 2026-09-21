@@ -1,4 +1,4 @@
-import type { ChapterDocument, PublicationDocument, SourceDocument } from '@models/database/schemas'
+import type { ChapterCacheDocument, ChapterDocument, PublicationDocument, SourceDocument } from '@models/database/schemas'
 import { chapterKey, publicationKey } from '@models/entities/keys'
 import type { Chapter, Publication } from '@models/entities/domain'
 import { sourceAdapterFor } from '@models/sources/source-registry'
@@ -59,7 +59,7 @@ async function syncPublicationNow(source: SourceDocument, publicationId: string,
       ...chapter,
       order: previous?.order ?? nextOrder + index,
       removedFromSource: false,
-      updateAvailable: previous?.updateAvailable ?? revisionChanged,
+      updateAvailable: Boolean(previous?.updateAvailable || revisionChanged),
       updatedAt: now,
     }
   })
@@ -73,6 +73,24 @@ async function syncPublicationNow(source: SourceDocument, publicationId: string,
     }
   }
   await Promise.all(chapterDocuments.map((chapter) => upsertChapter(database, chapter)))
+  if (cursor === undefined && !chapterPage.nextCursor) {
+    const orphanOrder = Math.max(-1, ...existingChapters.map((chapter) => chapter.get('order')), ...chapterDocuments.map((chapter) => chapter.order)) + 1
+    await Promise.all(existingCaches.filter((cache) => !existingByKey.has(cache.key) && !incomingKeys.has(cache.key)).map((cache, index) => {
+      const value = cache.toJSON() as unknown as ChapterCacheDocument
+      return upsertChapter(database, {
+        key: value.key,
+        sourceId: value.sourceId,
+        publicationId: value.publicationId,
+        chapterId: value.chapterId,
+        title: value.chapterId,
+        order: orphanOrder + index,
+        sourceRevision: value.sourceRevision,
+        removedFromSource: Boolean(value.resources.some((resource) => resource.state === 'available')),
+        updateAvailable: false,
+        updatedAt: now,
+      })
+    }))
+  }
   const knownChapterCount = (await database.chapters.find({ selector: { sourceId: source.id, publicationId } }).exec()).filter((chapter) => !chapter.get('removedFromSource')).length
   const syncedPublication: PublicationDocument = {
     ...publicationDocument,
@@ -120,8 +138,29 @@ export async function getLocalChapters(publicationKeyValue: string): Promise<Cha
   if (!publication) return []
   const documents = await database.chapters.find({ selector: { sourceId: publication.sourceId, publicationId: publication.publicationId } }).sort('order').exec()
   const caches = await database.chapterCaches.find({ selector: { publicationId: publication.publicationId, sourceId: publication.sourceId } }).exec()
-  const cacheByKey = new Map(caches.map((cache) => [cache.key, cache.toJSON()]))
-  return documents.map((document) => ({ ...document.toJSON(), cache: cacheByKey.get(document.key) as unknown as Chapter['cache'] }))
+  const cacheByKey = new Map(caches.map((cache) => [cache.key, cache.toJSON() as unknown as ChapterCacheDocument]))
+  const knownKeys = new Set(documents.map((document) => document.key))
+  const chapters = documents.map((document) => ({ ...document.toJSON(), cache: cacheByKey.get(document.key) as unknown as Chapter['cache'] }))
+  let nextOrder = Math.max(-1, ...documents.map((document) => document.get('order'))) + 1
+  // ponytail: legacy cache-only rows lack source title/order; append them until an online index sync repairs metadata.
+  for (const cache of caches) {
+    if (knownKeys.has(cache.key)) continue
+    const value = cache.toJSON() as unknown as ChapterCacheDocument
+    chapters.push({
+      key: value.key,
+      sourceId: value.sourceId,
+      publicationId: value.publicationId,
+      chapterId: value.chapterId,
+      title: value.chapterId,
+      order: nextOrder++,
+      sourceRevision: value.sourceRevision,
+      removedFromSource: false,
+      updateAvailable: false,
+      updatedAt: value.updatedAt,
+      cache: value,
+    })
+  }
+  return chapters
 }
 
 export async function getSourceForPublication(publicationKeyValue: string): Promise<SourceDocument | undefined> {

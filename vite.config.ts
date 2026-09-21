@@ -1,23 +1,12 @@
-import { copyFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import react from '@vitejs/plugin-react'
-import tsconfigPaths from 'vite-tsconfig-paths'
 import { VitePWA } from 'vite-plugin-pwa'
-import { defineConfig, type Plugin } from 'vite'
-
-function spaFallback(): Plugin {
-  return {
-    name: 'spa-fallback',
-    writeBundle(options) {
-      if (options.dir) return copyFile(join(options.dir, 'index.html'), join(options.dir, '404.html'))
-    },
-  }
-}
+import { defineConfig } from 'vite'
 
 export default defineConfig({
+  resolve: {
+    tsconfigPaths: true
+  },
   plugins: [
-    spaFallback(),
-    tsconfigPaths(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',

@@ -3,7 +3,7 @@
 }
 
 .status-slot[data-empty='true'] {
-  visibility: hidden;
+  display: none;
 }
 
 .status-slot.visually-hidden {

@@ -175,6 +175,32 @@ describe('publication sync service', () => {
     await expect(getLocalChapters('missing')).resolves.toEqual([])
   })
 
+  it('falls back to cached chapters when an older cache has no index row', async () => {
+    const publication = publicationDocument()
+    const publications = collectionFor([publication])
+    const chapters = collectionFor()
+    const chapterCaches = collectionFor([chapterCache('cached', 'available')])
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ publications, chapters, chapterCaches }))
+
+    await expect(getLocalChapters(publication.key)).resolves.toMatchObject([
+      { chapterId: 'cached', title: 'cached', order: 0, cache: { state: 'available' } },
+    ])
+  })
+
+  it('repairs cache-only rows as saved copies after a complete online index refresh', async () => {
+    const publication = publicationDocument()
+    const publications = collectionFor([publication])
+    const chapters = collectionFor()
+    const chapterCaches = collectionFor([chapterCache('cached', 'available')])
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ publications, chapters, chapterCaches }))
+    adapter.getPublication.mockResolvedValue(remotePublication())
+    adapter.getChapterIndex.mockResolvedValue({ chapters: [] })
+
+    await syncPublication(source, 'publication-1')
+
+    expect(chapters.documents).toMatchObject([{ chapterId: 'cached', removedFromSource: true, title: 'cached' }])
+  })
+
   it('persists publications without view-only fields and preserves metadata', async () => {
     const existing = publicationDocument('publication-1', { createdAt: '2025-01-01T00:00:00.000Z', coverState: 'available' })
     const publications = collectionFor([existing])
@@ -193,6 +219,22 @@ describe('publication sync service', () => {
     expect(persisted).toMatchObject({ createdAt: '2026-01-01T00:00:00.000Z', coverState: 'available', title: value.title })
     expect(persisted).not.toHaveProperty('bookmarked')
     expect(publications.documents[0]).toMatchObject({ createdAt: '2026-01-01T00:00:00.000Z', coverState: 'available' })
+  })
+
+  it('marks a cached existing chapter when its source revision changes', async () => {
+    const existingPublication = publicationDocument()
+    const existingChapter = chapterDocument('existing', 0, { sourceRevision: 'revision-1' })
+    const publications = collectionFor([existingPublication])
+    const chapters = collectionFor([existingChapter])
+    const chapterCaches = collectionFor([chapterCache('existing', 'available', 'revision-1')])
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ publications, chapters, chapterCaches }))
+    adapter.getPublication.mockResolvedValue(remotePublication())
+    adapter.getChapterIndex.mockResolvedValue({ chapters: [{ ...existingChapter, title: 'Updated title', sourceRevision: 'revision-2' }] })
+
+    await syncPublication(source, 'publication-1')
+
+    expect(chapters.documents[0]).toMatchObject({ title: 'Updated title', sourceRevision: 'revision-2', updateAvailable: true })
+    expect(chapterCaches.documents[0]).toMatchObject({ sourceRevision: 'revision-1', state: 'available' })
   })
 
   it('reconciles a complete source index, preserves order, and marks cached removals', async () => {

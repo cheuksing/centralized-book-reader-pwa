@@ -58,7 +58,7 @@ export function BookDetailsPage({ model, onBack, onRead, onJumpToChapter }: Book
       </section>
       <ConfirmDialog
         confirmLabel="Update chapter"
-        description="The current cached revision will be removed. If the replacement cannot be saved, the old revision cannot be restored."
+        description="The new revision is fetched before the cached copy is replaced. If the source is unavailable, the current cached revision is kept."
         destructive
         onCancel={model.cancelChapterUpdate}
         onConfirm={() => { void model.confirmChapterUpdate() }}

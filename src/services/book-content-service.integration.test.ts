@@ -229,7 +229,7 @@ describe('book content browser and cache workflows', () => {
     await service.ensureResourceCached(currentChapter.key, 'image')
     const sections = await service.loadChapterContent(publication, currentChapter, { recordAccess: false })
 
-    expect(mocks.fetchBlobThroughUserScript).toHaveBeenCalledTimes(2)
+    expect(mocks.fetchBlobThroughUserScript).toHaveBeenCalledTimes(4)
     expect(sections).toMatchObject([
       { type: 'html', content: '<p>safe</p><img data-bookshelf-image="image">|blob:test-1', cached: true },
       { type: 'image', objectUrl: 'blob:test-1', cached: true },
@@ -239,6 +239,118 @@ describe('book content browser and cache workflows', () => {
 
     service.releaseBookContent(sections)
     expect(revoked).toEqual(['blob:test-1'])
+  })
+
+  it('persists the chapter index entry when content is cached', async () => {
+    const currentChapter = chapter('chapter-1', 0)
+    const sources = collectionFor([source])
+    const chapters = collectionFor()
+    const caches = collectionFor()
+    const database = databaseFor({ sources, chapters, chapterCaches: caches })
+    mocks.getReaderDatabase.mockResolvedValue(database)
+    mocks.sourceAdapterFor.mockReturnValue({
+      getChapterManifest: vi.fn().mockResolvedValue({
+        chapterKey: currentChapter.key,
+        resources: [{ key: 'text-resource', resourceId: 'text', kind: 'text' as const, url: 'https://source.example/text.txt', mimeType: 'text/plain' }],
+      }),
+    })
+    mocks.fetchBlobThroughUserScript.mockResolvedValue({ blob: new Blob(['cached']), contentType: 'text/plain' })
+
+    const service = await loadService()
+    await service.loadChapterContent(publication, currentChapter)
+
+    expect(chapters.documents).toHaveLength(1)
+    expect(chapters.documents[0]).toMatchObject({ key: currentChapter.key, title: currentChapter.title, order: currentChapter.order })
+    expect(chapters.documents[0]).not.toHaveProperty('cache')
+  })
+
+  it('refreshes an existing cached chapter without exposing the old attachment after commit', async () => {
+    const currentChapter = chapter('chapter-1', 0)
+    const cached = cacheFor(currentChapter, [resource('text', 'text', 'https://source.example/text.txt', { state: 'available', byteLength: 3 })], 'available')
+    cached.sourceRevision = 'revision-1'
+    const sources = collectionFor([source])
+    const chapters = collectionFor([currentChapter])
+    const caches = collectionFor([cached])
+    await caches.documents[0].putAttachment({ id: 'cache-text', type: 'text/plain', data: new Blob(['old']) })
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ sources, chapters, chapterCaches: caches }))
+    const manifest = {
+      chapterKey: currentChapter.key,
+      sourceRevision: 'revision-2',
+      resources: [{ key: 'text-resource', resourceId: 'text', kind: 'text' as const, url: 'https://source.example/text.txt', mimeType: 'text/plain' }],
+    }
+    mocks.sourceAdapterFor.mockReturnValue({ getChapterManifest: vi.fn().mockResolvedValue(manifest) })
+    mocks.fetchBlobThroughUserScript.mockResolvedValue({ blob: new Blob(['new']), contentType: 'text/plain' })
+
+    const service = await loadService()
+    await expect(service.loadChapterContent(publication, currentChapter, { recordAccess: false })).resolves.toMatchObject([{ type: 'text', content: 'new', cached: true }])
+
+    expect(mocks.fetchBlobThroughUserScript).toHaveBeenCalledTimes(1)
+    expect(caches.documents[0]).toMatchObject({ sourceRevision: 'revision-2', state: 'available', resources: [{ state: 'available' }] })
+    expect(chapters.documents[0]).toMatchObject({ sourceRevision: 'revision-2', updateAvailable: false })
+    expect(caches.documents[0].getAttachment('cache-text')).toBeUndefined()
+  })
+
+  it('keeps the old readable chapter when refreshing its manifest fails', async () => {
+    const currentChapter = chapter('chapter-1', 0)
+    const cached = cacheFor(currentChapter, [resource('text', 'text', 'https://source.example/text.txt', { state: 'available', byteLength: 3 })], 'available')
+    cached.sourceRevision = 'revision-1'
+    const sources = collectionFor([source])
+    const chapters = collectionFor([currentChapter])
+    const caches = collectionFor([cached])
+    await caches.documents[0].putAttachment({ id: 'cache-text', type: 'text/plain', data: new Blob(['old']) })
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ sources, chapters, chapterCaches: caches }))
+    mocks.sourceAdapterFor.mockReturnValue({ getChapterManifest: vi.fn().mockRejectedValue(new Error('source unavailable')) })
+
+    const service = await loadService()
+    await expect(service.loadChapterContent(publication, currentChapter, { recordAccess: false })).resolves.toMatchObject([{ type: 'text', content: 'old', cached: true }])
+
+    expect(mocks.fetchBlobThroughUserScript).not.toHaveBeenCalled()
+    expect(caches.documents[0]).toMatchObject({ sourceRevision: 'revision-1', state: 'available', resources: [{ id: 'cache-text', state: 'available' }] })
+    expect(caches.documents[0].getAttachment('cache-text')).toBeDefined()
+  })
+
+  it('keeps the old readable chapter when a manual update cannot fetch its manifest', async () => {
+    const currentChapter = chapter('chapter-1', 0)
+    const cached = cacheFor(currentChapter, [resource('text', 'text', 'https://source.example/text.txt', { state: 'available', byteLength: 3 })], 'available')
+    cached.sourceRevision = 'revision-1'
+    const sources = collectionFor([source])
+    const chapters = collectionFor([currentChapter])
+    const caches = collectionFor([cached])
+    await caches.documents[0].putAttachment({ id: 'cache-text', type: 'text/plain', data: new Blob(['old']) })
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ sources, chapters, chapterCaches: caches }))
+    mocks.sourceAdapterFor.mockReturnValue({ getChapterManifest: vi.fn().mockRejectedValue(new Error('source unavailable')) })
+
+    const service = await loadService()
+    await expect(service.updateChapterCache(currentChapter.key)).rejects.toThrow('source unavailable')
+
+    expect(caches.documents[0]).toMatchObject({ sourceRevision: 'revision-1', state: 'available', resources: [{ id: 'cache-text', state: 'available' }] })
+    expect(caches.documents[0].getAttachment('cache-text')).toBeDefined()
+  })
+
+  it('keeps the old readable chapter when a refreshed resource fails', async () => {
+    const currentChapter = chapter('chapter-1', 0)
+    const cached = cacheFor(currentChapter, [resource('text', 'text', 'https://source.example/text.txt', { state: 'available', byteLength: 3 })], 'available')
+    cached.sourceRevision = 'revision-1'
+    const sources = collectionFor([source])
+    const chapters = collectionFor([currentChapter])
+    const caches = collectionFor([cached])
+    await caches.documents[0].putAttachment({ id: 'cache-text', type: 'text/plain', data: new Blob(['old']) })
+    mocks.getReaderDatabase.mockResolvedValue(databaseFor({ sources, chapters, chapterCaches: caches }))
+    mocks.sourceAdapterFor.mockReturnValue({
+      getChapterManifest: vi.fn().mockResolvedValue({
+        chapterKey: currentChapter.key,
+        sourceRevision: 'revision-2',
+        resources: [{ key: 'text-resource', resourceId: 'text', kind: 'text' as const, url: 'https://source.example/text.txt', mimeType: 'text/plain' }],
+      }),
+    })
+    mocks.fetchBlobThroughUserScript.mockRejectedValue(new Error('resource unavailable'))
+
+    const service = await loadService()
+    await expect(service.loadChapterContent(publication, currentChapter, { recordAccess: false })).resolves.toMatchObject([{ type: 'text', content: 'old', cached: true }])
+
+    expect(mocks.fetchBlobThroughUserScript).toHaveBeenCalledTimes(1)
+    expect(caches.documents[0]).toMatchObject({ sourceRevision: 'revision-1', state: 'available', resources: [{ id: 'cache-text', state: 'available' }] })
+    expect(caches.documents[0].getAttachment('cache-text')).toBeDefined()
   })
 
   it('rejects a late cache mutation from a newer clear generation', async () => {
@@ -288,7 +400,7 @@ describe('book content browser and cache workflows', () => {
     const service = await loadService()
     await expect(service.loadChapterContent(publication, currentChapter)).resolves.toMatchObject([{ type: 'text', content: 'recovered', cached: true }])
     expect(fetches).toBe(2)
-    expect(adapter.getChapterManifest).toHaveBeenCalledTimes(1)
+    expect(adapter.getChapterManifest).toHaveBeenCalledTimes(2)
     expect(caches.documents).toHaveLength(1)
   })
 

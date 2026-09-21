@@ -1,5 +1,5 @@
 import type { RxDocument } from 'rxdb'
-import type { ChapterCacheDocument, ChapterDocument, CachedResourceDocument, PublicationDocument } from '@models/database/schemas'
+import type { ChapterCacheDocument, ChapterDocument, CachedResourceDocument, PublicationDocument, SourceDocument } from '@models/database/schemas'
 import { getEvictionCandidates, getStorageEstimate, interpretStoragePressure, type CacheEvictionCandidate, type StorageEstimateInput } from '@models/cache/cache-policy'
 import { publicationKey, resourceKey } from '@models/entities/keys'
 import { sanitiseHtml, renderSanitisedHtml } from '@models/cache/html-sanitizer'
@@ -132,18 +132,35 @@ async function loadChapterContentNow(publication: PublicationDocument, chapter: 
   const source = await database.sources.findOne(publication.sourceId).exec()
   if (!source) throw new Error('The source for this publication is no longer installed.')
   let cache = await database.chapterCaches.findOne(chapter.key).exec()
+  if (cache) await ensureChapterIndexed(database, chapter)
   const online = isBrowserOnline()
+  let cacheCreated = false
   if (!cache || cache.resources.length === 0) {
     if (!online) throw new Error('This chapter is unavailable offline.')
     const cacheCreationGeneration = cacheClearGeneration
     const manifest = await sourceAdapterFor(source.toJSON()).getChapterManifest(source.toJSON(), publication.publicationId, chapter.chapterId)
     try {
       cache = await createOrMergeCache(chapter, manifest, { currentlyOpenChapterKey: chapter.key }, cacheCreationGeneration)
+      cacheCreated = true
     } catch (error) {
       if (!isQuotaStorageError(error) && !isCacheClearInProgressError(error)) throw error
       if (isQuotaStorageError(error)) notifyStorageFailure()
       return readTransientChapterContent(chapter, manifest)
     }
+  }
+  if (online && cache && cache.resources.length > 0 && !cacheCreated) {
+    try {
+      await refreshChapterCacheIfNeeded(chapter, source.toJSON(), cacheClearGeneration)
+    } catch {
+      // A failed refresh must not hide a readable previous revision.
+    }
+    cache = await database.chapterCaches.findOne(chapter.key).exec()
+  }
+  if (!cache) {
+    if (shouldRetryChapterReadAfterCacheLoss(online, retryAfterCacheLoss, false, false)) return loadChapterContentNow(publication, chapter, options, false)
+    if (!online) throw new Error('This chapter is unavailable offline.')
+    const manifest = await sourceAdapterFor(source.toJSON()).getChapterManifest(source.toJSON(), publication.publicationId, chapter.chapterId)
+    return readTransientChapterContent(chapter, manifest)
   }
   const cacheDocument = cache.toJSON() as unknown as ChapterCacheDocument
   if (!online && !hasReadableChapterCache(cacheDocument)) throw new Error('This chapter is unavailable offline.')
@@ -263,6 +280,7 @@ async function prepareChapter(publication: PublicationDocument, chapter: Chapter
   const database = await getDatabase()
   const source = await database.sources.findOne(publication.sourceId).exec()
   if (!source) throw new Error('The source for this publication is no longer installed.')
+  await ensureChapterIndexed(database, chapter)
   busyChapterKeys.add(chapter.key)
   nextPreparingChapterKey = chapter.key
   try {
@@ -436,35 +454,75 @@ export function updateChapterCache(chapterKey: string): Promise<void> {
 }
 
 async function updateChapterCacheNow(chapterKey: string, expectedGeneration: number): Promise<void> {
-  await deleteChapterCacheNow(chapterKey)
   const database = await getDatabase()
   const chapter = await database.chapters.findOne(chapterKey).exec()
   if (!chapter) throw new Error('This chapter no longer exists.')
   const source = await database.sources.findOne(chapter.sourceId).exec()
   if (!source) throw new Error('The source for this chapter is no longer installed.')
   const manifest = await sourceAdapterFor(source.toJSON()).getChapterManifest(source.toJSON(), chapter.publicationId, chapter.chapterId)
-  await createOrMergeCache(chapter.toJSON(), manifest, {}, expectedGeneration)
+  await replaceChapterCacheNow(database, chapter.toJSON() as unknown as ChapterDocument, manifest, expectedGeneration)
+}
+
+async function refreshChapterCacheIfNeeded(chapter: ChapterDocument, source: SourceDocument, expectedGeneration: number): Promise<void> {
+  await runKeyedOperation(chapterUpdateOperations, chapter.key, async () => {
+    const database = await getDatabase()
+    const cache = await database.chapterCaches.findOne(chapter.key).exec()
+    if (!cache || cache.resources.length === 0) return
+    const manifest = await sourceAdapterFor(source).getChapterManifest(source, chapter.publicationId, chapter.chapterId)
+    const value = cache.toJSON() as unknown as ChapterCacheDocument
+    if (chapterCacheIsFresh(value, cache, manifest)) return
+    await withCacheMutation(() => replaceChapterCacheNow(database, chapter, manifest, expectedGeneration), expectedGeneration)
+  })
+}
+
+async function replaceChapterCacheNow(database: Awaited<ReturnType<typeof getDatabase>>, chapter: ChapterDocument, manifest: CacheManifest, expectedGeneration: number): Promise<void> {
+  const transientCache = transientCacheFor(chapter, manifest)
   try {
-    while (true) {
-      const cache = await database.chapterCaches.findOne(chapterKey).exec()
-      if (!cache) throw new Error('Could not create the chapter cache.')
-      const resources = cache.resources.filter((candidate) => candidate.cacheable && candidate.state !== 'available')
-      if (resources.length === 0) break
-      for (const resource of resources) await ensureResourceCached(chapterKey, resource.sourceResourceId, resource.kind === 'image' ? 0 : 10, expectedGeneration)
+    await prepareTransientCache(transientCache)
+    if (!transientCache.resources.every((resource) => !resource.cacheable || (resource.state === 'available' && volatileResources.has(resource.id)))) throw new Error('The chapter could not be fully refreshed from the source.')
+    await commitTransientCache(database, chapter.key, transientCache, expectedGeneration)
+    const chapterDocument = await database.chapters.findOne(chapter.key).exec()
+    if (chapterDocument) {
+      const changes: Partial<ChapterDocument> = { updateAvailable: false, removedFromSource: false }
+      if (manifest.sourceRevision !== undefined) changes.sourceRevision = manifest.sourceRevision
+      await withQuotaRecovery(chapter.key, () => chapterDocument.patch(changes), 0, { currentlyOpenChapterKey: chapter.key }, expectedGeneration)
     }
-    const finalCache = await database.chapterCaches.findOne(chapterKey).exec()
-    if (!finalCache) throw new Error('The chapter cache disappeared while updating.')
-    await withQuotaRecovery(chapterKey, () => finalCache.patch({ state: 'available', sourceRevision: manifest.sourceRevision, updatedAt: new Date().toISOString() }), 0, { currentlyOpenChapterKey: chapterKey }, expectedGeneration)
-    await withQuotaRecovery(chapterKey, () => chapter.patch({ updateAvailable: false, removedFromSource: false }), 0, { currentlyOpenChapterKey: chapterKey }, expectedGeneration)
-  } catch (error) {
-    const failedCache = await database.chapterCaches.findOne(chapterKey).exec()
-    if (failedCache && shouldMarkChapterUpdateFailed(error, failedCache.toJSON())) {
-      try {
-        await withCacheMutation(() => failedCache.patch({ state: 'failed', updatedAt: new Date().toISOString() }), expectedGeneration)
-      } catch { /* Preserve the last committed cache state when failure bookkeeping cannot be persisted. */ }
-    }
-    throw error
+  } finally {
+    clearVolatileResources(transientCache.resources)
   }
+}
+
+async function commitTransientCache(database: Awaited<ReturnType<typeof getDatabase>>, chapterKey: string, staged: ChapterCacheDocument, expectedGeneration: number): Promise<void> {
+  const existing = await database.chapterCaches.findOne(chapterKey).exec()
+  const stagedAttachmentIds = staged.resources.filter((resource) => resource.cacheable).map((resource) => resource.id)
+  const oldAttachmentIds = existing?.resources.map((resource) => resource.id).filter((id) => !stagedAttachmentIds.includes(id)) ?? []
+  let target = existing
+  let committed = false
+  try {
+    await withQuotaRecovery(chapterKey, async () => {
+      if (!target) target = await database.chapterCaches.insert(staged)
+      for (const resource of staged.resources.filter((candidate) => candidate.cacheable)) {
+        const prepared = volatileResources.get(resource.id)
+        if (!prepared) throw new Error('The refreshed chapter resource is no longer available.')
+        await target.putAttachment({ id: resource.id, type: prepared.mimeType, data: prepared.blob })
+      }
+      if (!isCacheMutationGenerationCurrent(expectedGeneration, cacheClearGeneration, cacheClearInProgress)) throw new CacheClearInProgressError()
+      await target.patch({ resources: staged.resources, receivedBytes: staged.receivedBytes, sourceRevision: staged.sourceRevision, state: staged.state, updatedAt: new Date().toISOString() })
+    }, staged.receivedBytes, { currentlyOpenChapterKey: chapterKey }, expectedGeneration)
+    committed = true
+  } finally {
+    if (!committed) {
+      await Promise.allSettled(stagedAttachmentIds.map(async (id) => {
+        const attachment = target?.getAttachment(id)
+        if (attachment) await attachment.remove()
+      }))
+      if (!existing && target) await target.remove().catch(() => undefined)
+    }
+  }
+  if (committed && existing) await Promise.allSettled(oldAttachmentIds.map(async (id) => {
+    const attachment = existing.getAttachment(id)
+    if (attachment) await attachment.remove()
+  }))
 }
 
 export async function deleteChapterCache(chapterKey: string): Promise<void> {
@@ -515,6 +573,13 @@ interface CacheManifest {
   resources: CacheManifestResource[]
 }
 
+async function ensureChapterIndexed(database: Awaited<ReturnType<typeof getDatabase>>, chapter: ChapterDocument): Promise<void> {
+  const existing = await database.chapters.findOne(chapter.key).exec()
+  if (existing) return
+  const { cache: _cache, ...document } = chapter as ChapterDocument & { cache?: unknown }
+  await database.chapters.insert(document)
+}
+
 function cacheResourcesFromManifest(manifest: CacheManifest, previousResources: readonly CachedResourceDocument[] = []): CachedResourceDocument[] {
   const existingByResource = new Map(previousResources.map((resource) => [resource.sourceResourceId, resource]))
   return manifest.resources.map((resource) => {
@@ -526,7 +591,7 @@ function cacheResourcesFromManifest(manifest: CacheManifest, previousResources: 
 }
 
 function transientCacheFor(chapter: ChapterDocument, manifest: CacheManifest): ChapterCacheDocument {
-  const resources = cacheResourcesFromManifest(manifest)
+  const resources = cacheResourcesFromManifest(manifest).map((resource) => ({ ...resource, id: transientResourceId() }))
   const now = new Date().toISOString()
   return {
     key: chapter.key,
@@ -542,12 +607,43 @@ function transientCacheFor(chapter: ChapterDocument, manifest: CacheManifest): C
   }
 }
 
+function transientResourceId(): string {
+  return `refresh-${crypto.randomUUID()}`
+}
+
+function chapterCacheIsFresh(cache: ChapterCacheDocument, document: RxDocument<ChapterCacheDocument>, manifest: CacheManifest): boolean {
+  if (manifest.sourceRevision === undefined || cache.sourceRevision !== manifest.sourceRevision) return false
+  const manifestResourceIds = new Set(manifest.resources.map((resource) => resource.resourceId))
+  const cachedManifestResources = cache.resources.filter((resource) => manifestResourceIds.has(resource.sourceResourceId))
+  if (cachedManifestResources.length !== manifest.resources.length) return false
+  for (const [index, resource] of manifest.resources.entries()) {
+    const cached = cachedManifestResources[index]
+    if (!cached || !sameResourceDefinition(cached, resource)) return false
+  }
+  return cache.resources.every((resource) => !resource.cacheable || readableCachedResource(resource, document))
+}
+
+function sameResourceDefinition(cached: CachedResourceDocument, manifest: CacheManifestResource): boolean {
+  return cached.sourceResourceId === manifest.resourceId
+    && cached.url === manifest.url
+    && cached.kind === manifest.kind
+    && cached.textSelector === manifest.textSelector
+    && cached.label === manifest.label
+    && (manifest.mimeType === undefined || cached.mimeType === manifest.mimeType)
+    && cached.cacheable === (manifest.kind !== 'external-link')
+}
+
+function readableCachedResource(resource: CachedResourceDocument, document: RxDocument<ChapterCacheDocument>): boolean {
+  return volatileResources.has(resource.id) || (resource.state === 'available' && Boolean(document.getAttachment(resource.id)))
+}
+
 async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}, expectedGeneration = cacheClearGeneration): Promise<RxDocument<ChapterCacheDocument>> {
   return withCacheMutation(() => createOrMergeCacheNow(chapter, manifest, protection, expectedGeneration), expectedGeneration)
 }
 
 async function createOrMergeCacheNow(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}, expectedGeneration = cacheClearGeneration): Promise<RxDocument<ChapterCacheDocument>> {
   const database = await getDatabase()
+  await ensureChapterIndexed(database, chapter)
   const existing = await database.chapterCaches.findOne(chapter.key).exec()
   const resources = cacheResourcesFromManifest(manifest, existing?.resources)
   const now = new Date().toISOString()
@@ -580,7 +676,7 @@ interface PreparedResource {
   discovered: CachedResourceDocument[]
 }
 
-async function prepareFetchedResource(cache: ChapterCacheDocument, resource: CachedResourceDocument): Promise<PreparedResource> {
+async function prepareFetchedResource(cache: ChapterCacheDocument, resource: CachedResourceDocument, transient = false): Promise<PreparedResource> {
   const expectedContentTypes = resource.textSelector ? ['text/html', 'application/xhtml+xml'] : resource.kind === 'html' ? ['text/html', 'application/xhtml+xml'] : resource.kind === 'image' ? ['image/'] : ['text/plain', 'text/markdown']
   const { blob, contentType } = await fetchBlobThroughUserScript(resource.url, undefined, expectedContentTypes)
   let preparedBlob = blob
@@ -591,7 +687,7 @@ async function prepareFetchedResource(cache: ChapterCacheDocument, resource: Cac
     const sanitized = sanitiseHtml(await blob.text(), resource.url)
     preparedBlob = new Blob([sanitized.html], { type: 'text/html' })
     discovered = sanitized.images.map((image) => ({
-      id: resourceKey(cache.sourceId, cache.publicationId, cache.chapterId, image.resourceId),
+      id: transient ? transientResourceId() : resourceKey(cache.sourceId, cache.publicationId, cache.chapterId, image.resourceId),
       sourceResourceId: image.resourceId,
       url: image.url,
       kind: 'image' as const,
@@ -620,7 +716,7 @@ async function prepareTransientCache(cache: ChapterCacheDocument): Promise<void>
     if (!resource) return
     attempted.add(resource.id)
     try {
-      const prepared = await prepareFetchedResource(cache, resource)
+      const prepared = await prepareFetchedResource(cache, resource, true)
       volatileResources.set(resource.id, { blob: prepared.blob, mimeType: prepared.mimeType })
       const updated = mergeResources(cache.resources, prepared.discovered).map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'available' as const, mimeType: prepared.mimeType, byteLength: prepared.blob.size } : candidate)
       cache.resources = updated

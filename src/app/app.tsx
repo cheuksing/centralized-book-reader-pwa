@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Route, Switch, useLocation, useRoute } from 'wouter'
 import { detailsIntent, indexIntent, readerIntent } from '@app/route-commands'
 import { decodeRouteParam, readerPath, tabPath, type Tab } from '@app/routes'
@@ -46,8 +46,9 @@ export function App() {
 }
 
 function AppRoutes() {
-  const [location] = useLocation()
+  const [location, navigate] = useLocation()
   const pageKey = location.split('?')[0]
+  const activeTab: Tab | undefined = pageKey === '/' ? 'home' : pageKey === '/sources' ? 'sources' : pageKey === '/settings' ? 'settings' : undefined
   const [readerMatch] = useRoute('/reader/:publicationKey')
   const [indexMatch] = useRoute('/reader/:publicationKey/index')
   const [detailsMatch] = useRoute('/details/:publicationKey')
@@ -59,19 +60,20 @@ function AppRoutes() {
     void cleanupRoute({ isReaderRoute: Boolean(isReaderRoute), isPublicationRoute: Boolean(isPublicationRoute) })
   }, [cleanupRoute, isPublicationRoute, isReaderRoute])
 
-  return (
-    <div className="page-transition" key={pageKey}>
-      <Switch>
-        <Route path="/reader/:publicationKey/index">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="index" />}</Route>
-        <Route path="/reader/:publicationKey">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="reader" />}</Route>
-        <Route path="/details/:publicationKey">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="details" />}</Route>
-        <Route path="/sources"><TabRoute tab="sources"><SourcesRoute /></TabRoute></Route>
-        <Route path="/settings"><TabRoute tab="settings"><SettingsPage /></TabRoute></Route>
-        <Route path="/"><TabRoute tab="home"><HomeRoute /></TabRoute></Route>
-        <Route><NotFoundRoute /></Route>
-      </Switch>
-    </div>
+  const page = (
+    <Switch>
+      <Route path="/reader/:publicationKey/index">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="index" />}</Route>
+      <Route path="/reader/:publicationKey">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="reader" />}</Route>
+      <Route path="/details/:publicationKey">{({ publicationKey }) => <PublicationRoute publicationKey={publicationKey} screen="details" />}</Route>
+      <Route path="/sources"><SourcesRoute /></Route>
+      <Route path="/settings"><SettingsPage /></Route>
+      <Route path="/"><HomeRoute /></Route>
+      <Route><NotFoundRoute /></Route>
+    </Switch>
   )
+  const pageTransition = <div className="page-transition" key={pageKey}>{page}</div>
+  if (!activeTab) return pageTransition
+  return <TabLayout activeTab={activeTab} onTabChange={(nextTab) => { const nextPath = tabPath(nextTab); if (nextPath !== location) navigate(nextPath) }}>{pageTransition}</TabLayout>
 }
 
 function HomeRoute() {
@@ -109,10 +111,6 @@ function SourcesRoute() {
   }} />
 }
 
-function TabRoute({ tab, children }: { tab: Tab; children: ReactNode }) {
-  const [location, navigate] = useLocation()
-  return <TabLayout activeTab={tab} onTabChange={(nextTab) => { const nextPath = tabPath(nextTab); if (nextPath !== location) navigate(nextPath) }}>{children}</TabLayout>
-}
 
 function PublicationRoute({ publicationKey: encodedPublicationKey, screen }: { publicationKey: string; screen: PublicationScreen }) {
   const publicationKey = decodeRouteParam(encodedPublicationKey)

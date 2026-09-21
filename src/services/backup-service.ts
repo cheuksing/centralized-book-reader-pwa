@@ -46,11 +46,12 @@ export async function importBackupFile(file: File): Promise<void> {
   const database = await getDatabase()
   const currentApp = await database.appSettings.findOne('app').exec()
   const generationName = `bookshelf-prototype-${crypto.randomUUID()}`
-  const { activateReaderDatabaseGeneration, createReaderDatabaseGeneration } = await import('@models/database/opfs-database')
-  const staged = await createReaderDatabaseGeneration(generationName)
+  const { activateReaderDatabaseGeneration, createReaderDatabaseGeneration, removeReaderDatabaseGeneration } = await import('@models/database/opfs-database')
+  let staged: Awaited<ReturnType<typeof createReaderDatabaseGeneration>> | undefined
   let activated = false
 
   try {
+    staged = await createReaderDatabaseGeneration(generationName)
     const currentAppValue = currentApp?.toJSON()
     await staged.appSettings.insert(currentAppValue
       ? { ...currentAppValue, lastBackupAt: new Date().toISOString() }
@@ -64,9 +65,12 @@ export async function importBackupFile(file: File): Promise<void> {
 
     await activateReaderDatabaseGeneration(generationName, staged)
     activated = true
-    void database.remove().catch(() => undefined)
+    void database.remove().finally(() => removeReaderDatabaseGeneration(database.name)).catch(() => undefined)
   } catch (error) {
-    if (!activated) await staged.remove().catch(() => undefined)
+    if (!activated) {
+      if (staged) await staged.remove().catch(() => undefined)
+      await removeReaderDatabaseGeneration(generationName).catch(() => undefined)
+    }
     throw error
   }
 }
@@ -74,16 +78,20 @@ export async function importBackupFile(file: File): Promise<void> {
 export async function resetLocalDatabase(): Promise<void> {
   const current = await getDatabase()
   const generationName = `bookshelf-prototype-${crypto.randomUUID()}`
-  const { activateReaderDatabaseGeneration, createReaderDatabaseGeneration } = await import('@models/database/opfs-database')
-  const replacement = await createReaderDatabaseGeneration(generationName)
+  const { activateReaderDatabaseGeneration, createReaderDatabaseGeneration, removeReaderDatabaseGeneration } = await import('@models/database/opfs-database')
+  let replacement: Awaited<ReturnType<typeof createReaderDatabaseGeneration>> | undefined
   let activated = false
 
   try {
+    replacement = await createReaderDatabaseGeneration(generationName)
     await activateReaderDatabaseGeneration(generationName, replacement)
     activated = true
-    await current.remove()
+    await current.remove().finally(() => removeReaderDatabaseGeneration(current.name))
   } catch (error) {
-    if (!activated) await replacement.remove().catch(() => undefined)
+    if (!activated) {
+      if (replacement) await replacement.remove().catch(() => undefined)
+      await removeReaderDatabaseGeneration(generationName).catch(() => undefined)
+    }
     throw error
   }
 }

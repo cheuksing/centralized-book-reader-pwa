@@ -21,6 +21,15 @@ interface Snapshot<RxDocType> {
   attachmentFiles: Record<string, string>
 }
 
+export async function removeOPFSDatabase(databaseName: string): Promise<void> {
+  const root = await navigator.storage.getDirectory()
+  try {
+    await root.removeEntry(fileSafeName(databaseName), { recursive: true })
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === 'NotFoundError')) throw error
+  }
+}
+
 export function getRxStorageOPFS(): OpfsStorage {
   const memoryStorage = getRxStorageMemory()
   return {

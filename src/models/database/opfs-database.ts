@@ -4,7 +4,7 @@ import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode'
 import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema'
 import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
 import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv'
-import { getRxStorageOPFS } from '@models/database/opfs-rx-storage'
+import { getRxStorageOPFS, removeOPFSDatabase } from '@models/database/opfs-rx-storage'
 import {
   appSettingsSchema,
   chapterCacheSchema,
@@ -77,7 +77,7 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve, reject }
 }
 
-const DEFAULT_DATABASE_NAME = 'bookshelf-prototype-v10'
+const DEFAULT_DATABASE_NAME = 'bookshelf-prototype-v11'
 const ACTIVE_DATABASE_FILE = 'bookshelf-active-generation.json'
 const ACTIVE_DATABASE_POINTER_VERSION = 2
 let databasePromise: Promise<ReaderDatabase> | undefined
@@ -103,6 +103,11 @@ export async function activateReaderDatabaseGeneration(databaseName: string, dat
   if (!/^bookshelf-prototype-[a-z0-9-]+$/.test(databaseName)) throw new Error('Invalid Bookshelf database generation name.')
   await writeActiveDatabaseName(databaseName)
   databasePromise = Promise.resolve(database)
+}
+
+export async function removeReaderDatabaseGeneration(databaseName: string): Promise<void> {
+  if (!/^bookshelf-prototype-[a-z0-9-]+$/.test(databaseName)) throw new Error('Invalid Bookshelf database generation name.')
+  await removeOPFSDatabase(databaseName)
 }
 
 export async function closeReaderDatabase(): Promise<void> {

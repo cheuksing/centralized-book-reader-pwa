@@ -59,7 +59,7 @@ export interface SourcesPageViewModel extends SourcesPageState {
 export function normalizeRemotePublication(publication: RemotePublication): LocalPublication {
   return {
     ...publication,
-    createdAt: publication.updatedAt ?? new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     coverState: 'missing',
     bookmarked: false,
     availability: 'unavailable',

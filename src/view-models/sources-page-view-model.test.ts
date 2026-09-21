@@ -57,12 +57,15 @@ function browser(overrides: Partial<SourceBrowserViewModel> = {}): SourceBrowser
 }
 
 describe('sources page view-model composition', () => {
-  it('normalizes remote publications and derives adapter capabilities outside the page template', () => {
-    const remote = { key: 'remote-key', sourceId: 'source-1', publicationId: 'remote-id', title: 'Remote title', kind: 'book' as const, updatedAt: '2026-02-02T00:00:00.000Z' }
+  it('normalizes remote publication dates for the RxDB date-time schema', () => {
+    const remote = { key: 'remote-key', sourceId: 'source-1', publicationId: 'remote-id', title: 'Remote title', kind: 'book' as const, updatedAt: '2018-05-18' }
     const state = composeSourcesPageState(management(), browser({ selectedSource: source(), publications: [remote] }), true)
+    const normalized = normalizeRemotePublication(remote)
 
-    expect(normalizeRemotePublication(remote)).toMatchObject({ key: remote.key, createdAt: remote.updatedAt, bookmarked: false, availability: 'unavailable' })
-    expect(state).toMatchObject({ userScriptReady: true, hasCatalog: true, hasSearch: true, publications: [{ remote, local: { key: remote.key, createdAt: remote.updatedAt } }] })
+    expect(normalized).toMatchObject({ key: remote.key, bookmarked: false, availability: 'unavailable' })
+    expect(normalized.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
+    expect(state).toMatchObject({ userScriptReady: true, hasCatalog: true, hasSearch: true, publications: [{ remote, local: { key: remote.key } }] })
+    expect(state.publications[0]?.local.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
   })
 
   it('returns remove success and closes the selected browser only after persistence succeeds', async () => {

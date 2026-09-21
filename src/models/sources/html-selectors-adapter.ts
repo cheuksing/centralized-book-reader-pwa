@@ -136,8 +136,8 @@ function capturePattern(value: string, pattern: string, name: string): string {
 function optionalUrl(source: SourceDocument, value: string | undefined): string | undefined {
   if (!value) return undefined
   let url: URL
-  try { url = new URL(value, source.baseUrl) } catch { throw new Error('The source returned an invalid cover URL.') }
-  if (url.protocol !== 'https:' || url.username || url.password || url.port) throw new Error('The source returned a disallowed cover URL.')
+  try { url = new URL(value, source.baseUrl) } catch { return undefined }
+  if (url.protocol !== 'https:' || url.username || url.password || url.port) return undefined
   return url.toString()
 }
 

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getReaderDatabase: vi.fn(),
   createReaderDatabaseGeneration: vi.fn(),
   activateReaderDatabaseGeneration: vi.fn(),
+  removeReaderDatabaseGeneration: vi.fn(),
   loadReaderSettings: vi.fn(),
 }))
 
@@ -14,6 +15,7 @@ vi.mock('@models/database/opfs-database', () => ({
   getReaderDatabase: mocks.getReaderDatabase,
   createReaderDatabaseGeneration: mocks.createReaderDatabaseGeneration,
   activateReaderDatabaseGeneration: mocks.activateReaderDatabaseGeneration,
+  removeReaderDatabaseGeneration: mocks.removeReaderDatabaseGeneration,
 }))
 vi.mock('@services/reader-settings-service', () => ({
   defaultReaderSettings: { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable', showArticleImages: true },
@@ -50,6 +52,7 @@ function collectionFor(initial: StoredRecord[] = [], bulkError: unknown[] = []) 
 
 function databaseFor() {
   return {
+    name: 'bookshelf-prototype-current-generation',
     appSettings: collectionFor([{ id: 'app', persistentStorageRequested: true }]).collection,
     sources: collectionFor().collection,
     publications: collectionFor().collection,
@@ -109,6 +112,7 @@ describe('backup service', () => {
     vi.clearAllMocks()
     vi.stubGlobal('crypto', { randomUUID: () => 'restore-generation' })
     mocks.loadReaderSettings.mockResolvedValue(settings)
+    mocks.removeReaderDatabaseGeneration.mockResolvedValue(undefined)
   })
 
   afterEach(() => vi.unstubAllGlobals())
@@ -196,6 +200,22 @@ describe('backup service', () => {
     expect(mocks.createReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-restore-generation')
     expect(mocks.activateReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-restore-generation', replacement)
     expect(current.remove).toHaveBeenCalledOnce()
+    expect(mocks.removeReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-current-generation')
+    expect(replacement.remove).not.toHaveBeenCalled()
+  })
+
+  it('cleans the old generation even when RxDB removal fails', async () => {
+    const current = databaseFor()
+    const replacement = databaseFor()
+    const removalFailure = new Error('database removal failed')
+    current.remove.mockRejectedValue(removalFailure)
+    mocks.getReaderDatabase.mockResolvedValue(current)
+    mocks.createReaderDatabaseGeneration.mockResolvedValue(replacement)
+    mocks.activateReaderDatabaseGeneration.mockResolvedValue(undefined)
+
+    await expect(resetLocalDatabase()).rejects.toBe(removalFailure)
+
+    expect(mocks.removeReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-current-generation')
     expect(replacement.remove).not.toHaveBeenCalled()
   })
 

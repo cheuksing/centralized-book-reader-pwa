@@ -11,6 +11,23 @@ const emptyChapters: Chapter[] = []
 const emptyReaderChapters: ReaderChapterContent[] = []
 const emptySections: ReaderSection[] = []
 
+const readerThemeOptions = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+] as const
+
+const readerLineHeightOptions = [
+  { value: 1.65, label: 'Standard' },
+  { value: 1.9, label: 'Relaxed' },
+] as const
+
+const readerContentWidthOptions = [
+  { value: 'compact', label: 'Narrow' },
+  { value: 'comfortable', label: 'Comfortable' },
+  { value: 'wide', label: 'Wide' },
+] as const
+
 type ReaderSurfaceMode = 'loading' | 'error' | 'content' | 'empty'
 
 export interface ReaderSurfaceInput {
@@ -295,15 +312,16 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
   }, [onLoadAdjacentChapter, onOpenPublication, online, publication, requestedChapterId, readerSessionMatches])
 
   const effectiveTheme = useMemo(() => settings.theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : settings.theme === 'system' ? 'light' : settings.theme, [settings.theme])
+  const isStandardLineHeight = settings.lineHeight === 1.65
   const previousAvailable = renderedChapterIndex > 0
   const nextAvailable = renderedChapterIndex < renderedChapters.length - 1 || (input.online && hasMoreChapters)
   const chapterPosition = chapter ? `Chapter ${renderedChapterIndex + 1}${chapterCountKnown ? ` of ${renderedChapters.length}` : ''}` : 'Preparing chapter'
   const chapterRemaining = chapter ? chapterCountKnown ? `${remainingChapters} ${remainingChapters === 1 ? 'chapter' : 'chapters'} remaining` : 'More chapters available' : ''
   const unavailableOffline = renderedError === 'This chapter is unavailable offline.'
 
-  const body = surface === 'loading' ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{!readerSessionMatches || input.isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button className="reader-status-exit" onClick={input.onLeave} type="button">Back to bookshelf</button></section>
-    : surface === 'error' ? <section className="reader-status" role="alert">{unavailableOffline ? <><h1>Chapter unavailable offline</h1><p>This chapter is unavailable offline. Open the chapter index to choose a cached chapter.</p><button className="primary-button" onClick={input.onOpenIndex} type="button">Open chapter index</button></> : <><h1>Could not prepare this chapter</h1><p>{renderedError}</p><button className="primary-button" onClick={input.onOpenPublication} type="button">Try again</button></>}<button className="reader-status-exit" onClick={input.onLeave} type="button">Back to bookshelf</button></section>
-    : surface === 'empty' ? <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index to choose available content.</p><button className="reader-status-exit" onClick={input.onLeave} type="button">Back to bookshelf</button></section>
+  const body = surface === 'loading' ? <section className="reader-status" aria-live="polite"><div className="loading-mark">↓</div><h1>{!readerSessionMatches || input.isLoading ? 'Opening reader' : 'Opening chapter'}</h1><p>Saved text appears first. Images are fetched through the Worker only as they approach the viewport.</p><button aria-label="Back to bookshelf" className="reader-status-exit" onClick={input.onLeave} title="Back to bookshelf" type="button"><span aria-hidden="true">‹</span></button></section>
+    : surface === 'error' ? <section className="reader-status" role="alert">{unavailableOffline ? <><h1>Chapter unavailable offline</h1><p>This chapter is unavailable offline. Open the chapter index to choose a cached chapter.</p><button className="primary-button" onClick={input.onOpenIndex} type="button">Open chapter index</button></> : <><h1>Could not prepare this chapter</h1><p>{renderedError}</p><button className="primary-button" onClick={input.onOpenPublication} type="button">Try again</button></>}<button aria-label="Back to bookshelf" className="reader-status-exit" onClick={input.onLeave} title="Back to bookshelf" type="button"><span aria-hidden="true">‹</span></button></section>
+    : surface === 'empty' ? <section className="reader-status"><h1>No chapter is available</h1><p>Open the chapter index to choose available content.</p><button aria-label="Back to bookshelf" className="reader-status-exit" onClick={input.onLeave} title="Back to bookshelf" type="button"><span aria-hidden="true">‹</span></button></section>
     : <article className="reader-content" onClick={handleReaderClick} ref={contentRef}>
       <button className="visually-hidden reader-controls-trigger" onClick={openControls} ref={controlsTriggerRef} type="button">Open reader controls</button>
       <div className="reader-virtual-canvas" ref={readerCanvasRef} style={{ height: readerVirtualizer.getTotalSize() }}>
@@ -319,16 +337,15 @@ export function useReaderUiAdapter(input: ReaderUiAdapterInput): ReaderPageModel
 
   const controls = surface === 'content' && hasContent ? <dialog aria-labelledby="reader-controls-title" className={`reader-controls-dialog${!input.controlsOpen ? ' is-closing' : ''}`} onCancel={(event) => { event.preventDefault(); closeControls() }} onClick={(event) => { if (event.target === event.currentTarget) closeControls() }} onClose={() => { if (input.controlsOpen) closeControls() }} ref={controlsRef}>
     <div className="reader-controls-panel" onAnimationEnd={finishControlsClose}>
-      <div className="reader-controls-heading"><div><p className="reader-controls-kicker">Reader controls</p><h2 id="reader-controls-title">{chapter?.title ?? 'Current chapter'}</h2><p className="reader-controls-meta">{chapterPosition} · {chapterRemaining}</p></div><button className="reader-controls-close" onClick={closeControls} type="button">Close</button></div>
-      <div className="reader-chapter-navigation"><button disabled={!previousAvailable || input.isLoadingPreviousChapter || input.isLoadingChapter} onClick={() => void navigateChapter('previous')} type="button">← Previous chapter</button><button disabled={!nextAvailable || input.isLoadingNextChapter || input.isLoadingMoreChapters || input.isLoadingChapter} onClick={() => void navigateChapter('next')} type="button">Next chapter →</button></div>
-      <button className="reader-index-button" onClick={input.onOpenIndex} type="button">Open chapter index</button>
+      <div className="reader-controls-heading"><div><p className="reader-controls-kicker">Reader controls</p><h2 id="reader-controls-title">{chapter?.title ?? 'Current chapter'}</h2><p className="reader-controls-meta">{chapterPosition} · {chapterRemaining}</p></div><button aria-label="Close reader controls" className="reader-controls-close" onClick={closeControls} title="Close" type="button"><span aria-hidden="true">×</span></button></div>
+      <nav aria-label="Chapter navigation" className="reader-chapter-navigation"><button aria-label="Previous chapter" className="reader-chapter-arrow" disabled={!previousAvailable || input.isLoadingPreviousChapter || input.isLoadingChapter} onClick={() => void navigateChapter('previous')} title="Previous chapter" type="button"><span aria-hidden="true">‹</span></button><button aria-label="Open chapter index" className="reader-index-button" onClick={input.onOpenIndex} title="Open chapter index" type="button"><span aria-hidden="true">☷</span><span>Index</span></button><button aria-label="Next chapter" className="reader-chapter-arrow" disabled={!nextAvailable || input.isLoadingNextChapter || input.isLoadingMoreChapters || input.isLoadingChapter} onClick={() => void navigateChapter('next')} title="Next chapter" type="button"><span aria-hidden="true">›</span></button></nav>
       <section className="reader-appearance" aria-labelledby="reader-appearance-title"><h3 id="reader-appearance-title">Appearance</h3><div className="reader-control-panel">
-        <label className="reader-control-group"><span>Theme</span><select aria-label="Theme" onChange={(event) => input.onSetTheme(event.target.value as ReaderSettings['theme'])} value={settings.theme}><option value="system">System default</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
-        <div className="reader-control-group"><span>Font size</span><div className="reader-control-actions"><button aria-label="Decrease font size" disabled={settings.fontSize <= 14} onClick={input.onDecreaseFontSize} type="button">A−</button><output>{settings.fontSize}px</output><button aria-label="Increase font size" disabled={settings.fontSize >= 28} onClick={input.onIncreaseFontSize} type="button">A+</button></div></div>
-        <div className="reader-control-group"><span>Line spacing</span><button aria-label="Toggle line spacing" onClick={input.onToggleLineHeight} type="button">{settings.lineHeight === 1.65 ? 'Standard' : 'Relaxed'}</button></div>
-        <label className="reader-control-group"><span>Content width</span><select aria-label="Content width" onChange={(event) => input.onSetContentWidth(event.target.value as ReaderSettings['contentWidth'])} value={settings.contentWidth}><option value="compact">Narrow</option><option value="comfortable">Comfortable</option><option value="wide">Wide</option></select></label>
+        <div className="reader-control-group"><span>Theme</span><div aria-label="Theme" className="animated-tab-strip reader-setting-tabs" data-active-tab={settings.theme} role="tablist">{readerThemeOptions.map((option) => <button aria-selected={settings.theme === option.value} className={settings.theme === option.value ? 'is-active' : ''} key={option.value} onClick={() => input.onSetTheme(option.value)} role="tab" type="button">{option.label}</button>)}</div></div>
+        <div className="reader-control-group"><span>Font size</span><div className="reader-control-actions"><button aria-label="Decrease font size" className="reader-stepper-button" disabled={settings.fontSize <= 14} onClick={input.onDecreaseFontSize} type="button"><span aria-hidden="true">A−</span></button><output>{settings.fontSize}px</output><button aria-label="Increase font size" className="reader-stepper-button" disabled={settings.fontSize >= 28} onClick={input.onIncreaseFontSize} type="button"><span aria-hidden="true">A+</span></button></div></div>
+        <div className="reader-control-group"><span>Line spacing</span><div aria-label="Line spacing" className="animated-tab-strip reader-setting-tabs reader-setting-tabs--two" data-active-tab={isStandardLineHeight ? 'standard' : 'relaxed'} role="tablist">{readerLineHeightOptions.map((option) => { const isSelected = option.value === 1.65 ? isStandardLineHeight : !isStandardLineHeight; return <button aria-selected={isSelected} className={isSelected ? 'is-active' : ''} key={option.value} onClick={() => { if (!isSelected) input.onToggleLineHeight() }} role="tab" type="button">{option.label}</button> })}</div></div>
+        <div className="reader-control-group reader-control-group--wide"><span>Content width</span><div aria-label="Content width" className="animated-tab-strip reader-setting-tabs" data-active-tab={settings.contentWidth} role="tablist">{readerContentWidthOptions.map((option) => <button aria-selected={settings.contentWidth === option.value} className={settings.contentWidth === option.value ? 'is-active' : ''} key={option.value} onClick={() => input.onSetContentWidth(option.value)} role="tab" type="button">{option.label}</button>)}</div></div>
       </div></section>
-      <button className="reader-exit-button" onClick={input.onLeave} type="button">Back to bookshelf</button>
+      <button aria-label="Back to bookshelf" className="reader-exit-button" onClick={input.onLeave} title="Back to bookshelf" type="button"><span aria-hidden="true">‹</span></button>
     </div>
   </dialog> : undefined
 

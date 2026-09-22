@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getReaderDatabase: vi.fn(),
   createReaderDatabaseGeneration: vi.fn(),
   activateReaderDatabaseGeneration: vi.fn(),
+  closeReaderDatabase: vi.fn(),
   removeReaderDatabaseGeneration: vi.fn(),
   loadReaderSettings: vi.fn(),
 }))
@@ -15,6 +16,7 @@ vi.mock('@models/database/opfs-database', () => ({
   getReaderDatabase: mocks.getReaderDatabase,
   createReaderDatabaseGeneration: mocks.createReaderDatabaseGeneration,
   activateReaderDatabaseGeneration: mocks.activateReaderDatabaseGeneration,
+  closeReaderDatabase: mocks.closeReaderDatabase,
   removeReaderDatabaseGeneration: mocks.removeReaderDatabaseGeneration,
 }))
 vi.mock('@services/reader-settings-service', () => ({
@@ -112,6 +114,7 @@ describe('backup service', () => {
     vi.clearAllMocks()
     vi.stubGlobal('crypto', { randomUUID: () => 'restore-generation' })
     mocks.loadReaderSettings.mockResolvedValue(settings)
+    mocks.closeReaderDatabase.mockResolvedValue(undefined)
     mocks.removeReaderDatabaseGeneration.mockResolvedValue(undefined)
   })
 
@@ -187,6 +190,19 @@ describe('backup service', () => {
     await vi.waitFor(() => expect(mocks.removeReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-current-generation'))
   })
 
+  it('reports imported generation cleanup failures', async () => {
+    const current = databaseFor()
+    const staged = databaseFor()
+    const cleanupFailure = new Error('old generation cleanup failed')
+    mocks.getReaderDatabase.mockResolvedValue(current)
+    mocks.createReaderDatabaseGeneration.mockResolvedValue(staged)
+    mocks.activateReaderDatabaseGeneration.mockResolvedValue(undefined)
+    mocks.removeReaderDatabaseGeneration.mockRejectedValueOnce(cleanupFailure)
+
+    await expect(importBackupFile(new File([JSON.stringify(backup())], 'backup.json'))).rejects.toBe(cleanupFailure)
+    expect(current.remove).toHaveBeenCalledOnce()
+  })
+
   it('removes a failed staged generation and never activates partial data', async () => {
     const current = databaseFor()
     const staged = databaseFor()
@@ -200,20 +216,48 @@ describe('backup service', () => {
     expect(current.remove).not.toHaveBeenCalled()
   })
 
-  it('resets local RxDB and OPFS data by activating an empty generation first', async () => {
+  it('retires the current generation before creating a replacement', async () => {
     const current = databaseFor()
     const replacement = databaseFor()
     mocks.getReaderDatabase.mockResolvedValue(current)
-    mocks.createReaderDatabaseGeneration.mockResolvedValue(replacement)
+    mocks.createReaderDatabaseGeneration.mockImplementation(async () => {
+      expect(current.remove).toHaveBeenCalledOnce()
+      expect(mocks.removeReaderDatabaseGeneration).toHaveBeenCalledWith(current.name)
+      expect(mocks.closeReaderDatabase).toHaveBeenCalledOnce()
+      return replacement
+    })
     mocks.activateReaderDatabaseGeneration.mockResolvedValue(undefined)
 
     await expect(resetLocalDatabase()).resolves.toBeUndefined()
 
     expect(mocks.createReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-restore-generation')
     expect(mocks.activateReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-restore-generation', replacement)
-    expect(current.remove).toHaveBeenCalledOnce()
-    expect(mocks.removeReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-current-generation')
     expect(replacement.remove).not.toHaveBeenCalled()
+  })
+
+  it('cleans a partially-created staged generation when import generation creation fails', async () => {
+    const current = databaseFor()
+    const creationFailure = new Error('generation creation failed')
+    mocks.getReaderDatabase.mockResolvedValue(current)
+    mocks.createReaderDatabaseGeneration.mockRejectedValue(creationFailure)
+
+    await expect(importBackupFile(new File([JSON.stringify(backup())], 'backup.json'))).rejects.toBe(creationFailure)
+
+    expect(mocks.removeReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-restore-generation')
+    expect(current.remove).not.toHaveBeenCalled()
+  })
+
+  it('cleans a partially-created replacement when generation creation fails', async () => {
+    const current = databaseFor()
+    const creationFailure = new Error('generation creation failed')
+    mocks.getReaderDatabase.mockResolvedValue(current)
+    mocks.createReaderDatabaseGeneration.mockRejectedValue(creationFailure)
+
+    await expect(resetLocalDatabase()).rejects.toBe(creationFailure)
+
+    expect(mocks.removeReaderDatabaseGeneration).toHaveBeenCalledWith('bookshelf-prototype-restore-generation')
+    expect(current.remove).toHaveBeenCalledOnce()
+    expect(mocks.closeReaderDatabase).toHaveBeenCalledOnce()
   })
 
   it('cleans the old generation even when RxDB removal fails', async () => {
@@ -241,7 +285,7 @@ describe('backup service', () => {
 
     await expect(resetLocalDatabase()).rejects.toBe(activationFailure)
     expect(replacement.remove).toHaveBeenCalledOnce()
-    expect(current.remove).not.toHaveBeenCalled()
+    expect(current.remove).toHaveBeenCalledOnce()
   })
 
   it('removes the staged generation when activation fails before replacing the current one', async () => {

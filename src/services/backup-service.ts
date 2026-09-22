@@ -65,7 +65,8 @@ export async function importBackupFile(file: File): Promise<void> {
 
     await activateReaderDatabaseGeneration(generationName, staged)
     activated = true
-    void database.remove().finally(() => removeReaderDatabaseGeneration(database.name)).catch(() => undefined)
+    await database.remove().catch(() => undefined)
+    await removeReaderDatabaseGeneration(database.name)
   } catch (error) {
     if (!activated) {
       if (staged) await staged.remove().catch(() => undefined)
@@ -78,15 +79,21 @@ export async function importBackupFile(file: File): Promise<void> {
 export async function resetLocalDatabase(): Promise<void> {
   const current = await getDatabase()
   const generationName = `bookshelf-prototype-${crypto.randomUUID()}`
-  const { activateReaderDatabaseGeneration, createReaderDatabaseGeneration, removeReaderDatabaseGeneration } = await import('@models/database/opfs-database')
+  const { activateReaderDatabaseGeneration, closeReaderDatabase, createReaderDatabaseGeneration, removeReaderDatabaseGeneration } = await import('@models/database/opfs-database')
   let replacement: Awaited<ReturnType<typeof createReaderDatabaseGeneration>> | undefined
   let activated = false
 
   try {
+    await current.remove().finally(async () => {
+      try {
+        await removeReaderDatabaseGeneration(current.name)
+      } finally {
+        await closeReaderDatabase()
+      }
+    })
     replacement = await createReaderDatabaseGeneration(generationName)
     await activateReaderDatabaseGeneration(generationName, replacement)
     activated = true
-    await current.remove().finally(() => removeReaderDatabaseGeneration(current.name))
   } catch (error) {
     if (!activated) {
       if (replacement) await replacement.remove().catch(() => undefined)

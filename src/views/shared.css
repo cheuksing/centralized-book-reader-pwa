@@ -1,0 +1,219 @@
+.eyebrow {
+  color: #5c7067;
+  font-size: .72rem;
+  font-weight: 750;
+  letter-spacing: .13em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: #68736e;
+  line-height: 1.5;
+  margin: -13px 0 25px;
+}
+
+.text-button {
+  background: none;
+  border: 0;
+  color: #346651;
+  font-size: .88rem;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 10px 4px;
+}
+
+.animated-tab-strip {
+  --tab-count: 3;
+  --tab-highlight-color: #fffdf8;
+  --tab-highlight-index: 0;
+  --tab-highlight-inset-bottom: 4px;
+  --tab-highlight-inset-inline-end: 4px;
+  --tab-highlight-inset-inline-start: 4px;
+  --tab-highlight-inset-top: 4px;
+  --tab-highlight-radius: 8px;
+  --tab-highlight-shadow: 0 2px 8px #17362d12;
+  isolation: isolate;
+  position: relative;
+}
+
+.animated-tab-strip::before {
+  background: var(--tab-highlight-color);
+  border-radius: var(--tab-highlight-radius);
+  bottom: var(--tab-highlight-inset-bottom);
+  box-shadow: var(--tab-highlight-shadow);
+  content: '';
+  left: var(--tab-highlight-inset-inline-start);
+  pointer-events: none;
+  position: absolute;
+  top: var(--tab-highlight-inset-top);
+  transform: translateX(calc(var(--tab-highlight-index) * 100%));
+  transition: transform .28s cubic-bezier(.22, 1, .36, 1);
+  width: calc((100% - var(--tab-highlight-inset-inline-start) - var(--tab-highlight-inset-inline-end)) / var(--tab-count));
+  z-index: 0;
+}
+
+.animated-tab-strip[data-active-tab='bookmarks'],
+.animated-tab-strip[data-active-tab='sources'] {
+  --tab-highlight-index: 1;
+}
+
+.animated-tab-strip[data-active-tab='settings'] {
+  --tab-highlight-index: 2;
+}
+
+.animated-tab-strip > button {
+  position: relative;
+  transition: color .2s ease, transform .18s ease;
+  z-index: 1;
+}
+
+.animated-tab-strip > button:active:not(:disabled) {
+  transform: scale(.98);
+}
+
+.round-button {
+  background: #285a49;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  flex-basis: 44px;
+  font-size: 1.55rem;
+  height: 44px;
+  min-height: 44px;
+  width: 44px;
+}
+
+.primary-button {
+  background: #285a49;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font-size: .88rem;
+  font-weight: 750;
+  margin-top: 16px;
+  min-height: 44px;
+  padding: 11px 14px;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.secondary-button,
+.danger-button {
+  background: #fff;
+  border: 1px solid #cbd9d0;
+  border-radius: 8px;
+  color: #2e644f;
+  font-size: .86rem;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.danger-button {
+  border-color: #e5c7bd;
+  color: #9a4330;
+  margin-top: 10px;
+}
+
+.button-row {
+  display: flex;
+  gap: 9px;
+}
+
+.database-error {
+  background: #fae4df;
+  border: 1px solid #e8beb3;
+  border-radius: 10px;
+  color: #843b2d;
+  font-size: .82rem;
+  line-height: 1.4;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+}
+
+.status-note {
+  color: #63736a;
+  font-size: .79rem;
+  line-height: 1.4;
+  margin: 10px 0 0;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+}
+
+.loading-mark {
+  animation: cache-pulse 1.4s ease-in-out infinite;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  display: grid;
+  font-size: 1.3rem;
+  height: 48px;
+  margin: auto;
+  place-items: center;
+  width: 48px;
+}
+
+button:focus-visible {
+  outline: 3px solid #78ae93;
+  outline-offset: 2px;
+}
+
+.detail-header,
+.index-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: max(20px, calc(20px + env(safe-area-inset-top))) max(20px, calc(20px + env(safe-area-inset-right))) 20px max(20px, calc(20px + env(safe-area-inset-left)));
+}
+
+.detail-header button,
+.index-header button {
+  background: none;
+  border: 0;
+  color: #315f4e;
+  font-size: .85rem;
+  font-weight: 750;
+  min-height: 44px;
+}
+
+.book-details-page,
+.book-index-page {
+  background: #f7f4ec;
+  margin: 0 auto;
+  max-width: 720px;
+  min-height: 100dvh;
+}
+
+@media (min-width: 721px) {
+  .book-details-page,
+  .book-index-page {
+    box-shadow: 0 0 45px #192c2414;
+  }
+}
+
+@keyframes cache-pulse {
+  50% {
+    opacity: .45;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

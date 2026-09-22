@@ -1,0 +1,14 @@
+{
+  "context_servers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest", "--headless", "--categoryExtensions"]
+    },
+    "motion": {
+        "url": "https://mcp.motion.dev"
+    },
+    "motion-plus": {
+        "url": "https://mcp.motion.dev/plus"
+    }
+  }
+}

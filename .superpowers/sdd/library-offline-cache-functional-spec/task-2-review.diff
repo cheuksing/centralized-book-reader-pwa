@@ -1,0 +1,1051 @@
+# Review package: d39dee130fe9a0abdcf9a41ef608e58ece1de37c..HEAD
+
+## Commits
+71fa612 Implement automatic offline cache preparation
+
+## Files changed
+ src/app/app.tsx                         |   2 -
+ src/services/book-content-service.ts    | 314 ++++++++++++++++++++++++++++----
+ src/services/cache-preparation.check.ts |  69 +++++++
+ src/services/cache-preparation.ts       | 155 ++++++++++++++++
+ src/view-models/reader-view-model.ts    |  56 +++++-
+ 5 files changed, 555 insertions(+), 41 deletions(-)
+
+## Diff
+diff --git a/src/app/app.tsx b/src/app/app.tsx
+index 912daa7..fce5956 100644
+--- a/src/app/app.tsx
++++ b/src/app/app.tsx
+@@ -7,39 +7,37 @@ import { BookDetailsPage } from '../views/pages/book-details-page'
+ import { BookIndexPage } from '../views/pages/book-index-page'
+ import { HomePage } from '../views/pages/home-page'
+ import { ReaderPage } from '../views/pages/reader-page'
+ import { SettingsPage } from '../views/pages/settings-page'
+ import { SourcesPage } from '../views/pages/sources-page'
+ import { WorkerSetupPage } from '../views/pages/worker-setup-page'
+ import { TabLayout } from '../views/layouts/tab-layout'
+ import { useAppViewModel } from '@app/app-store'
+ import { decodeRouteParam, tabPath, type Tab } from '@app/routes'
+ import { getLibraryPublication } from '@services/library-service'
+-import { resumeExplicitDownloads } from '@services/book-content-service'
+ import './app.scss'
+ 
+ type PublicationScreen = 'details' | 'reader' | 'index'
+ 
+ export function App() {
+   const initializeSettings = useSettingsViewModel((state) => state.initialize)
+   const settingsInitialized = useSettingsViewModel((state) => state.initialized)
+   const hasLocalData = useSettingsViewModel((state) => state.hasLocalData)
+   const workerConfigured = useSettingsViewModel((state) => state.workerConfigured)
+   const databaseError = useSettingsViewModel((state) => state.databaseError)
+   const initializeSources = useSourcesViewModel((state) => state.initialize)
+   const initializeReader = useReaderViewModel((state) => state.initialize)
+ 
+   useEffect(() => {
+     void initializeSettings()
+     void initializeReader()
+     void initializeSources()
+-    void resumeExplicitDownloads()
+   }, [initializeReader, initializeSettings, initializeSources])
+ 
+   if (!settingsInitialized) return <main className="blocking-page"><div className="loading-mark">◌</div><h1>Opening Bookshelf</h1><p>Checking local storage and the active app instance…</p></main>
+   if (databaseError) return <main className="blocking-page"><h1>Bookshelf cannot open here</h1><p>{databaseError}</p><p className="muted">Close the other Bookshelf tab or use a browser with OPFS and Web Locks support.</p></main>
+   if (!workerConfigured && !hasLocalData) return <WorkerSetupPage />
+ 
+   return <AppRoutes />
+ }
+ 
+ function AppRoutes() {
+diff --git a/src/services/book-content-service.ts b/src/services/book-content-service.ts
+index 82b030f..d08bc41 100644
+--- a/src/services/book-content-service.ts
++++ b/src/services/book-content-service.ts
+@@ -1,19 +1,41 @@
+ import type { RxDocument } from 'rxdb'
+ import type { ChapterCacheDocument, ChapterDocument, CachedResourceDocument, PublicationDocument } from '@models/database/schemas'
++import { getEvictionCandidates, getStorageEstimate, interpretStoragePressure, type CacheEvictionCandidate, type StorageEstimateInput } from '@models/cache/cache-policy'
+ import { publicationKey, resourceKey } from '@models/entities/keys'
+ import { sanitiseHtml, renderSanitisedHtml } from '@models/cache/html-sanitizer'
+ import { sourceAdapterFor } from '@models/sources/source-registry'
+ import { extractHtmlText } from '@models/sources/html-text'
+ import { fetchBlobThroughWorker } from '@services/remote-fetch-service'
+ import { enqueueImage } from '@services/image-coordinator'
+ import { removePublicationCoverIfUnused } from '@services/library-service'
++import {
++  BOOK_ARTICLE_PREPARATION_WINDOW,
++  COMIC_PREPARATION_WINDOW,
++  QUOTA_RECOVERY_SAFETY_MARGIN_BYTES,
++  READING_INTENT_DELAY_MS,
++  READING_INTENT_PROGRESS_PERCENT,
++  evictUntilSafe,
++  getChapterOpenability,
++  getUpcomingChapterKeys,
++  isQuotaStorageError,
++  preparationGate,
++  runWithBoundedQuotaRetry,
++  type ChapterOpenability,
++  type PreparationSkipReason,
++} from './cache-preparation'
++
++export { getChapterOpenability }
++export type { ChapterOpenability }
++
++export const PREPARATION_WINDOW = { book: BOOK_ARTICLE_PREPARATION_WINDOW, article: BOOK_ARTICLE_PREPARATION_WINDOW, comic: COMIC_PREPARATION_WINDOW } as const
++export const READING_INTENT = { delayMs: READING_INTENT_DELAY_MS, progressPercent: READING_INTENT_PROGRESS_PERCENT } as const
+ 
+ export interface ReaderSection {
+   id: string
+   chapterKey: string
+   resourceId: string
+   title: string
+   type: 'html' | 'image' | 'text' | 'external-link' | 'unsupported'
+   content?: string
+   objectUrl?: string
+   mimeType: string
+@@ -21,53 +43,262 @@ export interface ReaderSection {
+   cached: boolean
+ }
+ 
+ async function getDatabase() {
+   const { getReaderDatabase } = await import('@models/database/opfs-database')
+   return getReaderDatabase()
+ }
+ 
+ const resourceOperations = new Map<string, Promise<void>>()
+ const downloadOperations = new Map<string, Promise<void>>()
++const busyChapterKeys = new Set<string>()
++const volatileResources = new Map<string, { blob: Blob; mimeType: string }>()
++let nextPreparingChapterKey: string | undefined
++let preparationOperation: Promise<ChapterPreparationResult> | undefined
+ 
+-export async function loadChapterContent(publication: PublicationDocument, chapter: ChapterDocument): Promise<ReaderSection[]> {
++export interface ChapterPreparationResult {
++  status: 'completed' | 'skipped' | 'failed'
++  attempted: boolean
++  preparedChapterKeys: string[]
++  reason?: PreparationSkipReason | 'no-upcoming-chapters' | 'preparation-failed'
++  error?: string
++}
++
++export interface LoadChapterContentOptions {
++  recordAccess?: boolean
++}
++
++export async function loadChapterContent(publication: PublicationDocument, chapter: ChapterDocument, options: LoadChapterContentOptions = {}): Promise<ReaderSection[]> {
+   const database = await getDatabase()
+   const source = await database.sources.findOne(publication.sourceId).exec()
+   if (!source) throw new Error('The source for this publication is no longer installed.')
+-  let cache = (await database.chapterCaches.findOne(chapter.key).exec())
++  let cache = await database.chapterCaches.findOne(chapter.key).exec()
++  const online = isBrowserOnline()
+   if (!cache || cache.resources.length === 0) {
++    if (!online) throw new Error('This chapter is unavailable offline.')
+     const manifest = await sourceAdapterFor(source.toJSON()).getChapterManifest(source.toJSON(), publication.publicationId, chapter.chapterId)
+-    cache = await createOrMergeCache(chapter, manifest)
++    cache = await createOrMergeCache(chapter, manifest, { currentlyOpenChapterKey: chapter.key })
+   }
++  const cacheDocument = cache.toJSON() as unknown as ChapterCacheDocument
++  if (!online && !hasReadableChapterCache(cacheDocument)) throw new Error('This chapter is unavailable offline.')
+ 
+-  for (const resource of cache.resources.filter((resource) => resource.cacheable && (resource.kind === 'text' || resource.kind === 'html') && resource.state !== 'available')) {
+-    await ensureResourceCached(chapter.key, resource.sourceResourceId)
++  if (online) for (const resource of cacheDocument.resources.filter((resource) => resource.cacheable && (resource.kind === 'text' || resource.kind === 'html') && resource.state !== 'available')) {
++    try {
++      await ensureResourceCached(chapter.key, resource.sourceResourceId)
++    } catch (error) {
++      const latest = await database.chapterCaches.findOne(chapter.key).exec()
++      if (!latest || !hasReadableChapterCache(latest.toJSON() as unknown as ChapterCacheDocument)) throw error
++    }
+   }
+   const latest = await database.chapterCaches.findOne(chapter.key).exec()
+   if (!latest) throw new Error('The chapter cache disappeared while loading.')
+-  return readSections(latest.toJSON() as unknown as ChapterCacheDocument)
++  const sections = await readSections(latest.toJSON() as unknown as ChapterCacheDocument)
++  if (options.recordAccess !== false) await recordChapterAccess(chapter.key)
++  return sections
++}
++
++export function prepareUpcomingChapters(publication: PublicationDocument, chapters: readonly ChapterDocument[], currentChapterKey: string): Promise<ChapterPreparationResult> {
++  if (preparationOperation) return preparationOperation
++  const operation = prepareUpcomingChaptersNow(publication, chapters, currentChapterKey).finally(() => {
++    if (preparationOperation === operation) preparationOperation = undefined
++  })
++  preparationOperation = operation
++  return operation
+ }
+ 
+ export async function ensureResourceCached(chapterKey: string, sourceResourceId: string, priority = 0): Promise<void> {
+   const database = await getDatabase()
+   const cache = await database.chapterCaches.findOne(chapterKey).exec()
+   if (!cache) throw new Error('This chapter has no cached manifest.')
+   const resource = cache.resources.find((candidate) => candidate.sourceResourceId === sourceResourceId)
+   if (!resource || !resource.cacheable || resource.state === 'available') return
+   const run = () => cacheResource(cache.toJSON() as unknown as ChapterCacheDocument, resource)
+   const shared = resourceOperations.get(resource.id)
+   if (shared) return shared
+   const operation = resource.kind === 'image' ? enqueueImage(resource.id, run, priority) : run()
+   resourceOperations.set(resource.id, operation)
+   try { await operation } finally { if (resourceOperations.get(resource.id) === operation) resourceOperations.delete(resource.id) }
+ }
+ 
++interface CacheProtection {
++  currentlyOpenChapterKey?: string
++  nextPreparingChapterKey?: string
++}
++
++async function prepareUpcomingChaptersNow(publication: PublicationDocument, chapters: readonly ChapterDocument[], currentChapterKey: string): Promise<ChapterPreparationResult> {
++  const chapterKeys = getUpcomingChapterKeys(chapters, currentChapterKey, publication.kind)
++  if (chapterKeys.length === 0) return { status: 'skipped', attempted: false, preparedChapterKeys: [], reason: 'no-upcoming-chapters' }
++
++  let pressure = await storagePressure()
++  const environmentGate = preparationGate({ active: isAppVisible(), online: isBrowserOnline(), saveData: saveDataEnabled(), pressure: 'normal' })
++  if (!environmentGate.allowed) return { status: 'skipped', attempted: false, preparedChapterKeys: [], reason: environmentGate.reason }
++  if (pressure === 'pause') return { status: 'skipped', attempted: false, preparedChapterKeys: [], reason: 'storage-pressure' }
++  if (pressure === 'critical') await recoverCriticalStorage(currentChapterKey)
++  pressure = await storagePressure()
++  const initialGate = preparationGate({ active: isAppVisible(), online: isBrowserOnline(), saveData: saveDataEnabled(), pressure })
++  if (!initialGate.allowed) return { status: 'skipped', attempted: false, preparedChapterKeys: [], reason: initialGate.reason }
++
++  const preparedChapterKeys: string[] = []
++  for (const chapterKey of chapterKeys) {
++    pressure = await storagePressure()
++    const gate = preparationGate({ active: isAppVisible(), online: isBrowserOnline(), saveData: saveDataEnabled(), pressure })
++    if (!gate.allowed) return { status: preparedChapterKeys.length > 0 ? 'completed' : 'skipped', attempted: preparedChapterKeys.length > 0, preparedChapterKeys, reason: gate.reason }
++    const chapter = chapters.find((candidate) => candidate.key === chapterKey)
++    if (!chapter) continue
++    try {
++      await prepareChapter(publication, chapter)
++      preparedChapterKeys.push(chapter.key)
++      await safeStorageEstimate()
++    } catch (error) {
++      return {
++        status: 'failed',
++        attempted: true,
++        preparedChapterKeys,
++        reason: 'preparation-failed',
++        error: error instanceof Error ? error.message : 'Could not prepare the next chapter offline.',
++      }
++    }
++  }
++  return { status: 'completed', attempted: true, preparedChapterKeys }
++}
++
++async function prepareChapter(publication: PublicationDocument, chapter: ChapterDocument): Promise<void> {
++  const database = await getDatabase()
++  const source = await database.sources.findOne(publication.sourceId).exec()
++  if (!source) throw new Error('The source for this publication is no longer installed.')
++  busyChapterKeys.add(chapter.key)
++  nextPreparingChapterKey = chapter.key
++  try {
++    let cache = await database.chapterCaches.findOne(chapter.key).exec()
++    if (!cache || cache.resources.length === 0) {
++      const manifest = await sourceAdapterFor(source.toJSON()).getChapterManifest(source.toJSON(), publication.publicationId, chapter.chapterId)
++      cache = await createOrMergeCache(chapter, manifest, { nextPreparingChapterKey: chapter.key })
++    }
++    while (true) {
++      const latest = await database.chapterCaches.findOne(chapter.key).exec()
++      if (!latest) throw new Error('The chapter cache disappeared while preparing.')
++      const resource = latest.resources.find((candidate) => candidate.cacheable && candidate.state !== 'available')
++      if (!resource) break
++      await ensureResourceCached(chapter.key, resource.sourceResourceId, resource.kind === 'image' ? 0 : 10)
++      const updated = await database.chapterCaches.findOne(chapter.key).exec()
++      const current = updated?.resources.find((candidate) => candidate.id === resource.id)
++      if (!current || current.state === 'failed') throw new Error('The chapter could not be fully prepared offline.')
++    }
++    const latest = await database.chapterCaches.findOne(chapter.key).exec()
++    if (!latest) throw new Error('The chapter cache disappeared while preparing.')
++    const latestResources = latest.resources
++    if (latestResources.some((resource) => resource.cacheable && resource.state !== 'available')) throw new Error('The chapter could not be fully prepared offline.')
++    await withQuotaRecovery(chapter.key, () => latest.patch({ state: 'available', updatedAt: new Date().toISOString() }), 0, { nextPreparingChapterKey: chapter.key })
++  } finally {
++    busyChapterKeys.delete(chapter.key)
++    if (nextPreparingChapterKey === chapter.key) nextPreparingChapterKey = undefined
++  }
++}
++
++async function recoverCriticalStorage(currentlyOpenChapterKey?: string): Promise<void> {
++  await evictUntilSafe<CacheEvictionCandidate>({
++    getEstimate: safeStorageEstimate,
++    getCandidates: () => getDatabaseEvictionCandidates({ currentlyOpenChapterKey }),
++    getKey: (candidate) => candidate.key,
++    remove: (candidate) => removeEvictionCandidate(candidate.key),
++    mode: 'critical',
++  })
++}
++
++async function withQuotaRecovery<T>(chapterKey: string, operation: () => Promise<T>, requiredBytes: number, protection: CacheProtection = {}): Promise<T> {
++  return runWithBoundedQuotaRetry(operation, async () => {
++    await evictUntilSafe<CacheEvictionCandidate>({
++      getEstimate: safeStorageEstimate,
++      getCandidates: () => getDatabaseEvictionCandidates({ ...protection, busyChapterKeys: new Set(busyChapterKeys).add(chapterKey) }),
++      getKey: (candidate) => candidate.key,
++      remove: (candidate) => removeEvictionCandidate(candidate.key),
++      mode: 'quota',
++      requiredBytes,
++      safetyMarginBytes: QUOTA_RECOVERY_SAFETY_MARGIN_BYTES,
++    })
++  })
++}
++
++async function getDatabaseEvictionCandidates(protection: CacheProtection & { busyChapterKeys?: ReadonlySet<string> } = {}): Promise<CacheEvictionCandidate[]> {
++  const database = await getDatabase()
++  const [caches, chapters] = await Promise.all([database.chapterCaches.find().exec(), database.chapters.find().exec()])
++  const chapterByKey = new Map(chapters.map((chapter) => [chapter.key, chapter]))
++  const busy = new Set(protection.busyChapterKeys)
++  busyChapterKeys.forEach((key) => busy.add(key))
++  return getEvictionCandidates(caches.map((cache) => ({
++    key: cache.key,
++    state: cache.state,
++    createdAt: cache.createdAt,
++    updatedAt: cache.updatedAt,
++    lastAccessedAt: cache.lastAccessedAt,
++    removedFromSource: chapterByKey.get(cache.key)?.removedFromSource,
++    attachmentIds: cache.resources.map((resource) => resource.id),
++  })), {
++    currentlyOpenChapterKey: protection.currentlyOpenChapterKey,
++    busyChapterKeys: busy,
++    nextPreparingChapterKey: protection.nextPreparingChapterKey ?? nextPreparingChapterKey,
++  })
++}
++
++async function removeEvictionCandidate(chapterKey: string): Promise<void> {
++  const database = await getDatabase()
++  const cache = await database.chapterCaches.findOne(chapterKey).exec()
++  if (cache) {
++    clearVolatileResources(cache.resources)
++    await cache.remove()
++  }
++  const job = await database.downloadJobs.findOne(chapterKey).exec()
++  if (job) await job.remove()
++}
++
++async function storagePressure() {
++  return interpretStoragePressure(await safeStorageEstimate())
++}
++
++async function safeStorageEstimate(): Promise<StorageEstimateInput | undefined> {
++  if (typeof navigator === 'undefined') return undefined
++  try { return await getStorageEstimate() } catch { return undefined }
++}
++
++function isBrowserOnline(): boolean {
++  return typeof navigator === 'undefined' || navigator.onLine !== false
++}
++
++function isAppVisible(): boolean {
++  return typeof document === 'undefined' || document.visibilityState === 'visible'
++}
++
++function saveDataEnabled(): boolean {
++  if (typeof navigator === 'undefined') return false
++  const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
++  return connection?.saveData === true
++}
++
++function hasReadableChapterCache(cache: ChapterCacheDocument): boolean {
++  return cache.resources.some((resource) => resource.cacheable && (resource.state === 'available' || volatileResources.has(resource.id)))
++}
++
++function clearVolatileResources(resources: readonly CachedResourceDocument[]): void {
++  resources.forEach((resource) => volatileResources.delete(resource.id))
++}
++
++async function recordChapterAccess(chapterKey: string): Promise<void> {
++  try {
++    const database = await getDatabase()
++    const cache = await database.chapterCaches.findOne(chapterKey).exec()
++    if (cache) await withQuotaRecovery(chapterKey, () => cache.patch({ lastAccessedAt: new Date().toISOString() }), 0, { currentlyOpenChapterKey: chapterKey })
++  } catch {
++    // Access metadata is advisory and must not block an otherwise successful open.
++  }
++}
++
++// Compatibility surface for the pre-Task-4 screens; automatic preparation never calls this or writes downloadJobs.
+ export function downloadChapter(chapterKey: string): Promise<void> {
+   const existing = downloadOperations.get(chapterKey)
+   if (existing) return existing
+ 
+   const operation = downloadChapterNow(chapterKey).finally(() => {
+     if (downloadOperations.get(chapterKey) === operation) downloadOperations.delete(chapterKey)
+   })
+   downloadOperations.set(chapterKey, operation)
+   return operation
+ }
+@@ -132,21 +363,24 @@ export async function cancelDownload(chapterKey: string): Promise<void> {
+   const job = await database.downloadJobs.findOne(chapterKey).exec()
+   if (job) await job.patch({ state: 'cancelled', updatedAt: new Date().toISOString() })
+   const cache = await database.chapterCaches.findOne(chapterKey).exec()
+   if (cache) await cache.patch({ state: cache.resources.some((resource) => resource.state === 'available') ? 'partial' : 'not-downloaded', updatedAt: new Date().toISOString() })
+ }
+ 
+ export async function deleteChapterCache(chapterKey: string): Promise<void> {
+   const database = await getDatabase()
+   const cache = await database.chapterCaches.findOne(chapterKey).exec()
+   const publicationKeyValue = cache ? publicationKey(cache.sourceId, cache.publicationId) : undefined
+-  if (cache) await cache.remove()
++  if (cache) {
++    clearVolatileResources(cache.resources)
++    await cache.remove()
++  }
+   const job = await database.downloadJobs.findOne(chapterKey).exec()
+   if (job) await job.remove()
+   const chapter = await database.chapters.findOne(chapterKey).exec()
+   if (chapter) await chapter.patch({ updateAvailable: false })
+   if (publicationKeyValue) await removePublicationCoverIfUnused(publicationKeyValue)
+ }
+ 
+ export async function resumeExplicitDownloads(): Promise<void> {
+   const database = await getDatabase()
+   const jobs = await database.downloadJobs.find({ selector: { state: { $in: ['queued', 'downloading', 'failed'] } } }).exec()
+@@ -167,126 +401,144 @@ interface CacheManifestResource {
+   label?: string
+   textSelector?: string
+ }
+ 
+ interface CacheManifest {
+   chapterKey: string
+   sourceRevision?: string
+   resources: CacheManifestResource[]
+ }
+ 
+-async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManifest): Promise<RxDocument<ChapterCacheDocument>> {
++async function createOrMergeCache(chapter: ChapterDocument, manifest: CacheManifest, protection: CacheProtection = {}): Promise<RxDocument<ChapterCacheDocument>> {
+   const database = await getDatabase()
+   const existing = await database.chapterCaches.findOne(chapter.key).exec()
+   const existingByResource = new Map(existing?.resources.map((resource) => [resource.sourceResourceId, resource]))
+   const resources: CachedResourceDocument[] = manifest.resources.map((resource) => {
+     const previous = existingByResource.get(resource.resourceId)
+     return previous && previous.url === resource.url && previous.textSelector === resource.textSelector
+       ? previous
+       : { id: resource.key, sourceResourceId: resource.resourceId, url: resource.url, kind: resource.kind, mimeType: resource.mimeType, label: resource.label, textSelector: resource.textSelector, state: 'pending', cacheable: resource.kind !== 'external-link' }
+   })
+   const now = new Date().toISOString()
+   if (existing) {
+     const nextIds = new Set(resources.map((resource) => resource.id))
+     await Promise.all(existing.resources.filter((resource) => !nextIds.has(resource.id)).map(async (resource) => {
+       const attachment = existing.getAttachment(resource.id)
+       if (attachment) await attachment.remove()
+     }))
+-    await existing.patch({ resources, sourceRevision: manifest.sourceRevision, updatedAt: now, state: cacheState(resources) })
++    await withQuotaRecovery(chapter.key, () => existing.patch({ resources, sourceRevision: manifest.sourceRevision, updatedAt: now, state: cacheState(resources) }), 0, protection)
+     return existing
+   }
+-  return database.chapterCaches.insert({
++  return withQuotaRecovery(chapter.key, () => database.chapterCaches.insert({
+     key: chapter.key,
+     sourceId: chapter.sourceId,
+     publicationId: chapter.publicationId,
+     chapterId: chapter.chapterId,
+     sourceRevision: manifest.sourceRevision,
+     state: cacheState(resources),
+     resources,
+     receivedBytes: 0,
+     createdAt: now,
+     updatedAt: now,
+-  })
++  }), 0, protection)
+ }
+ 
+ async function cacheResource(cache: ChapterCacheDocument, resource: CachedResourceDocument): Promise<void> {
+   const database = await getDatabase()
+   const source = await database.sources.findOne(cache.sourceId).exec()
+   if (!source) throw new Error('The source for this cache is no longer installed.')
+   const document = await database.chapterCaches.findOne(cache.key).exec()
+   if (!document) throw new Error('The chapter cache no longer exists.')
+   const current = document.resources.find((candidate) => candidate.id === resource.id)
+   if (!current || !current.cacheable || current.state === 'available') return
+-  await document.patch({ resources: document.resources.map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'downloading' } : candidate), state: 'downloading', updatedAt: new Date().toISOString() })
++  busyChapterKeys.add(cache.key)
++  let storedBlob: Blob | undefined
++  let storedMimeType: string | undefined
+   try {
++    await withQuotaRecovery(cache.key, () => document.patch({ resources: document.resources.map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'downloading' } : candidate), state: 'downloading', updatedAt: new Date().toISOString() }), 0, { currentlyOpenChapterKey: cache.key })
+     const expectedContentTypes = resource.textSelector ? ['text/html', 'application/xhtml+xml'] : resource.kind === 'html' ? ['text/html', 'application/xhtml+xml'] : resource.kind === 'image' ? ['image/'] : ['text/plain', 'text/markdown']
+     const { blob, contentType } = await fetchBlobThroughWorker(resource.url, undefined, expectedContentTypes)
+-    let storedBlob = blob
++    storedBlob = blob
+     let discovered: CachedResourceDocument[] = []
+     if (resource.textSelector) {
+       storedBlob = new Blob([extractHtmlText(await blob.text(), resource.textSelector)], { type: 'text/plain' })
+     } else if (resource.kind === 'html') {
+       const sanitized = sanitiseHtml(await blob.text(), resource.url)
+       storedBlob = new Blob([sanitized.html], { type: 'text/html' })
+       discovered = sanitized.images.map((image) => ({
+         id: resourceKey(cache.sourceId, cache.publicationId, cache.chapterId, image.resourceId),
+         sourceResourceId: image.resourceId,
+         url: image.url,
+         kind: 'image' as const,
+         label: image.label,
+         state: 'pending' as const,
+         cacheable: true,
+       }))
+     }
+-    const storedMimeType = resource.textSelector ? 'text/plain' : contentType ?? resource.mimeType ?? mimeTypeFromUrl(resource.url)
+-    await document.putAttachment({ id: resource.id, type: storedMimeType, data: storedBlob })
+-    const latest = await database.chapterCaches.findOne(cache.key).exec()
+-    if (!latest) throw new Error('The chapter cache disappeared while storing content.')
+-    const merged = mergeResources(latest.resources, discovered)
+-    const updated = merged.map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'available' as const, mimeType: storedMimeType, byteLength: storedBlob.size } : candidate)
+-    await latest.patch({ resources: updated, receivedBytes: updated.reduce((sum, candidate) => sum + (candidate.byteLength ?? 0), 0), state: cacheState(updated), updatedAt: new Date().toISOString() })
++    storedMimeType = resource.textSelector ? 'text/plain' : contentType ?? resource.mimeType ?? mimeTypeFromUrl(resource.url)
++    if (!storedBlob || !storedMimeType) throw new Error('The fetched resource could not be prepared.')
++    const committedBlob = storedBlob
++    const committedMimeType = storedMimeType
++    await withQuotaRecovery(cache.key, async () => {
++      await document.putAttachment({ id: resource.id, type: committedMimeType, data: committedBlob })
++      const latest = await database.chapterCaches.findOne(cache.key).exec()
++      if (!latest) throw new Error('The chapter cache disappeared while storing content.')
++      const merged = mergeResources(latest.resources, discovered)
++      const updated = merged.map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'available' as const, mimeType: committedMimeType, byteLength: committedBlob.size } : candidate)
++      await latest.patch({ resources: updated, receivedBytes: updated.reduce((sum, candidate) => sum + (candidate.byteLength ?? 0), 0), state: cacheState(updated), updatedAt: new Date().toISOString() })
++    }, committedBlob.size, { currentlyOpenChapterKey: cache.key })
++    volatileResources.delete(resource.id)
+   } catch (error) {
++    if (isQuotaStorageError(error) && storedBlob && storedMimeType) volatileResources.set(resource.id, { blob: storedBlob, mimeType: storedMimeType })
+     const latest = await database.chapterCaches.findOne(cache.key).exec()
+-    if (latest) await latest.patch({ resources: latest.resources.map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'failed' as const } : candidate), state: cacheState(latest.resources.map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'failed' as const } : candidate)), updatedAt: new Date().toISOString() })
+-    throw error
++    if (latest) {
++      const failedResources = latest.resources.map((candidate) => candidate.id === resource.id ? { ...candidate, state: 'failed' as const } : candidate)
++      try { await latest.patch({ resources: failedResources, state: cacheState(failedResources), updatedAt: new Date().toISOString() }) } catch { /* Preserve the last committed cache state when storage is full. */ }
++    }
++    if (!isQuotaStorageError(error) || !storedBlob) throw error
++  } finally {
++    busyChapterKeys.delete(cache.key)
+   }
+ }
+ 
+ async function readSections(cache: ChapterCacheDocument): Promise<ReaderSection[]> {
+   const objectUrlByResourceId = new Map<string, string>()
+   const blobById = new Map<string, Blob>()
+   const document = await getDatabase().then((database) => database.chapterCaches.findOne(cache.key).exec())
+   if (!document) throw new Error('The chapter cache no longer exists.')
+-  for (const resource of cache.resources.filter((candidate) => candidate.state === 'available')) {
+-    const attachment = document.getAttachment(resource.id)
+-    if (!attachment) continue
+-    const blob = await attachment.getData()
++  for (const resource of cache.resources.filter((candidate) => candidate.state === 'available' || volatileResources.has(candidate.id))) {
++    const volatile = volatileResources.get(resource.id)
++    const attachment = volatile ? undefined : document.getAttachment(resource.id)
++    if (!volatile && !attachment) continue
++    const blob = volatile?.blob ?? await attachment!.getData()
+     blobById.set(resource.id, blob)
+     if (resource.kind === 'image') objectUrlByResourceId.set(resource.sourceResourceId, URL.createObjectURL(blob))
+   }
+   const sections: ReaderSection[] = []
+   for (const resource of cache.resources) {
+     const blob = blobById.get(resource.id)
++    const volatile = volatileResources.get(resource.id)
++    const mimeType = volatile?.mimeType ?? resource.mimeType
+     const title = resource.label || titleFromUrl(resource.url, resource.sourceResourceId)
+     if (!resource.cacheable) {
+-      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'external-link', content: resource.url, mimeType: resource.mimeType ?? 'text/uri-list', url: resource.url, cached: false })
++      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'external-link', content: resource.url, mimeType: mimeType ?? 'text/uri-list', url: resource.url, cached: false })
+       continue
+     }
+     if (resource.kind === 'image') {
+-      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'image', objectUrl: objectUrlByResourceId.get(resource.sourceResourceId), mimeType: resource.mimeType ?? mimeTypeFromUrl(resource.url), url: resource.url, cached: Boolean(blob) })
++      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'image', objectUrl: objectUrlByResourceId.get(resource.sourceResourceId), mimeType: mimeType ?? mimeTypeFromUrl(resource.url), url: resource.url, cached: Boolean(blob) })
+     } else if (resource.kind === 'html' && blob) {
+       const html = renderSanitisedHtml(await blob.text(), objectUrlByResourceId)
+-      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'html', content: html, mimeType: resource.mimeType ?? 'text/html', url: resource.url, cached: true })
++      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'html', content: html, mimeType: mimeType ?? 'text/html', url: resource.url, cached: true })
+     } else if (resource.kind === 'text' && blob) {
+-      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'text', content: await blob.text(), mimeType: resource.mimeType ?? 'text/plain', url: resource.url, cached: true })
++      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'text', content: await blob.text(), mimeType: mimeType ?? 'text/plain', url: resource.url, cached: true })
+     } else {
+-      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'unsupported', mimeType: resource.mimeType ?? 'application/octet-stream', url: resource.url, cached: false })
++      sections.push({ id: resource.sourceResourceId, chapterKey: cache.key, resourceId: resource.sourceResourceId, title, type: 'unsupported', mimeType: mimeType ?? 'application/octet-stream', url: resource.url, cached: false })
+     }
+   }
+   return sections
+ }
+ 
+ async function upsertDownloadJob(chapterKey: string) {
+   const database = await getDatabase()
+   const existing = await database.downloadJobs.findOne(chapterKey).exec()
+   const cache = await database.chapterCaches.findOne(chapterKey).exec()
+   const pending = cache?.resources.filter((resource) => resource.cacheable && resource.state !== 'available').map((resource) => resource.sourceResourceId) ?? []
+diff --git a/src/services/cache-preparation.check.ts b/src/services/cache-preparation.check.ts
+new file mode 100644
+index 0000000..2eb7e61
+--- /dev/null
++++ b/src/services/cache-preparation.check.ts
+@@ -0,0 +1,69 @@
++import {
++  evictUntilSafe,
++  getChapterOpenability,
++  getUpcomingChapterKeys,
++  preparationGate,
++  runWithBoundedQuotaRetry,
++} from './cache-preparation.js'
++
++function assert(condition: unknown, message: string): asserts condition {
++  if (!condition) throw new Error(message)
++}
++
++assert(preparationGate({ active: true, online: true, saveData: false, pressure: 'normal' }).allowed, 'normal active apps may prepare')
++assert(!preparationGate({ active: true, online: false, saveData: false, pressure: 'normal' }).allowed, 'offline apps must not prepare')
++assert(!preparationGate({ active: true, online: true, saveData: true, pressure: 'normal' }).allowed, 'Save-Data apps must not prepare')
++assert(!preparationGate({ active: true, online: true, saveData: false, pressure: 'pause' }).allowed, 'pause pressure must gate preparation')
++assert(!preparationGate({ active: true, online: true, saveData: false, pressure: 'critical' }).allowed, 'critical pressure must gate preparation')
++assert(preparationGate({ active: true, online: true, saveData: false, pressure: 'unknown' }).allowed, 'unknown estimates must not block ordinary reading/preparation')
++
++const chapters = [
++  { key: 'chapter-3', order: 3 },
++  { key: 'chapter-1', order: 1 },
++  { key: 'chapter-2', order: 2 },
++  { key: 'chapter-4', order: 4 },
++  { key: 'chapter-5', order: 5 },
++]
++assert(getUpcomingChapterKeys(chapters, 'chapter-1', 'book').join(',') === 'chapter-2,chapter-3,chapter-4', 'books must prepare the next three chapters in source order')
++assert(getUpcomingChapterKeys(chapters, 'chapter-1', 'comic').join(',') === 'chapter-2', 'comics must prepare only the next chapter')
++
++const cached = { state: 'partial' as const, resources: [{ id: 'text', sourceResourceId: 'text', url: 'https://example.test/text', kind: 'text' as const, state: 'available' as const, cacheable: true }] }
++assert(getChapterOpenability({ removedFromSource: false }, cached, false).canOpen, 'readable partial caches must remain openable offline')
++assert(!getChapterOpenability({ removedFromSource: false }, undefined, false).canOpen, 'uncached chapters must be unavailable offline')
++assert(getChapterOpenability({ removedFromSource: true }, cached, false).reason === 'cached', 'removed chapters with a readable cache must remain openable')
++assert(!getChapterOpenability({ removedFromSource: true }, undefined, true).canOpen, 'removed chapters without a cache must not require a dead source')
++
++let estimateIndex = 0
++const estimates = [{ usage: 96, quota: 100 }, { usage: 95, quota: 100 }]
++const candidates = [{ key: 'oldest' }, { key: 'newer' }]
++const evicted: string[] = []
++const recovery = await evictUntilSafe({
++  getEstimate: async () => estimates[estimateIndex++] ?? estimates.at(-1),
++  getCandidates: () => candidates.filter((candidate) => !evicted.includes(candidate.key)),
++  getKey: (candidate) => candidate.key,
++  remove: async (candidate) => { evicted.push(candidate.key) },
++  mode: 'critical',
++})
++assert(recovery.stoppedBecause === 'pressure-cleared' && evicted.join(',') === 'oldest', 'critical recovery must evict one candidate and stop when pressure clears')
++
++let attempts = 0
++let recoveries = 0
++const recovered = await runWithBoundedQuotaRetry(async () => {
++  attempts += 1
++  if (attempts === 1) throw { name: 'QuotaExceededError' }
++  return 'saved'
++}, async () => { recoveries += 1 })
++assert(recovered === 'saved' && attempts === 2 && recoveries === 1, 'quota recovery must retry the logical write exactly once')
++
++let failedAttempts = 0
++try {
++  await runWithBoundedQuotaRetry(async () => {
++    failedAttempts += 1
++    throw { name: 'QuotaExceededError' }
++  }, async () => undefined)
++  throw new Error('a second quota failure must reject')
++} catch (error) {
++  assert(failedAttempts === 2 && (error as { name?: string }).name === 'QuotaExceededError', 'quota recovery must remain bounded after a failed retry')
++}
++
++console.log('cache preparation checks passed')
+diff --git a/src/services/cache-preparation.ts b/src/services/cache-preparation.ts
+new file mode 100644
+index 0000000..205e5ad
+--- /dev/null
++++ b/src/services/cache-preparation.ts
+@@ -0,0 +1,155 @@
++import type { ChapterCacheDocument, ChapterDocument, PublicationKind } from '../models/database/schemas.js'
++import {
++  interpretStoragePressure,
++  type StorageEstimateInput,
++  type StoragePressure,
++} from '../models/cache/cache-policy.js'
++
++export const READING_INTENT_DELAY_MS = 20_000
++export const READING_INTENT_PROGRESS_PERCENT = 20
++export const BOOK_ARTICLE_PREPARATION_WINDOW = 3
++export const COMIC_PREPARATION_WINDOW = 1
++export const QUOTA_RECOVERY_SAFETY_MARGIN_BYTES = 1_048_576
++
++export type PreparationSkipReason = 'inactive' | 'offline' | 'save-data' | 'storage-pressure'
++
++export interface PreparationGateInput {
++  active?: boolean
++  online?: boolean
++  saveData?: boolean
++  pressure: StoragePressure
++}
++
++export interface PreparationGateResult {
++  allowed: boolean
++  reason?: PreparationSkipReason
++}
++
++export function preparationGate(input: PreparationGateInput): PreparationGateResult {
++  if (input.active === false) return { allowed: false, reason: 'inactive' }
++  if (input.online === false) return { allowed: false, reason: 'offline' }
++  if (input.saveData === true) return { allowed: false, reason: 'save-data' }
++  if (input.pressure === 'pause' || input.pressure === 'critical') return { allowed: false, reason: 'storage-pressure' }
++  return { allowed: true }
++}
++
++export function preparationWindowFor(kind: PublicationKind): number {
++  return kind === 'comic' ? COMIC_PREPARATION_WINDOW : BOOK_ARTICLE_PREPARATION_WINDOW
++}
++
++export function getUpcomingChapterKeys(chapters: readonly Pick<ChapterDocument, 'key' | 'order'>[], currentChapterKey: string, kind: PublicationKind): string[] {
++  const current = chapters.find((chapter) => chapter.key === currentChapterKey)
++  if (!current) return []
++  return [...chapters]
++    .filter((chapter) => chapter.order > current.order)
++    .sort((left, right) => left.order - right.order || left.key.localeCompare(right.key))
++    .slice(0, preparationWindowFor(kind))
++    .map((chapter) => chapter.key)
++}
++
++export interface ChapterOpenability {
++  canOpen: boolean
++  availableOffline: boolean
++  requiresNetwork: boolean
++  cacheState: ChapterCacheDocument['state'] | 'not-downloaded'
++  reason: 'online' | 'cached' | 'unavailable-offline' | 'removed-from-source'
++}
++
++export function hasReadableCachedContent(cache: Pick<ChapterCacheDocument, 'resources'> | undefined): boolean {
++  return Boolean(cache?.resources.some((resource) => resource.cacheable && resource.state === 'available'))
++}
++
++export function getChapterOpenability(
++  chapter: Pick<ChapterDocument, 'removedFromSource'>,
++  cache: Pick<ChapterCacheDocument, 'state' | 'resources'> | undefined,
++  online = true,
++): ChapterOpenability {
++  const availableOffline = hasReadableCachedContent(cache)
++  const canOpen = chapter.removedFromSource ? availableOffline : online || availableOffline
++  const reason = chapter.removedFromSource
++    ? availableOffline ? 'cached' : 'removed-from-source'
++    : canOpen && availableOffline && !online ? 'cached' : canOpen ? 'online' : 'unavailable-offline'
++  return {
++    canOpen,
++    availableOffline,
++    requiresNetwork: !availableOffline && !chapter.removedFromSource,
++    cacheState: cache?.state ?? 'not-downloaded',
++    reason,
++  }
++}
++
++export interface BoundedEvictionOptions<T> {
++  getEstimate: () => Promise<StorageEstimateInput | undefined>
++  getCandidates: () => readonly T[] | Promise<readonly T[]>
++  getKey: (candidate: T) => string
++  remove: (candidate: T) => Promise<void>
++  mode: 'critical' | 'quota'
++  requiredBytes?: number
++  safetyMarginBytes?: number
++  maxEvictions?: number
++}
++
++export interface BoundedEvictionResult<T> {
++  evicted: T[]
++  estimate?: StorageEstimateInput
++  stoppedBecause: 'enough-space' | 'pressure-cleared' | 'no-estimate' | 'no-candidates' | 'remove-failed' | 'max-evictions'
++}
++
++export async function evictUntilSafe<T>(options: BoundedEvictionOptions<T>): Promise<BoundedEvictionResult<T>> {
++  const evicted: T[] = []
++  const attempted = new Set<string>()
++  const maxEvictions = options.maxEvictions ?? 100
++  let estimate = await safeEstimate(options.getEstimate)
++
++  for (let attempt = 0; attempt < maxEvictions; attempt += 1) {
++    if (isSafe(estimate, options.mode, options.requiredBytes, options.safetyMarginBytes)) {
++      return { evicted, estimate, stoppedBecause: options.mode === 'critical' ? 'pressure-cleared' : 'enough-space' }
++    }
++    if (!estimate && evicted.length > 0) return { evicted, estimate, stoppedBecause: 'no-estimate' }
++
++    const candidate = (await options.getCandidates()).find((entry) => !attempted.has(options.getKey(entry)))
++    if (!candidate) return { evicted, estimate, stoppedBecause: 'no-candidates' }
++    attempted.add(options.getKey(candidate))
++    try {
++      await options.remove(candidate)
++    } catch {
++      return { evicted, estimate, stoppedBecause: 'remove-failed' }
++    }
++    evicted.push(candidate)
++    estimate = await safeEstimate(options.getEstimate)
++  }
++
++  return { evicted, estimate, stoppedBecause: 'max-evictions' }
++}
++
++export async function runWithBoundedQuotaRetry<T>(operation: () => Promise<T>, recover: () => Promise<void>): Promise<T> {
++  try {
++    return await operation()
++  } catch (error) {
++    if (!isQuotaStorageError(error)) throw error
++    await recover()
++    return operation()
++  }
++}
++
++export function isQuotaStorageError(error: unknown): boolean {
++  if (typeof error !== 'object' || error === null) return false
++  const candidate = error as { name?: unknown; code?: unknown; message?: unknown }
++  const name = typeof candidate.name === 'string' ? candidate.name : ''
++  const message = typeof candidate.message === 'string' ? candidate.message : ''
++  return name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED' || candidate.code === 22 || /quota|storage(?:\s+capacity)?\s+(?:is\s+)?full|no space left/i.test(message)
++}
++
++function isSafe(estimate: StorageEstimateInput | undefined, mode: BoundedEvictionOptions<unknown>['mode'], requiredBytes = 0, safetyMarginBytes = 0): boolean {
++  if (!estimate || !Number.isFinite(estimate.usage) || !Number.isFinite(estimate.quota) || estimate.usage === undefined || estimate.quota === undefined || estimate.quota <= 0 || estimate.usage < 0) return false
++  if (mode === 'critical') return interpretStoragePressure(estimate) !== 'critical'
++  return estimate.quota - estimate.usage >= requiredBytes + safetyMarginBytes
++}
++
++async function safeEstimate(getEstimate: () => Promise<StorageEstimateInput | undefined>): Promise<StorageEstimateInput | undefined> {
++  try {
++    return await getEstimate()
++  } catch {
++    return undefined
++  }
++}
+diff --git a/src/view-models/reader-view-model.ts b/src/view-models/reader-view-model.ts
+index 8be4cf8..175bf1c 100644
+--- a/src/view-models/reader-view-model.ts
++++ b/src/view-models/reader-view-model.ts
+@@ -1,14 +1,14 @@
+ import { create } from 'zustand'
+ import type { ChapterDocument, ReadingLocator } from '@models/database/schemas'
+ import type { Chapter, Publication, ReaderSettings } from '@models/entities/domain'
+-import { loadChapterContent, releaseBookContent, ensureResourceCached, type ReaderSection } from '@services/book-content-service'
++import { loadChapterContent, prepareUpcomingChapters, releaseBookContent, ensureResourceCached, READING_INTENT, type ReaderSection } from '@services/book-content-service'
+ import { enterReader, getLibraryPublication, saveReadingProgress } from '@services/library-service'
+ import { loadReaderSettings, saveReaderSettings } from '@services/reader-settings-service'
+ import { getLocalChapters, getSourceForPublication, syncPublication } from '@services/publication-sync-service'
+ 
+ const initialSettings: ReaderSettings = { theme: 'system', fontSize: 18, lineHeight: 1.65, contentWidth: 'comfortable' }
+ 
+ // ponytail: keep loaded chapters in-session for stable bidirectional scroll; add windowing after measuring long-book memory pressure.
+ export interface ReaderChapterContent {
+   chapter: Chapter
+   sections: ReaderSection[]
+@@ -60,20 +60,51 @@ let progressVersion = 0
+ function chapterPercentage(index: number, count: number): number { return count <= 1 ? 0 : Math.round((index / (count - 1)) * 100) }
+ 
+ function locatorFor(section: ReaderSection, sectionIndex: number, sectionCount: number): ReadingLocator {
+   const percentage = chapterPercentage(sectionIndex, sectionCount)
+   if (section.type === 'image') return { type: 'image', chapterId: section.chapterKey, resourceId: section.resourceId, verticalFraction: 0, chapterPercentage: percentage }
+   const exact = section.type === 'text' ? (section.content ?? '').slice(0, 80) : ''
+   return { type: 'text', chapterId: section.chapterKey, resourceId: section.resourceId, characterOffset: 0, quote: { exact }, chapterPercentage: percentage }
+ }
+ 
+ let progressWrite: Promise<void> = Promise.resolve()
++let readingIntentTimer: number | undefined
++let readingIntentChapterKey: string | undefined
++let preparationRequestedChapterKey: string | undefined
++
++function resetReadingIntent(): void {
++  if (readingIntentTimer !== undefined) window.clearTimeout(readingIntentTimer)
++  readingIntentTimer = undefined
++  readingIntentChapterKey = undefined
++  preparationRequestedChapterKey = undefined
++}
++
++function beginReadingIntentTimer(publication: Publication, chapterKey: string): void {
++  if (readingIntentTimer !== undefined) window.clearTimeout(readingIntentTimer)
++  readingIntentChapterKey = chapterKey
++  readingIntentTimer = window.setTimeout(() => {
++    if (readingIntentChapterKey === chapterKey) void establishReadingIntent(publication, chapterKey)
++  }, READING_INTENT.delayMs)
++}
++
++async function establishReadingIntent(publication: Publication, chapterKey: string): Promise<void> {
++  const current = useReaderViewModel.getState()
++  if (current.publicationKey !== publication.key || current.chapters[current.chapterIndex]?.key !== chapterKey || preparationRequestedChapterKey === chapterKey) return
++  preparationRequestedChapterKey = chapterKey
++  await prepareUpcomingChapters(publication, current.chapters, chapterKey).catch(() => undefined)
++}
++
++function maybeEstablishReadingIntent(publication: Publication, chapterId: string, chapterPercentage: number): void {
++  if (chapterPercentage < READING_INTENT.progressPercent) return
++  const chapter = useReaderViewModel.getState().chapters.find((candidate) => candidate.chapterId === chapterId)
++  if (chapter) void establishReadingIntent(publication, chapter.key)
++}
+ 
+ function queueProgress(publication: Publication, locator: ReadingLocator) {
+   pendingProgress = { publication, locator }
+   progressVersion += 1
+   if (progressTimer !== undefined) window.clearTimeout(progressTimer)
+   progressTimer = window.setTimeout(() => { void flushProgress().catch(() => undefined) }, 250)
+ }
+ 
+ async function flushProgress() {
+   if (progressTimer !== undefined) window.clearTimeout(progressTimer)
+@@ -128,20 +159,21 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
+     const readerPublication = requestedChapterId ? publication : await getLibraryPublication(publication.key).catch(() => undefined) ?? publication
+     await enterReader(readerPublication)
+     const key = readerPublication.key
+     const current = get()
+     if (current.publicationKey === key && (current.isLoading || current.isLoadingChapter || current.chapters.length > 0)) {
+       if (requestedChapterId && current.chapters[current.chapterIndex]?.chapterId !== requestedChapterId) await get().selectChapter(readerPublication, requestedChapterId)
+       else if (requestedChapterId) set({ resumeLocator: undefined, sectionIndex: 0 })
+       return
+     }
+     releaseReaderChapters(current.readerChapters)
++    resetReadingIntent()
+     const chapterNextCursor = current.chapterCursorPublicationKey === key ? current.chapterNextCursor : undefined
+     const resumeLocator = requestedChapterId ? undefined : readerPublication.progress?.locator
+     set({ publicationKey: key, chapters: [], chapterIndex: 0, chapterNextCursor, chapterCursorPublicationKey: key, isLoadingMoreChapters: false, readerChapters: [], sections: [], sectionIndex: 0, resumeLocator, isLoading: true, isLoadingChapter: false, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
+     try {
+       let chapters = await getLocalChapters(key)
+       if (get().publicationKey !== key) return
+       const targetId = requestedChapterId ?? readerPublication.progress?.locator.chapterId
+       const paginationKnown = current.chapterCursorPublicationKey === key
+       let source = chapters.length === 0 || !paginationKnown ? await getSourceForPublication(key) : undefined
+       let cursor = paginationKnown ? get().chapterNextCursor : undefined
+@@ -167,35 +199,37 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
+         chapters = await getLocalChapters(key)
+         cursor = synced.nextCursor === cursor ? undefined : synced.nextCursor
+       }
+       set({ chapterNextCursor: cursor, chapterCursorPublicationKey: key })
+       const targetIndex = targetId ? Math.max(0, chapters.findIndex((chapter) => chapter.chapterId === targetId)) : 0
+       const chapterIndex = targetIndex >= 0 ? targetIndex : 0
+       const chapter = chapters[chapterIndex]
+       if (!chapter) throw new Error('No chapter is available.')
+       set({ chapters: chapters.map((chapter) => ({ ...chapter })), chapterIndex, readerChapters: [{ chapter, sections: [], loading: true }], isLoading: false, isLoadingChapter: true })
+       const locator = requestedChapterId ? undefined : readerPublication.progress?.locator
+-      await loadChapter(readerPublication, chapter, locator)
++      await loadChapter(readerPublication, chapter, false, locator)
+     } catch (error) {
+       if (get().publicationKey === key) set({ error: error instanceof Error ? error.message : 'Could not open this publication.', isLoading: false, isLoadingChapter: false })
+     }
+   },
+   selectChapter: async (publication, chapterId) => {
+     if (get().publicationKey !== publication.key) return
+     const index = get().chapters.findIndex((chapter) => chapter.chapterId === chapterId)
+     if (index < 0) return
++    const forwardNavigation = index > get().chapterIndex
+     await flushProgress()
+     if (get().publicationKey !== publication.key) return
+     const chapter = get().chapters[index]
++    resetReadingIntent()
+     releaseReaderChapters(get().readerChapters)
+     set({ chapterIndex: index, readerChapters: [{ chapter, sections: [], loading: true }], sections: [], resumeLocator: undefined, isLoadingChapter: true, isLoadingPreviousChapter: false, isLoadingNextChapter: false, error: undefined })
+-    await loadChapter(publication, chapter)
++    await loadChapter(publication, chapter, forwardNavigation)
+   },
+   selectAdjacentChapter: async (publication, direction, chapterId) => {
+     const delta = direction === 'previous' ? -1 : 1
+     const sourceIndex = get().chapters.findIndex((chapter) => chapter.chapterId === chapterId)
+     if (sourceIndex < 0) return undefined
+     const targetIndex = sourceIndex + delta
+     if (targetIndex < 0) return undefined
+     while (targetIndex >= get().chapters.length) {
+       const state = get()
+       if (state.chapterCursorPublicationKey !== publication.key || !state.chapterNextCursor) return undefined
+@@ -230,21 +264,21 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
+     const existing = get().readerChapters.find((entry) => entry.chapter.key === target.key)
+     if (existing?.loading) return undefined
+     if (existing && !existing.error) return target.chapterId
+     if (direction === 'previous' ? get().isLoadingPreviousChapter : get().isLoadingNextChapter) return undefined
+     const loadingEntry: ReaderChapterContent = { chapter: target, sections: existing?.sections ?? [], loading: true }
+     const readerChapters = existing
+       ? updateReaderChapter(get().readerChapters, target.key, () => loadingEntry)
+       : direction === 'previous' ? [loadingEntry, ...get().readerChapters] : [...get().readerChapters, loadingEntry]
+     set(direction === 'previous' ? { readerChapters, isLoadingPreviousChapter: true } : { readerChapters, isLoadingNextChapter: true })
+     try {
+-      const sections = await loadChapterContent(publication, target)
++      const sections = await loadChapterContent(publication, target, { recordAccess: false })
+       const current = get()
+       if (current.publicationKey !== publication.key || !current.readerChapters.some((entry) => entry.chapter.key === target.key)) {
+         releaseBookContent(sections)
+         return undefined
+       }
+       set({ readerChapters: updateReaderChapter(current.readerChapters, target.key, () => ({ chapter: target, sections, loading: false })), error: undefined })
+       return target.chapterId
+     } catch (error) {
+       const message = error instanceof Error ? error.message : `Could not load the ${direction} chapter.`
+       if (get().publicationKey === publication.key) set({ readerChapters: updateReaderChapter(get().readerChapters, target.key, (entry) => ({ ...entry, loading: false, error: message })) })
+@@ -272,44 +306,47 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
+     }
+   },
+   selectSection: (publication, index) => {
+     const { chapterIndex, chapters, readerChapters } = get()
+     const chapter = chapters[chapterIndex]
+     const entry = chapter ? readerChapters.find((candidate) => candidate.chapter.key === chapter.key) : undefined
+     const sections = entry?.sections ?? get().sections
+     if (index < 0 || index >= sections.length) return
+     set({ sectionIndex: index })
+     const section = sections[index]
+-    queueProgress(publication, { ...locatorFor(section, index, sections.length), chapterId: chapter?.chapterId ?? section.chapterKey })
++    const nextLocator = { ...locatorFor(section, index, sections.length), chapterId: chapter?.chapterId ?? section.chapterKey }
++    queueProgress(publication, nextLocator)
++    maybeEstablishReadingIntent(publication, nextLocator.chapterId, nextLocator.chapterPercentage)
+     window.scrollTo({ top: 0, behavior: 'smooth' })
+   },
+   ensureImage: async (publication, chapterKey, sourceResourceId, priority = 100) => {
+     const entry = get().readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
+     if (!entry) return
+     try {
+       await ensureResourceCached(chapterKey, sourceResourceId, priority)
+       const current = get()
+       const latestEntry = current.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
+       if (current.publicationKey !== publication.key || !latestEntry) return
+-      const sections = await loadChapterContent(publication, latestEntry.chapter)
++      const sections = await loadChapterContent(publication, latestEntry.chapter, { recordAccess: false })
+       const next = get()
+       const currentEntry = next.readerChapters.find((candidate) => candidate.chapter.key === chapterKey)
+       if (next.publicationKey !== publication.key || !currentEntry) {
+         releaseBookContent(sections)
+         return
+       }
+       const active = next.chapters[next.chapterIndex]?.key === chapterKey
+       releaseBookContent(currentEntry.sections)
+       set({ readerChapters: updateReaderChapter(next.readerChapters, chapterKey, () => ({ chapter: currentEntry.chapter, sections, loading: false })), ...(active ? { sections } : {}) })
+     } catch (error) { set({ error: error instanceof Error ? error.message : 'Could not load this image.' }) }
+   },
+   closeBook: () => {
++    resetReadingIntent()
+     void flushProgress().catch(() => undefined)
+     releaseReaderChapters(get().readerChapters)
+     set({ publicationKey: undefined, chapters: [], chapterNextCursor: undefined, chapterCursorPublicationKey: undefined, isLoadingMoreChapters: false, readerChapters: [], isLoadingPreviousChapter: false, isLoadingNextChapter: false, sections: [], chapterIndex: 0, sectionIndex: 0, resumeLocator: undefined, isLoading: false, isLoadingChapter: false, error: undefined })
+   },
+   flushProgress,
+   setTheme: (theme) => {
+     const settings = { ...get().settings, theme }
+     set({ settings }); void saveReaderSettings(settings)
+   },
+   decreaseFontSize: () => {
+@@ -329,34 +366,37 @@ export const useReaderViewModel = create<ReaderViewModel>((set, get) => ({
+     set({ settings }); void saveReaderSettings(settings)
+   },
+   updateVisibleSection: (publication, chapterId, index, locator) => {
+     const { chapters, readerChapters } = get()
+     const chapterIndex = chapters.findIndex((chapter) => chapter.chapterId === chapterId)
+     const entry = readerChapters.find((candidate) => candidate.chapter.chapterId === chapterId)
+     const section = entry?.sections[index]
+     if (chapterIndex < 0 || !section) return
+     const nextLocator = locator ?? locatorFor(section, index, entry.sections.length)
+     set({ chapterIndex, sectionIndex: index, sections: entry.sections, resumeLocator: nextLocator })
+-    queueProgress(publication, { ...nextLocator, chapterId })
++    queueProgress(publication, nextLocator)
++    maybeEstablishReadingIntent(publication, chapterId, nextLocator.chapterPercentage)
+   },
+ }))
+ 
+-async function loadChapter(publication: Publication, chapter: ChapterDocument, locator?: ReadingLocator): Promise<void> {
++async function loadChapter(publication: Publication, chapter: ChapterDocument, establishIntent = false, locator?: ReadingLocator): Promise<void> {
+   try {
+     const sections = await loadChapterContent(publication, chapter)
+     const current = useReaderViewModel.getState()
+     const entry = current.readerChapters.find((candidate) => candidate.chapter.key === chapter.key)
+     if (current.publicationKey !== publication.key || !entry) {
+       releaseBookContent(sections)
+       return
+     }
+     const requestedResource = locator?.chapterId === chapter.chapterId ? locator.resourceId : undefined
+     const sectionIndex = requestedResource ? Math.max(0, sections.findIndex((section) => section.resourceId === requestedResource)) : 0
+     const firstLocator = !locator && sections[sectionIndex] ? { ...locatorFor(sections[sectionIndex], sectionIndex, sections.length), chapterId: chapter.chapterId } : undefined
+     useReaderViewModel.setState({ readerChapters: updateReaderChapter(current.readerChapters, chapter.key, () => ({ chapter: entry.chapter, sections, loading: false })), sections, sectionIndex, isLoadingChapter: false, error: undefined, ...(firstLocator ? { resumeLocator: firstLocator } : {}) })
++    beginReadingIntentTimer(publication, chapter.key)
++    if (establishIntent) void establishReadingIntent(publication, chapter.key)
+     if (firstLocator) queueProgress(publication, firstLocator)
+   } catch (error) {
+     const message = error instanceof Error ? error.message : 'Could not load this chapter.'
+     const current = useReaderViewModel.getState()
+     if (current.publicationKey === publication.key) useReaderViewModel.setState({ readerChapters: updateReaderChapter(current.readerChapters, chapter.key, (entry) => ({ ...entry, loading: false, error: message })), isLoadingChapter: false, error: message })
+   }
+ }

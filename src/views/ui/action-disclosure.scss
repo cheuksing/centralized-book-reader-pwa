@@ -1,0 +1,41 @@
+.action-disclosure {
+  border: 1px solid #d2ddd5;
+  border-radius: 8px;
+  width: 100%;
+
+  summary {
+    color: #346651;
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 700;
+    min-height: 44px;
+    padding: 11px 12px;
+
+    &:focus-visible {
+      outline: 3px solid #78ae93;
+      outline-offset: 2px;
+    }
+  }
+
+  &[open] summary {
+    border-bottom: 1px solid #dce2d9;
+  }
+}
+
+.action-disclosure-content {
+  padding: 4px 10px 8px;
+}
+
+@media (min-width: 521px) {
+  .action-disclosure {
+    width: auto;
+
+    summary {
+      white-space: nowrap;
+    }
+  }
+
+  .action-disclosure-content {
+    padding: 4px 0 0;
+  }
+}

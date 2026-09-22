@@ -1,0 +1,899 @@
+# Review package: ebe75dbe3265f6a7d567310f8957f01e3418dc6a..HEAD
+
+## Commits
+a62a068 Implement Library offline cache projection
+
+## Files changed
+ .../task-3-report.md                               | 247 +++++++++++++++++++++
+ src/models/cache/cache-policy.check.ts             |   1 +
+ src/models/database/schemas.ts                     |   5 +
+ src/models/entities/domain.ts                      |   4 +-
+ src/services/library-service.ts                    |  35 ++-
+ src/services/publication-sync-service.ts           |  10 +-
+ src/view-models/home-view-model.ts                 |   5 +-
+ src/views/layouts/tab-layout.tsx                   |   4 +-
+ src/views/pages/home-page.scss                     |  42 +---
+ src/views/pages/home-page.tsx                      |  60 ++---
+ 10 files changed, 317 insertions(+), 96 deletions(-)
+
+## Diff
+diff --git a/.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md b/.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md
+new file mode 100644
+index 0000000..be0c4e5
+--- /dev/null
++++ b/.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md
+@@ -0,0 +1,247 @@
++# Task 3 implementation report
++
++## Status
++
++Implemented and committed; the final commit hash is returned in the completion status.
++
++Task 3 owns the Library projection and visible Library/navigation surfaces. It does not change `app.tsx` or the reader index/details/reader screens.
++
++## Files changed
++
++Implementation files:
++
++- `src/models/database/schemas.ts`
++  - Added optional `PublicationDocument` metadata:
++    - `chapterIndexKnowledge?: 'complete' | 'has-more' | 'unknown'`
++    - `knownChapterCount?: number`
++  - The fields are optional so existing publications and older backups remain readable; no destructive migration or database-generation reset is needed.
++
++- `src/models/entities/domain.ts`
++  - Changed `CurrentChapter.remaining` to the existing policy `RemainingCount` shape and made it optional for unknown totals.
++  - Added optional `CurrentChapter.readyAhead`.
++
++- `src/services/publication-sync-service.ts`
++  - Persists pagination knowledge after every chapter-index page is written.
++  - A returned `nextCursor` persists `chapterIndexKnowledge: 'has-more'`.
++  - A page without `nextCursor` persists `chapterIndexKnowledge: 'complete'`.
++  - Persists the number of non-removed chapter rows known after the write as `knownChapterCount`.
++  - Does not claim a complete total from a partial page.
++
++- `src/services/library-service.ts`
++  - Removed `downloads` from `LibrarySnapshot`; cache documents remain part of the projection because reader availability and ready-ahead still depend on them.
++  - Joins chapter cache state to chapter-index rows by chapter key.
++  - Uses `calculateRemainingCount` for exact/lower-bound/omitted projection behavior.
++  - Uses `countReadyAhead` for later, same-publication chapters whose cache state is exactly `available`.
++  - Omits `remaining` when the total is unknown/invalid and omits `readyAhead` when it is zero or there is no current chapter.
++  - Preserves the existing bookmark, history, progress, cover, availability, cache, and pruning operations.
++
++- `src/view-models/home-view-model.ts`
++  - Removed the obsolete Downloads projection from the view-model state and snapshot mapping.
++
++- `src/views/pages/home-page.tsx`
++  - Changed the screen heading to exactly `Your library`.
++  - Reduced the views to Recent and Saved, with no item counts and no Downloads view.
++  - Removed the page-level Clear Recent action and dialog.
++  - Retained `Remove from recent` in the Recent row context menu.
++  - Added the exact empty-state copy:
++    - `No recent publications`
++    - `Publications appear here after you start reading.`
++    - `No saved publications`
++    - `Save a publication from Browse to find it here.`
++  - Rows now show title, current chapter, exact/lower-bound remaining text, positive ready-ahead text, and quiet author metadata.
++  - Removed row availability/download status copy and publication-kind text while retaining the cover visual and whole-row Read/resume action.
++
++- `src/views/pages/home-page.scss`
++  - Removed count-pill, three-tab, Clear Recent, and download-badge styling.
++  - Added restrained positive styling for the ready-ahead indicator.
++
++- `src/views/layouts/tab-layout.tsx`
++  - Changed only visible labels from `Home` to `Library` and `Sources` to `Browse`.
++  - Internal tab IDs and route compatibility remain unchanged.
++
++- `src/models/cache/cache-policy.check.ts`
++  - Added an executable no-current-chapter ready-ahead assertion alongside the existing exact, lower-bound, unknown, partial-cache, and same-publication policy checks.
++
++Report file:
++
++- `.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md`
++  - This path is ignored by `.superpowers/sdd/.gitignore`; it is force-added intentionally because the task explicitly requires the report at this path.
++
++Not changed:
++
++- `src/app/app.tsx`
++- `src/views/pages/book-index-page.tsx`
++- `src/views/pages/book-details-page.tsx`
++- `src/views/pages/reader-page.tsx`
++- `src/views/layouts/tab-layout.scss`
++
++The existing Graphify working-tree changes were refreshed but are intentionally not part of the implementation commit.
++
++## Behavior decisions
++
++### Remaining chapter counts
++
++The projection does not use `chapters.length` as a publication total. It passes persisted `knownChapterCount`, the current chapter position, and persisted `chapterIndexKnowledge` to `calculateRemainingCount`:
++
++- `complete` produces `{ kind: 'exact', count }`, rendered as `N remaining`.
++- `has-more` produces `{ kind: 'lower-bound', count }`, rendered as `N+ remaining`.
++- `unknown`, missing metadata, missing current chapter, or invalid arithmetic omits the indicator.
++
++Old publications that have not been synchronized with the new writer intentionally omit the count instead of presenting a guessed total.
++
++### Ready ahead
++
++The projection passes the current chapter and per-chapter cache states to `countReadyAhead`. Only later chapters with the same `sourceId`, `publicationId`, and cache state `available` count. Partial, downloading, failed, queued, and unrelated-publication entries do not count. A zero result is omitted.
++
++### Library information architecture
++
++The visible Library surface is now:
++
++- Stable heading: `Your library`
++- Views: `Recent`, `Saved`
++- No item counts
++- No Downloads view
++- No page-level Clear Recent action
++- Recent row context action: `Remove from recent`
++
++The row remains the primary Read/resume action. Bookmark toggling and chapter-index navigation remain secondary context-menu actions.
++
++### Persistence independence
++
++Removing a Recent entry still calls `removeHistoryEntry`, which removes only the history entry and prunes publication metadata only when no bookmark, progress, or cache concern retains it. The implementation does not call `clearHistory` from the page, does not delete progress, does not delete bookmarks, and does not delete chapter caches. Cache availability remains in the domain projection for other screens even though Library no longer displays it as a badge.
++
++### Navigation compatibility
++
++The bottom navigation still uses internal tab IDs `home`, `sources`, and `settings`; only visible text changed to `Library`, `Browse`, and `Settings`. No route or `app.tsx` change was required.
++
++## Checks and commands
++
++### Focused executable checks
++
++Commands:
++
++```text
++node_modules/.bin/esbuild src/models/cache/cache-policy.check.ts --bundle --platform=node --format=esm --outfile=dist/cache-policy.check.mjs --tsconfig=tsconfig.app.json && node dist/cache-policy.check.mjs
++node_modules/.bin/esbuild src/services/cache-preparation.check.ts --bundle --platform=node --format=esm --outfile=dist/cache-preparation.check.mjs --tsconfig=tsconfig.app.json && node dist/cache-preparation.check.mjs
++```
++
++Outputs:
++
++```text
++dist/cache-policy.check.mjs  6.7kb
++⚡ Done in 9ms
++cache policy checks passed
++
++dist/cache-preparation.check.mjs  10.8kb
++⚡ Done in 4ms
++cache preparation checks passed
++```
++
++The bundles are emitted below ignored `dist/` only to execute the repository's assertion-based TypeScript checks with the configured path aliases.
++
++### Build
++
++Command:
++
++```text
++npm run build
++```
++
++Output summary:
++
++```text
++> pwa@0.0.0 build
++> tsc -b && vite build
++
++▲ [WARNING] Proxy environment variables detected. We'll use your proxy for fetch requests.
++The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option.
++✓ 1019 modules transformed.
++✓ built in 358ms
++PWA v1.3.0
++mode      generateSW
++precache  13 entries (768.11 KiB)
++files generated
++  dist/sw.js
++  dist/workbox-9c191d2f.js
++```
++
++Exit code: `0`.
++
++### Lint
++
++Command:
++
++```text
++npm run lint
++```
++
++Output:
++
++```text
++> pwa@0.0.0 lint
++> oxlint
++
++Found 0 warnings and 0 errors.
++Finished in 37ms on 56 files with 116 rules using 12 threads.
++```
++
++Exit code: `0`.
++
++### Changed-file diagnostics
++
++The editor diagnostics check was run for every changed source file. Each returned:
++
++```text
++Diagnostics successfully refreshed.
++File doesn't have errors or warnings!
++```
++
++The project-wide diagnostics summary still reports one existing configuration diagnostic each for `package.json`, `.cursor/mcp.json`, and `.mcp.json`; none is in the changed source files.
++
++### Whitespace check
++
++Command:
++
++```text
++git --no-pager diff --check -- src/models/cache/cache-policy.check.ts src/models/database/schemas.ts src/models/entities/domain.ts src/services/library-service.ts src/services/publication-sync-service.ts src/view-models/home-view-model.ts src/views/layouts/tab-layout.tsx src/views/pages/home-page.scss src/views/pages/home-page.tsx
++```
++
++Output: no output; exit code `0`.
++
++### Graph refresh
++
++Command:
++
++```text
++graphify update .
++```
++
++Output summary:
++
++```text
++AST extraction: 59/59 uncached files (100%) [12 workers]
++warning: 3 source file(s) produced zero nodes and are absent from the graph: settings.json, czbooks.json, skills-lock.json.
++Rebuilt: 1104 nodes, 1502 edges, 99 communities
++graph.json, graph.html and GRAPH_REPORT.md updated in graphify-out
++Code graph updated.
++```
++
++The three zero-node warnings are configuration/non-source artifacts and are unrelated to Task 3. The refreshed Graphify files remain unstaged.
++
++## Self-review
++
++- The diff does not touch `app.tsx` or Task 4 reader screens.
++- Internal route/tab IDs remain unchanged.
++- No new dependency or persistence collection was added.
++- Existing policy helpers are reused instead of duplicating exact/lower-bound/ready-ahead rules.
++- Existing independent bookmark, history, progress, cover, and cache operations remain in place.
++- The visible Library no longer contains the obsolete greeting, Download view, counts, Clear Recent action, availability badges, kind text, or download instructions.
++- The projection omits unknown totals rather than inferring a complete total from locally present rows.
++
++## Concerns
++
++- Existing publications without the new sync metadata will not show a remaining count until their chapter index is synchronized; omission is intentional and safer than guessing.
++- No browser-level OPFS/RxDB integration test was added. The executable checks cover policy/projection-adjacent edge cases, while actual pagination persistence and cache joins still require a browser-backed scenario.
++- The persisted count is the non-removed chapter rows known after each pagination write. A source changing its index while pages are being fetched can make that persisted lower bound stale until a later synchronization; it is never presented as complete while `nextCursor` exists.
++- `graphify update .` left the existing/generated `graphify-out/.graphify_labels.json`, `.graphify_labels.json.sig`, `GRAPH_REPORT.md`, `graph.html`, and `graph.json` changes in the working tree. They are deliberately not staged.
++- The project-wide diagnostics tool still reports unrelated configuration diagnostics in `package.json`, `.cursor/mcp.json`, and `.mcp.json`; build, lint, and all changed-file diagnostics are clean.
+diff --git a/src/models/cache/cache-policy.check.ts b/src/models/cache/cache-policy.check.ts
+index fc83186..62d62bd 100644
+--- a/src/models/cache/cache-policy.check.ts
++++ b/src/models/cache/cache-policy.check.ts
+@@ -23,20 +23,21 @@ const readyAhead = countReadyAhead(
+   { sourceId: 'source', publicationId: 'publication', order: 2 },
+   [
+     { sourceId: 'source', publicationId: 'publication', order: 1, cacheState: 'available' },
+     { sourceId: 'source', publicationId: 'publication', order: 3, cacheState: 'available' },
+     { sourceId: 'source', publicationId: 'publication', order: 4, cacheState: 'partial' },
+     { sourceId: 'other', publicationId: 'publication', order: 5, cacheState: 'available' },
+     { sourceId: 'source', publicationId: 'publication', order: 6, cacheState: 'available' },
+   ],
+ )
+ assert(readyAhead === 2, 'ready-ahead must only count later available chapters from the same publication')
++assert(countReadyAhead(undefined, [{ sourceId: 'source', publicationId: 'publication', order: 3, cacheState: 'available' }]) === 0, 'ready-ahead must be omitted when there is no current chapter')
+ 
+ const evictionCandidates = [
+   { key: 'never-opened', state: 'available', createdAt: '2024-01-01T00:00:00.000Z' },
+   { key: 'accessed-b', state: 'available', lastAccessedAt: '2024-02-01T00:00:00.000Z' },
+   { key: 'partial', state: 'partial', updatedAt: '2024-03-01T00:00:00.000Z' },
+   { key: 'accessed-a', state: 'available', lastAccessedAt: '2024-02-01T00:00:00.000Z' },
+ ] satisfies CacheEvictionCandidate[]
+ assert(orderEvictionCandidates(evictionCandidates).map((candidate) => candidate.key).join(',') === 'partial,accessed-a,accessed-b,never-opened', 'eviction ordering must prioritize partial caches, then LRU, then never-opened caches with stable key ties')
+ 
+ const protectedCandidates = [
+diff --git a/src/models/database/schemas.ts b/src/models/database/schemas.ts
+index ff5e2ec..4249c66 100644
+--- a/src/models/database/schemas.ts
++++ b/src/models/database/schemas.ts
+@@ -3,20 +3,23 @@ import type { RxJsonSchema } from 'rxdb'
+ 
+ FormatRegistry.Set('uri', (value) => {
+   try { return Boolean(new URL(value).protocol) } catch { return false }
+ })
+ 
+ export const publicationKindSchema = Type.Unsafe<'book' | 'article' | 'comic'>(Type.String({ enum: ['book', 'article', 'comic'], maxLength: 7 }))
+ export const resourceKindSchema = Type.Unsafe<'text' | 'html' | 'image' | 'external-link'>(Type.String({ enum: ['text', 'html', 'image', 'external-link'], maxLength: 13 }))
+ export const cacheStateSchema = Type.Unsafe<'not-downloaded' | 'queued' | 'downloading' | 'partial' | 'available' | 'failed'>(Type.String({
+   enum: ['not-downloaded', 'queued', 'downloading', 'partial', 'available', 'failed'], maxLength: 14,
+ }))
++export const chapterIndexKnowledgeSchema = Type.Unsafe<'complete' | 'has-more' | 'unknown'>(Type.String({
++  enum: ['complete', 'has-more', 'unknown'], maxLength: 8,
++}))
+ export const resourceStateSchema = Type.Unsafe<'pending' | 'downloading' | 'available' | 'failed'>(Type.String({
+   enum: ['pending', 'downloading', 'available', 'failed'], maxLength: 11,
+ }))
+ export const downloadJobStateSchema = Type.Unsafe<'queued' | 'downloading' | 'paused' | 'failed' | 'completed' | 'cancelled'>(Type.String({
+   enum: ['queued', 'downloading', 'paused', 'failed', 'completed', 'cancelled'], maxLength: 11,
+ }))
+ export type PublicationKind = Static<typeof publicationKindSchema>
+ export type ResourceKind = Static<typeof resourceKindSchema>
+ export type CacheState = Static<typeof cacheStateSchema>
+ export type DownloadState = Static<typeof downloadJobStateSchema>
+@@ -174,20 +177,22 @@ export const defaultGenericJsonAdapter: GenericJsonAdapterConfig = {
+ 
+ export const PublicationDocumentSchema = Type.Object({
+   key: Type.String({ minLength: 1, maxLength: 500 }),
+   sourceId: Type.String({ minLength: 1, maxLength: 100 }),
+   publicationId: Type.String({ minLength: 1, maxLength: 200 }),
+   title: Type.String({ minLength: 1, maxLength: 500 }),
+   author: Type.Optional(Type.String()),
+   description: Type.Optional(Type.String()),
+   coverUrl: Type.Optional(Type.String({ format: 'uri', maxLength: 2000 })),
+   kind: publicationKindSchema,
++  chapterIndexKnowledge: Type.Optional(chapterIndexKnowledgeSchema),
++  knownChapterCount: Type.Optional(Type.Integer({ minimum: 0, maximum: 1_000_000_000, multipleOf: 1 })),
+   updatedAt: Type.Optional(Type.String({ maxLength: 40 })),
+   createdAt: Type.String({ format: 'date-time', maxLength: 40 }),
+   coverState: Type.Unsafe<'missing' | 'downloading' | 'available' | 'failed'>(Type.String({ enum: ['missing', 'downloading', 'available', 'failed'] })),
+ }, { additionalProperties: false })
+ export type PublicationDocument = Static<typeof PublicationDocumentSchema>
+ 
+ export const ChapterDocumentSchema = Type.Object({
+   key: Type.String({ minLength: 1, maxLength: 700 }),
+   sourceId: Type.String({ minLength: 1, maxLength: 100 }),
+   publicationId: Type.String({ minLength: 1, maxLength: 200 }),
+diff --git a/src/models/entities/domain.ts b/src/models/entities/domain.ts
+index 60c0518..b1a038f 100644
+--- a/src/models/entities/domain.ts
++++ b/src/models/entities/domain.ts
+@@ -1,10 +1,11 @@
++import type { RemainingCount } from '@models/cache/cache-policy'
+ import type {
+   AppSettingsDocument,
+   ChapterCacheDocument,
+   ChapterDocument,
+   DownloadJobDocument,
+   PublicationBookmarkDocument,
+   PublicationDocument,
+   ReadingHistoryDocument,
+ 
+   ReadingProgressDocument,
+@@ -12,21 +13,22 @@ import type {
+   SourceDocument,
+ } from '@models/database/schemas'
+ 
+ export type { ReadingLocator, ReadingImageLocator, ReadingTextLocator } from '@models/database/schemas'
+ export type { PublicationKind, ResourceKind, CacheState, DownloadState } from '@models/database/schemas'
+ export type { CacheEvictionCandidate, CacheEvictionProtection, ChapterIndexKnowledge, ReadyAheadChapter, RemainingCount, RemainingCountInput, StorageEstimateInput, StoragePressure } from '@models/cache/cache-policy'
+ 
+ export interface CurrentChapter {
+   title: string
+   number: number
+-  remaining: number
++  remaining?: RemainingCount
++  readyAhead?: number
+ }
+ 
+ export type Publication = PublicationDocument & {
+   bookmarked: boolean
+   historyOpenedAt?: string
+   progress?: ReadingProgress
+   currentChapter?: CurrentChapter
+   availability: 'available' | 'partial' | 'unavailable'
+ }
+ export type Chapter = ChapterDocument & {
+diff --git a/src/services/library-service.ts b/src/services/library-service.ts
+index c68244d..231dfb3 100644
+--- a/src/services/library-service.ts
++++ b/src/services/library-service.ts
+@@ -1,25 +1,25 @@
+-import type { ChapterDocument, PublicationBookmarkDocument, PublicationDocument, ReadingLocator } from '@models/database/schemas'
++import type { CacheState, ChapterDocument, PublicationBookmarkDocument, PublicationDocument, ReadingLocator } from '@models/database/schemas'
++import { calculateRemainingCount, countReadyAhead } from '@models/cache/cache-policy'
+ import type { Publication } from '@models/entities/domain'
+ import { persistPublication } from '@services/publication-sync-service'
+ import { fetchBlobThroughWorker } from '@services/remote-fetch-service'
+ 
+ async function getDatabase() {
+   const { getReaderDatabase } = await import('@models/database/opfs-database')
+   return getReaderDatabase()
+ }
+ 
+ export interface LibrarySnapshot {
+   publications: Publication[]
+   bookmarks: Publication[]
+   recent: Publication[]
+-  downloads: Publication[]
+ }
+ 
+ export async function listLibrary(): Promise<LibrarySnapshot> {
+   const database = await getDatabase()
+   const [publicationDocuments, bookmarkDocuments, historyDocuments, progressDocuments, cacheDocuments, chapterDocuments] = await Promise.all([
+     database.publications.find({ selector: {} }).exec(),
+     database.publicationBookmarks.find({ selector: {} }).exec(),
+     database.readingHistory.find({ selector: {} }).sort('openedAt').exec(),
+     database.readingProgress.find({ selector: {} }).exec(),
+     database.chapterCaches.find({ selector: {} }).exec(),
+@@ -37,26 +37,29 @@ export async function listLibrary(): Promise<LibrarySnapshot> {
+   })
+   chaptersByPublication.forEach((chapters) => chapters.sort((left, right) => left.order - right.order))
+   const cachesByPublication = new Map<string, { available: boolean; partial: boolean }>()
+   cacheDocuments.forEach((cache) => {
+     const key = publicationKeyFromCache(cache.sourceId, cache.publicationId)
+     const current = cachesByPublication.get(key) ?? { available: false, partial: false }
+     current.available ||= cache.state === 'available'
+     current.partial ||= cache.state === 'partial' || cache.state === 'downloading' || cache.state === 'failed'
+     cachesByPublication.set(key, current)
+   })
+-  const publications = publicationDocuments.map((document) => toPublication(document.toJSON(), bookmarks.has(document.key), history.get(document.key), progress.get(document.key), cachesByPublication.get(document.key), chaptersByPublication.get(document.key) ?? []))
++  const cacheStateByChapterKey = new Map(cacheDocuments.map((document) => {
++    const value = document.toJSON()
++    return [value.key, value.state] as const
++  }))
++  const publications = publicationDocuments.map((document) => toPublication(document.toJSON(), bookmarks.has(document.key), history.get(document.key), progress.get(document.key), cachesByPublication.get(document.key), chaptersByPublication.get(document.key) ?? [], cacheStateByChapterKey))
+   return {
+     publications,
+     bookmarks: publications.filter((publication) => publication.bookmarked),
+     recent: publications.filter((publication) => publication.historyOpenedAt).sort((left, right) => right.historyOpenedAt!.localeCompare(left.historyOpenedAt!)),
+-    downloads: publications.filter((publication) => cachesByPublication.has(publication.key)),
+   }
+ }
+ 
+ export async function watchLibrary(onSnapshot: (snapshot: LibrarySnapshot) => void): Promise<() => void> {
+   const database = await getDatabase()
+   let sequence = 0
+   const refresh = async () => {
+     const current = ++sequence
+     const snapshot = await listLibrary()
+     if (current === sequence) onSnapshot(snapshot)
+@@ -203,29 +206,45 @@ async function prunePublication(publicationKey: string): Promise<void> {
+     database.chapterCaches.find({ selector: {} }).exec(),
+   ])
+   if (bookmark || history || progress || caches.some((cache) => cache.key.startsWith(publicationKey))) {
+     await removePublicationCoverIfUnused(publicationKey)
+     return
+   }
+   const publication = await database.publications.findOne(publicationKey).exec()
+   if (publication) await publication.remove()
+ }
+ 
+-function toPublication(document: PublicationDocument, bookmarked: boolean, historyOpenedAt: string | undefined, progressDocument: { locator: ReadingLocator; updatedAt: string } | undefined, cache: { available: boolean; partial: boolean } | undefined, chapters: ChapterDocument[]): Publication {
+-  const currentChapterIndex = progressDocument ? chapters.findIndex((chapter) => chapter.chapterId === progressDocument.locator.chapterId) : -1
+-  const currentChapter = currentChapterIndex >= 0 ? { title: chapters[currentChapterIndex].title, number: currentChapterIndex + 1, remaining: chapters.length - currentChapterIndex - 1 } : undefined
++function toPublication(document: PublicationDocument, bookmarked: boolean, historyOpenedAt: string | undefined, progressDocument: { locator: ReadingLocator; updatedAt: string } | undefined, cache: { available: boolean; partial: boolean } | undefined, chapters: ChapterDocument[], cacheStateByChapterKey: ReadonlyMap<string, CacheState>): Publication {
++  const currentChapter = progressDocument ? chapters.find((chapter) => chapter.chapterId === progressDocument.locator.chapterId) : undefined
++  const currentChapterIndex = currentChapter ? chapters.indexOf(currentChapter) : -1
++  const remaining = calculateRemainingCount({
++    knownRemaining: document.knownChapterCount === undefined ? Number.NaN : document.knownChapterCount - currentChapterIndex - 1,
++    indexKnowledge: document.chapterIndexKnowledge ?? 'unknown',
++  })
++  const readyAhead = countReadyAhead(currentChapter, chapters.map((chapter) => ({
++    sourceId: chapter.sourceId,
++    publicationId: chapter.publicationId,
++    order: chapter.order,
++    cacheState: cacheStateByChapterKey.get(chapter.key),
++  })))
++  const currentChapterProjection = currentChapter ? {
++    title: currentChapter.title,
++    number: currentChapterIndex + 1,
++    ...(remaining.kind === 'omitted' ? {} : { remaining }),
++    ...(readyAhead > 0 ? { readyAhead } : {}),
++  } : undefined
+   return {
+     ...document,
+     bookmarked,
+     historyOpenedAt,
+     progress: progressDocument ? { locator: progressDocument.locator, updatedAt: progressDocument.updatedAt } : undefined,
+-    currentChapter,
++    currentChapter: currentChapterProjection,
+     availability: cache?.available ? 'available' : cache?.partial ? 'partial' : 'unavailable',
+   }
+ }
+ 
+ function normalizeLocator(locator: ReadingLocator): ReadingLocator {
+   if (locator.type === 'image') return {
+     type: 'image',
+     chapterId: locator.chapterId,
+     resourceId: locator.resourceId,
+     verticalFraction: clampNumber(locator.verticalFraction, 0, 1),
+diff --git a/src/services/publication-sync-service.ts b/src/services/publication-sync-service.ts
+index 07dd4fb..56b8dc4 100644
+--- a/src/services/publication-sync-service.ts
++++ b/src/services/publication-sync-service.ts
+@@ -65,23 +65,29 @@ async function syncPublicationNow(source: SourceDocument, publicationId: string,
+   })
+ 
+   // ponytail: source removals need a complete index snapshot; retain unseen local chapters until a source provides one page.
+   if (cursor === undefined && !chapterPage.nextCursor) for (const oldChapter of existingChapters) {
+     if (!incomingKeys.has(oldChapter.key)) {
+       const previous = oldChapter.toJSON()
+       const cache = await database.chapterCaches.findOne(previous.key).exec()
+       await oldChapter.patch({ removedFromSource: Boolean(cache && cache.resources.some((resource) => resource.state === 'available')), updatedAt: now })
+     }
+   }
+-  await upsertPublication(database, publicationDocument)
+   await Promise.all(chapterDocuments.map((chapter) => upsertChapter(database, chapter)))
+-  return { publication: publicationDocument, chapters: chapterDocuments, nextCursor: chapterPage.nextCursor }
++  const knownChapterCount = (await database.chapters.find({ selector: { sourceId: source.id, publicationId } }).exec()).filter((chapter) => !chapter.get('removedFromSource')).length
++  const syncedPublication: PublicationDocument = {
++    ...publicationDocument,
++    chapterIndexKnowledge: chapterPage.nextCursor ? 'has-more' : 'complete',
++    knownChapterCount,
++  }
++  await upsertPublication(database, syncedPublication)
++  return { publication: syncedPublication, chapters: chapterDocuments, nextCursor: chapterPage.nextCursor }
+ }
+ 
+ export function persistPublication(publication: Publication | PublicationDocument): Promise<PublicationDocument> {
+   const existingWrite = publicationWrites.get(publication.key)
+   if (existingWrite) return existingWrite
+   const operation = persistPublicationNow(publication).finally(() => {
+     if (publicationWrites.get(publication.key) === operation) publicationWrites.delete(publication.key)
+   })
+   publicationWrites.set(publication.key, operation)
+   return operation
+diff --git a/src/view-models/home-view-model.ts b/src/view-models/home-view-model.ts
+index 482b6be..c603b8d 100644
+--- a/src/view-models/home-view-model.ts
++++ b/src/view-models/home-view-model.ts
+@@ -1,29 +1,28 @@
+ import { create } from 'zustand'
+ import type { Publication } from '@models/entities/domain'
+ import { listLibrary, togglePublicationBookmark, watchLibrary, type LibrarySnapshot } from '@services/library-service'
+ 
+ interface HomeViewModel {
+   publications: Publication[]
+   bookmarks: Publication[]
+   recent: Publication[]
+-  downloads: Publication[]
+   error?: string
+   isLoading: boolean
+   initialize: () => Promise<() => void>
+   toggleBookmark: (publication: Publication) => Promise<void>
+   refresh: () => Promise<void>
+ }
+ 
+ function errorMessage(error: unknown, fallback: string): string { return error instanceof Error ? error.message : fallback }
+-function emptySnapshot(): LibrarySnapshot { return { publications: [], bookmarks: [], recent: [], downloads: [] } }
+-function setSnapshot(snapshot: LibrarySnapshot): Pick<HomeViewModel, 'publications' | 'bookmarks' | 'recent' | 'downloads'> { return { publications: snapshot.publications, bookmarks: snapshot.bookmarks, recent: snapshot.recent, downloads: snapshot.downloads } }
++function emptySnapshot(): LibrarySnapshot { return { publications: [], bookmarks: [], recent: [] } }
++function setSnapshot(snapshot: LibrarySnapshot): Pick<HomeViewModel, 'publications' | 'bookmarks' | 'recent'> { return { publications: snapshot.publications, bookmarks: snapshot.bookmarks, recent: snapshot.recent } }
+ 
+ export const useHomeViewModel = create<HomeViewModel>((set) => ({
+   ...setSnapshot(emptySnapshot()),
+   isLoading: true,
+   initialize: async () => {
+     set({ isLoading: true, error: undefined })
+     try {
+       const unsubscribe = await watchLibrary((snapshot) => set({ ...setSnapshot(snapshot), isLoading: false }))
+       return unsubscribe
+     } catch (error) {
+diff --git a/src/views/layouts/tab-layout.tsx b/src/views/layouts/tab-layout.tsx
+index 1b6c393..8c8e7b8 100644
+--- a/src/views/layouts/tab-layout.tsx
++++ b/src/views/layouts/tab-layout.tsx
+@@ -3,22 +3,22 @@ import './tab-layout.scss'
+ 
+ type Tab = 'home' | 'sources' | 'settings'
+ 
+ interface TabLayoutProps {
+   activeTab: Tab
+   onTabChange: (tab: Tab) => void
+   children: ReactNode
+ }
+ 
+ const tabs: Array<{ id: Tab; label: string; icon: string }> = [
+-  { id: 'home', label: 'Home', icon: '⌂' },
+-  { id: 'sources', label: 'Sources', icon: '◫' },
++  { id: 'home', label: 'Library', icon: '⌂' },
++  { id: 'sources', label: 'Browse', icon: '◫' },
+   { id: 'settings', label: 'Settings', icon: '⚙' },
+ ]
+ 
+ export function TabLayout({ activeTab, onTabChange, children }: TabLayoutProps) {
+   return (
+     <main className="app-shell">
+       <div className="content">{children}</div>
+       <nav className="animated-tab-strip tab-bar" data-active-tab={activeTab} aria-label="Primary navigation">
+         {tabs.map((tab) => (
+           <button
+diff --git a/src/views/pages/home-page.scss b/src/views/pages/home-page.scss
+index aea81a1..5263599 100644
+--- a/src/views/pages/home-page.scss
++++ b/src/views/pages/home-page.scss
+@@ -18,33 +18,20 @@
+     font-weight: 750;
+     min-height: 44px;
+     padding: 10px;
+ 
+     &.is-active {
+       background: transparent;
+       box-shadow: none;
+       color: #234f3e;
+     }
+   }
+-
+-  span {
+-    background: #d9e4dc;
+-    border-radius: 99px;
+-    font-size: .7rem;
+-    margin-left: 4px;
+-    padding: 2px 6px;
+-  }
+-
+-  &.library-tabs-three {
+-    --tab-count: 3;
+-    grid-template-columns: repeat(3, 1fr);
+-  }
+ }
+ 
+ .library-panel {
+   touch-action: pan-y;
+ }
+ 
+ .library-book-list,
+ .library-empty {
+   animation: library-panel-enter .24s cubic-bezier(.22, 1, .36, 1) both;
+ }
+@@ -54,25 +41,20 @@
+     opacity: 0;
+     transform: translateY(7px);
+   }
+ 
+   to {
+     opacity: 1;
+     transform: translateY(0);
+   }
+ }
+ 
+-.history-clear {
+-  display: block;
+-  margin: -4px 0 8px auto;
+-}
+-
+ .library-message {
+   margin: 24px 0;
+ }
+ 
+ .library-empty {
+   background: #edf0e8;
+   border-radius: 14px;
+   margin-top: 18px;
+   padding: 24px;
+   text-align: center;
+@@ -133,36 +115,16 @@
+   }
+ 
+   p {
+     overflow-wrap: anywhere;
+   }
+ 
+   small {
+     display: block;
+     margin-top: 4px;
+   }
+-}
+ 
+-.download-badge {
+-  border-radius: 5px;
+-  color: #596962;
+-  display: inline-block;
+-  font-size: .66rem;
+-  font-weight: 700;
+-  margin-top: 7px;
+-  padding: 2px 5px;
+-  text-transform: capitalize;
+-
+-  &.state-available {
+-    background: #dcefe4;
++  .ready-ahead {
+     color: #28704e;
+-  }
+-
+-  &.state-partial {
+-    background: #f2e9cc;
+-    color: #8a651b;
+-  }
+-
+-  &.state-not-cached {
+-    background: #eae8e1;
++    font-weight: 700;
+   }
+ }
+diff --git a/src/views/pages/home-page.tsx b/src/views/pages/home-page.tsx
+index 9d77c1b..b7a04d8 100644
+--- a/src/views/pages/home-page.tsx
++++ b/src/views/pages/home-page.tsx
+@@ -1,85 +1,84 @@
+ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
+ import './home-page.scss'
+ import { useWindowVirtualizer } from '@tanstack/react-virtual'
+ import { useLocation } from 'wouter'
+ import { useAppViewModel } from '@app/app-store'
+ import { indexPath, readerPath } from '@app/routes'
+ import type { Publication } from '@models/entities/domain'
+-import { clearHistory, removeHistoryEntry } from '@services/library-service'
++import { removeHistoryEntry } from '@services/library-service'
+ import { useHomeViewModel } from '@view-models/home-view-model'
+ import { ContextMenu } from '../ui/context-menu'
+ import { PageHeader } from '../ui/page-header'
+ import { PublicationCover } from '../ui/publication-cover'
+-import { ConfirmDialog } from '../ui/confirm-dialog'
+ import { InfiniteScrollSentinel } from '../ui/infinite-scroll-sentinel'
+ 
+-type LibraryList = 'recent' | 'bookmarks' | 'downloads'
++type LibraryList = 'recent' | 'bookmarks'
+ 
+-const LIBRARY_LISTS: LibraryList[] = ['recent', 'bookmarks', 'downloads']
++const LIBRARY_LISTS: LibraryList[] = ['recent', 'bookmarks']
+ const BOOKS_PER_PAGE = 20
+ const SWIPE_THRESHOLD = 48
+ 
+ function PublicationRow({ publication, list }: { publication: Publication; list: LibraryList }) {
+   const toggleBookmark = useHomeViewModel((state) => state.toggleBookmark)
+   const refresh = useHomeViewModel((state) => state.refresh)
+   const [, navigate] = useLocation()
+   const setActivePublication = useAppViewModel((state) => state.setActivePublication)
+-  const availability = publication.availability === 'available' ? 'available offline' : publication.availability === 'partial' ? 'partly offline' : 'not cached'
++  const remaining = publication.currentChapter?.remaining
++  const remainingCopy = remaining && remaining.kind !== 'omitted'
++    ? `${remaining.count}${remaining.kind === 'lower-bound' ? '+' : ''} remaining`
++    : undefined
+ 
+   return (
+     <ContextMenu
+       actions={[
+         { label: 'Open chapter index', onSelect: () => { setActivePublication(publication); navigate(indexPath(publication.key)) } },
+         { label: publication.bookmarked ? 'Remove bookmark' : 'Bookmark', onSelect: () => { void toggleBookmark(publication) } },
+         ...(list === 'recent' ? [{ label: 'Remove from recent', onSelect: () => { void removeHistoryEntry(publication.key).then(refresh) } }] : []),
+       ]}
+       ariaLabel={`Open ${publication.title}`}
+       className="book-row"
+       onItemPress={() => { setActivePublication(publication); navigate(readerPath(publication.key)) }}
+     >
+       <PublicationCover kind={publication.kind} />
+       <div className="book-details">
+         <h3>{publication.title}</h3>
+-        <p>{publication.author ?? 'Unknown author'} · {publication.kind}</p>
+-        {publication.currentChapter && <small>Reading chapter {publication.currentChapter.number}: {publication.currentChapter.title} · {publication.currentChapter.remaining} chapter{publication.currentChapter.remaining === 1 ? '' : 's'} remaining</small>}
+-        <span className={`download-badge state-${publication.availability}`}>{availability}</span>
++        {publication.currentChapter && <small>Chapter {publication.currentChapter.number}: {publication.currentChapter.title}{remainingCopy && ` · ${remainingCopy}`}</small>}
++        {publication.currentChapter?.readyAhead && publication.currentChapter.readyAhead > 0 && <small className="ready-ahead">↓ {publication.currentChapter.readyAhead} ready ahead</small>}
++        <p>{publication.author ?? 'Unknown author'}</p>
+       </div>
+     </ContextMenu>
+   )
+ }
+ 
+ export function HomePage() {
+   const [activeList, setActiveList] = useState<LibraryList>('recent')
+-  const [confirmingClearRecent, setConfirmingClearRecent] = useState(false)
+-  const [visibleCounts, setVisibleCounts] = useState<Record<LibraryList, number>>({ recent: BOOKS_PER_PAGE, bookmarks: BOOKS_PER_PAGE, downloads: BOOKS_PER_PAGE })
++  const [visibleCounts, setVisibleCounts] = useState<Record<LibraryList, number>>({ recent: BOOKS_PER_PAGE, bookmarks: BOOKS_PER_PAGE })
+   const recent = useHomeViewModel((state) => state.recent)
+   const bookmarks = useHomeViewModel((state) => state.bookmarks)
+-  const downloads = useHomeViewModel((state) => state.downloads)
+   const isLoading = useHomeViewModel((state) => state.isLoading)
+   const error = useHomeViewModel((state) => state.error)
+   const initialize = useHomeViewModel((state) => state.initialize)
+-  const refresh = useHomeViewModel((state) => state.refresh)
+   const canvasRef = useRef<HTMLElement>(null)
+   const swipeOrigin = useRef<{ pointerId: number; x: number; y: number } | null>(null)
+   const swipeTriggered = useRef(false)
+   const [scrollMargin, setScrollMargin] = useState(0)
+ 
+   useEffect(() => {
+     let cancelled = false
+     let unsubscribe: () => void = () => undefined
+     void initialize().then((stopWatching) => { if (cancelled) stopWatching(); else unsubscribe = stopWatching })
+     return () => { cancelled = true; unsubscribe() }
+   }, [initialize])
+ 
+-  const books = activeList === 'recent' ? recent : activeList === 'bookmarks' ? bookmarks : downloads
+-  const label = activeList === 'recent' ? 'Recent' : activeList === 'bookmarks' ? 'Bookmarks' : 'Downloads'
++  const books = activeList === 'recent' ? recent : bookmarks
++  const label = activeList === 'recent' ? 'Recent' : 'Saved'
+   const visibleBooks = books.slice(0, visibleCounts[activeList])
+   const hasMoreBooks = visibleBooks.length < books.length
+   const loadMoreBooks = useCallback(() => {
+     setVisibleCounts((counts) => {
+       const currentCount = counts[activeList]
+       if (currentCount >= books.length) return counts
+       return { ...counts, [activeList]: Math.min(currentCount + BOOKS_PER_PAGE, books.length) }
+     })
+   }, [activeList, books.length])
+   const getBookKey = useCallback((index: number) => books[index]?.key ?? index, [books])
+@@ -93,21 +92,21 @@ export function HomePage() {
+   })
+   const virtualItems = virtualizer.getVirtualItems()
+ 
+   useLayoutEffect(() => {
+     const canvas = canvasRef.current
+     if (!canvas) return
+     const updateScrollMargin = () => setScrollMargin(canvas.getBoundingClientRect().top + window.scrollY)
+     updateScrollMargin()
+     window.addEventListener('resize', updateScrollMargin)
+     return () => window.removeEventListener('resize', updateScrollMargin)
+-  }, [activeList, books.length, isLoading, recent.length])
++  }, [activeList, books.length, isLoading])
+ 
+   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+     swipeTriggered.current = false
+     if (event.pointerType === 'mouse' && event.button !== 0) {
+       swipeOrigin.current = null
+       return
+     }
+     if (event.target instanceof Element && event.target.closest('button, a, input, select, textarea')) {
+       swipeOrigin.current = null
+       return
+@@ -128,59 +127,40 @@ export function HomePage() {
+     setActiveList(LIBRARY_LISTS[nextIndex])
+   }, [activeList])
+   const cancelSwipe = useCallback(() => { swipeOrigin.current = null }, [])
+   const suppressSwipeClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+     if (!swipeTriggered.current) return
+     swipeTriggered.current = false
+     event.preventDefault()
+     event.stopPropagation()
+   }, [])
+ 
+-  async function clearRecent() {
+-    await clearHistory()
+-    await refresh()
+-  }
+-
+   return (
+     <>
+-      <PageHeader
+-        eyebrow="Your local library"
+-        title="Good evening"
+-        supportingCopy="Bookmarks, Recent, and Downloads stay available even when the network does not."
+-      />
++      <PageHeader title="Your library" />
+       <div className="library-panel" onClickCapture={suppressSwipeClick} onPointerCancel={cancelSwipe} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
+-        <div className="animated-tab-strip library-tabs library-tabs-three" data-active-tab={activeList} role="tablist" aria-label="Library lists">
+-          <button aria-selected={activeList === 'recent'} className={activeList === 'recent' ? 'is-active' : ''} onClick={() => setActiveList('recent')} role="tab" type="button">Recent <span>{recent.length}</span></button>
+-          <button aria-selected={activeList === 'bookmarks'} className={activeList === 'bookmarks' ? 'is-active' : ''} onClick={() => setActiveList('bookmarks')} role="tab" type="button">Bookmarks <span>{bookmarks.length}</span></button>
+-          <button aria-selected={activeList === 'downloads'} className={activeList === 'downloads' ? 'is-active' : ''} onClick={() => setActiveList('downloads')} role="tab" type="button">Downloads <span>{downloads.length}</span></button>
++        <div className="animated-tab-strip library-tabs" data-active-tab={activeList} role="tablist" aria-label="Library lists">
++          <button aria-selected={activeList === 'recent'} className={activeList === 'recent' ? 'is-active' : ''} onClick={() => setActiveList('recent')} role="tab" type="button">Recent</button>
++          <button aria-selected={activeList === 'bookmarks'} className={activeList === 'bookmarks' ? 'is-active' : ''} onClick={() => setActiveList('bookmarks')} role="tab" type="button">Saved</button>
+         </div>
+-        {activeList === 'recent' && recent.length > 0 && <button className="text-button history-clear" onClick={() => setConfirmingClearRecent(true)} type="button">Clear Recent</button>}
+         {error && <p className="database-error" role="alert">{error}</p>}
+         {isLoading ? <p className="muted library-message" key={activeList}>Opening your local library…</p> : books.length === 0 ? (
+           <section className="library-empty" key={activeList}>
+-            <h2>{activeList === 'recent' ? 'Nothing read yet' : activeList === 'bookmarks' ? 'No bookmarks yet' : 'No downloads yet'}</h2>
+-            <p>{activeList === 'recent' ? 'Recent entries appear as soon as you enter a reader page.' : activeList === 'bookmarks' ? 'Bookmark a publication from a source or its details page.' : 'Download chapters from reader controls to keep them offline.'}</p>
++            <h2>{activeList === 'recent' ? 'No recent publications' : 'No saved publications'}</h2>
++            <p>{activeList === 'recent' ? 'Publications appear here after you start reading.' : 'Save a publication from Browse to find it here.'}</p>
+           </section>
+         ) : (
+           <>
+             <section className="library-book-list library-book-list-virtual" aria-label={label} aria-live="polite" key={activeList} ref={canvasRef} style={{ height: virtualizer.getTotalSize() }}>
+               {virtualItems.map((virtualRow) => {
+                 const publication = visibleBooks[virtualRow.index]
+                 if (!publication) return null
+                 return <div data-index={virtualRow.index} key={publication.key} ref={virtualizer.measureElement} style={{ left: 0, position: 'absolute', top: 0, transform: `translateY(${virtualRow.start - scrollMargin}px)`, width: '100%' }}><PublicationRow list={activeList} publication={publication} /></div>
+               })}
+             </section>
+             <InfiniteScrollSentinel key={`${activeList}-${visibleBooks.length}`} hasMore={hasMoreBooks} isLoading={isLoading} label={label.toLowerCase()} onLoadMore={loadMoreBooks} />
+           </>
+         )}
+       </div>
+-      <ConfirmDialog
+-        confirmLabel="Clear Recent"
+-        description="Progress, bookmarks, and downloads will remain."
+-        onCancel={() => setConfirmingClearRecent(false)}
+-        onConfirm={() => { setConfirmingClearRecent(false); void clearRecent() }}
+-        open={confirmingClearRecent}
+-        title="Clear Recent?"
+-      />
+     </>
+   )
+ }

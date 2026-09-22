@@ -1,0 +1,52 @@
+import type { RemainingCount } from '@models/cache/cache-policy'
+import type {
+  AppSettingsDocument,
+  ChapterCacheDocument,
+  ChapterDocument,
+  PublicationBookmarkDocument,
+  PublicationDocument,
+  ReadingHistoryDocument,
+
+  ReadingProgressDocument,
+  ReaderSettings as ReaderSettingsValue,
+  SourceDocument,
+} from '@models/database/schemas'
+
+export type { ReadingLocator, ReadingImageLocator, ReadingTextLocator } from '@models/database/schemas'
+export type { PublicationKind, ResourceKind, CacheState } from '@models/database/schemas'
+export type { CacheEvictionCandidate, CacheEvictionProtection, ChapterIndexKnowledge, ReadyAheadChapter, RemainingCount, RemainingCountInput, StorageEstimateInput, StoragePressure } from '@models/cache/cache-policy'
+
+export interface CurrentChapter {
+  title: string
+  number: number
+  remaining?: RemainingCount
+  readyAhead?: number
+}
+
+export type Publication = PublicationDocument & {
+  bookmarked: boolean
+  historyOpenedAt?: string
+  progress?: ReadingProgress
+  currentChapter?: CurrentChapter
+  availability: 'available' | 'partial' | 'unavailable'
+}
+export type Chapter = ChapterDocument & {
+  cache?: ChapterCacheDocument
+}
+export type ReadingProgress = Omit<ReadingProgressDocument, 'id' | 'publicationKey'>
+export type Source = SourceDocument
+export type ReaderSettings = ReaderSettingsValue
+export type AppSettings = AppSettingsDocument
+export type PublicationBookmark = PublicationBookmarkDocument
+export type ReadingHistory = ReadingHistoryDocument
+
+export interface ReaderBackup {
+  version: 2
+  createdAt: string
+  settings: ReaderSettings
+  sources: Source[]
+  publications: PublicationDocument[]
+  bookmarks: PublicationBookmarkDocument[]
+  readingHistory: ReadingHistoryDocument[]
+  readingProgress: ReadingProgressDocument[]
+}

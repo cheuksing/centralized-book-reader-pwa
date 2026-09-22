@@ -1,0 +1,452 @@
+# Review package: a62a068..HEAD
+
+## Commits
+01236fa Fix Task 3 schema migration and remaining counts
+
+## Files changed
+ .../task-3-report.md                               | 218 +++++++++++++++++++++
+ src/models/database/opfs-database.ts               |   9 +-
+ src/models/database/schemas.ts                     |   2 +-
+ src/services/library-service.check.ts              |  59 ++++++
+ src/services/library-service.ts                    |   8 +-
+ 5 files changed, 291 insertions(+), 5 deletions(-)
+
+## Diff
+diff --git a/.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md b/.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md
+index be0c4e5..940c577 100644
+--- a/.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md
++++ b/.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md
+@@ -238,10 +238,228 @@ The three zero-node warnings are configuration/non-source artifacts and are unre
+ - The visible Library no longer contains the obsolete greeting, Download view, counts, Clear Recent action, availability badges, kind text, or download instructions.
+ - The projection omits unknown totals rather than inferring a complete total from locally present rows.
+ 
+ ## Concerns
+ 
+ - Existing publications without the new sync metadata will not show a remaining count until their chapter index is synchronized; omission is intentional and safer than guessing.
+ - No browser-level OPFS/RxDB integration test was added. The executable checks cover policy/projection-adjacent edge cases, while actual pagination persistence and cache joins still require a browser-backed scenario.
+ - The persisted count is the non-removed chapter rows known after each pagination write. A source changing its index while pages are being fetched can make that persisted lower bound stale until a later synchronization; it is never presented as complete while `nextCursor` exists.
+ - `graphify update .` left the existing/generated `graphify-out/.graphify_labels.json`, `.graphify_labels.json.sig`, `GRAPH_REPORT.md`, `graph.html`, and `graph.json` changes in the working tree. They are deliberately not staged.
+ - The project-wide diagnostics tool still reports unrelated configuration diagnostics in `package.json`, `.cursor/mcp.json`, and `.mcp.json`; build, lint, and all changed-file diagnostics are clean.
++
++## Round 1 fixes
++
++### Status
++
++Implemented the two Round 1 fixes. The prior statement that the optional publication metadata required no migration/reset was incorrect and is superseded by the versioned RxDB migration described below.
++
++### Changed files
++
++- `src/models/database/schemas.ts`
++  - Bumped only `publicationSchema` from version `0` to version `1` because the optional chapter-index metadata changes the RxDB schema hash.
++
++- `src/models/database/opfs-database.ts`
++  - Registered the installed `RxDBMigrationSchemaPlugin`.
++  - Added `migrationStrategies: { 1: (document) => document }` to the `publications` collection.
++  - The identity strategy preserves every existing publication field, including documents written before the metadata existed; the new fields remain optional.
++  - Other collection versions and strategies are unchanged.
++
++- `src/services/library-service.ts`
++  - Kept current-chapter lookup over all local chapter rows so cached `removedFromSource` entries remain readable and progress still identifies the current chapter.
++  - Added a source-order active list filtered to non-removed rows.
++  - Uses the active-list position for chapter number and remaining-count arithmetic.
++  - If the current chapter itself is removed, its local title/identification remains available, its local position is retained for display, and active-source remaining arithmetic is omitted.
++  - `countReadyAhead` continues to receive the readable local chapter rows, preserving existing cache/read-ahead behavior.
++
++- `src/services/library-service.check.ts`
++  - Added an executable projection check covering a removed chapter before the current chapter, exact remaining arithmetic, active-source chapter numbering, and a removed current chapter.
++
++- `.superpowers/sdd/library-offline-cache-functional-spec/task-3-report.md`
++  - Appended this Round 1 fix report. The path remains force-added because `.superpowers/sdd/.gitignore` ignores the report directory.
++
++### Findings addressed
++
++#### RxDB migration compatibility
++
++RxDB's installed migration API was inspected before implementation:
++
++- `node_modules/rxdb/plugins/migration-schema/index.d.mts` re-exports the migration plugin types.
++- `node_modules/rxdb/dist/types/plugins/migration-schema/migration-types.d.ts:5` declares `RxDBMigrationSchemaPlugin`.
++- `node_modules/rxdb/dist/types/types/rx-collection.d.ts:28-33` accepts `migrationStrategies` on collection creation.
++- `node_modules/rxdb/dist/types/types/rx-schema.d.ts:234-238` requires a schema version increase and a strategy for each version step when an existing collection schema changes.
++- `node_modules/rxdb/dist/cjs/rx-collection.js:955` shows that collection creation auto-runs `migratePromise()` by default for nonzero schema versions.
++
++The publication collection now therefore opens an existing OPFS generation through RxDB's preserving v0-to-v1 migration instead of presenting the changed schema as an incompatible version-0 collection. This preserves local publication data rather than requiring a generation reset.
++
++#### Removed chapters and remaining counts
++
++`publication-sync-service.ts` already persists `knownChapterCount` as the number of non-removed chapter rows. The Library projection now uses the same rule for the current position: it finds the current chapter in all local rows, then finds that chapter's position in `chapters.filter((chapter) => !chapter.removedFromSource)`. A removed row before the current chapter no longer consumes one of the known active chapters, so exact and lower-bound remaining counts stay aligned with the sync metadata. Removed rows are not deleted from the local projection, and a removed current chapter remains identifiable while its active-source count is omitted.
++
++### Checks and commands
++
++#### Focused projection check
++
++Command:
++
++```text
++node_modules/.bin/esbuild src/services/library-service.check.ts --bundle --platform=node --format=esm --outfile=dist/library-service.check.mjs --tsconfig=tsconfig.app.json && node dist/library-service.check.mjs
++```
++
++Output:
++
++```text
++dist/library-service.check.mjs  1.9mb ⚠️
++
++⚡ Done in 130ms
++library projection checks passed
++```
++
++The bundle is large because the check imports the existing Library service and its dependency graph; it is emitted only under ignored `dist/` and is not production output.
++
++#### Existing focused checks
++
++Commands:
++
++```text
++node_modules/.bin/esbuild src/models/cache/cache-policy.check.ts --bundle --platform=node --format=esm --outfile=dist/cache-policy.check.mjs --tsconfig=tsconfig.app.json && node dist/cache-policy.check.mjs
++node_modules/.bin/esbuild src/services/cache-preparation.check.ts --bundle --platform=node --format=esm --outfile=dist/cache-preparation.check.mjs --tsconfig=tsconfig.app.json && node dist/cache-preparation.check.mjs
++```
++
++Outputs:
++
++```text
++dist/cache-policy.check.mjs  6.7kb
++
++⚡ Done in 4ms
++cache policy checks passed
++
++dist/cache-preparation.check.mjs  10.8kb
++
++⚡ Done in 6ms
++cache preparation checks passed
++```
++
++#### Build
++
++Command:
++
++```text
++npm run build
++```
++
++Output:
++
++```text
++> pwa@0.0.0 build
++> tsc -b && vite build
++
++▲ [WARNING] Proxy environment variables detected. We'll use your proxy for fetch requests.
++
++The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
++vite v8.3.0 building client environment for production...
++✓ 1027 modules transformed.
++✓ built in 320ms
++
++PWA v1.3.0
++mode      generateSW
++precache  13 entries (816.47 KiB)
++files generated
++  dist/sw.js
++  dist/workbox-9c191d2f.js
++```
++
++Exit code: `0`.
++
++#### Lint
++
++Command:
++
++```text
++npm run lint
++```
++
++Output:
++
++```text
++> pwa@0.0.0 lint
++> oxlint
++
++Found 0 warnings and 0 errors.
++Finished in 49ms on 57 files with 116 rules using 12 threads.
++```
++
++Exit code: `0`.
++
++#### Diagnostics
++
++Changed-file diagnostics were run for each of:
++
++```text
++src/models/database/schemas.ts
++src/models/database/opfs-database.ts
++src/services/library-service.ts
++src/services/library-service.check.ts
++```
++
++Each returned:
++
++```text
++Diagnostics successfully refreshed.
++File doesn't have errors or warnings!
++```
++
++The project-wide summary returned these unrelated JSON diagnostics:
++
++```text
++/Users/mxalg0007/Code/pwa/graphify-out/.graphify_labels.json: 1 error(s), 0 warning(s)
++/Users/mxalg0007/Code/pwa/package.json: 1 error(s), 0 warning(s)
++/Users/mxalg0007/Code/pwa/.cursor/mcp.json: 1 error(s), 0 warning(s)
++/Users/mxalg0007/Code/pwa/graphify-out/graph.json: 1 error(s), 0 warning(s)
++/Users/mxalg0007/Code/pwa/.mcp.json: 1 error(s), 0 warning(s)
++/Users/mxalg0007/Code/pwa/node_modules/rxdb/plugins/migration-schema/package.json: 1 error(s), 0 warning(s)
++```
++
++#### Whitespace and Graphify refresh
++
++Command:
++
++```text
++git --no-pager diff --check -- src/models/database/opfs-database.ts src/models/database/schemas.ts src/services/library-service.ts
++```
++
++Output: no output; exit code `0`.
++
++Command:
++
++```text
++graphify update .
++```
++
++Output:
++
++```text
++Re-extracting code files in . (no LLM needed)...
++  AST extraction: 60/60 uncached files (100%) [12 workers]
++  warning: 3 source file(s) produced zero nodes and are absent from the graph: settings.json, czbooks.json, skills-lock.json. A re-run will retry them (empties are no longer cached); if it persists, please report the file(s) (#1666).
++[graphify watch] community set changed since labeling (99 saved labels, 97 communities now; renamed 6 community(ies) by their hub). Run `graphify label` to refresh names with the LLM.
++[graphify] backed up curated graph (4 files) -> 2026-09-18/
++[graphify watch] Rebuilt: 1112 nodes, 1511 edges, 97 communities
++[graphify watch] graph.json, graph.html and GRAPH_REPORT.md updated in graphify-out
++Code graph updated. For doc/paper/image changes run /graphify --update in your AI assistant.
++Tip: set GEMINI_API_KEY or GOOGLE_API_KEY to use Gemini for semantic extraction.
++```
++
++### Self-review
++
++- Only the `publications` collection version changed; all other collections retain their existing schemas and no database generation reset was added.
++- The v1 identity strategy preserves old publication documents and allows the new fields to remain absent.
++- Removed chapter rows remain in the readable projection, while remaining counts use the same non-removed definition as sync metadata.
++- The current chapter is identified before filtering; a removed current chapter cannot produce a misleading active-source count.
++- No `app.tsx`, reader index/details/reader screen, Task 1 interface, or Task 2 cache/openability behavior was changed.
++- Existing cache, bookmark, history, progress, cover, and pruning operations remain independent.
++
++### Concerns
++
++- No browser-backed OPFS/RxDB migration integration test was added. The installed RxDB API and TypeScript build validate the migration wiring, while a real old OPFS generation should still be exercised in browser QA.
++- The projection check imports the full Library service, so its temporary Node bundle is approximately 1.9 MB; this does not affect the production bundle.
++- The project-wide diagnostics still report unrelated JSON errors in generated Graphify files, project configuration, and the installed RxDB plugin package. All changed source-file diagnostics, build, lint, and executable checks are clean.
++- Graphify left its expected generated changes in `graphify-out/`; they remain intentionally unstaged.
+diff --git a/src/models/database/opfs-database.ts b/src/models/database/opfs-database.ts
+index 09de01c..3459845 100644
+--- a/src/models/database/opfs-database.ts
++++ b/src/models/database/opfs-database.ts
+@@ -1,13 +1,14 @@
+ import { addRxPlugin, createRxDatabase, type RxCollection, type RxDatabase } from 'rxdb'
+ import { RxDBAttachmentsPlugin } from 'rxdb/plugins/attachments'
+ import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode'
++import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema'
+ import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
+ import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv'
+ import { getRxStorageOPFS } from '@models/database/opfs-rx-storage'
+ import {
+   appSettingsSchema,
+   chapterCacheSchema,
+   chapterSchema,
+   downloadJobSchema,
+   publicationBookmarkSchema,
+   publicationSchema,
+@@ -36,20 +37,21 @@ export type ReaderCollections = {
+   publications: RxCollection<PublicationDocument>
+   readerSettings: RxCollection<ReaderSettingsDocument>
+   readingHistory: RxCollection<ReadingHistoryDocument>
+   readingProgress: RxCollection<ReadingProgressDocument>
+   sources: RxCollection<SourceDocument>
+ }
+ 
+ export type ReaderDatabase = RxDatabase<ReaderCollections>
+ 
+ addRxPlugin(RxDBAttachmentsPlugin)
++addRxPlugin(RxDBMigrationSchemaPlugin)
+ addRxPlugin(RxDBQueryBuilderPlugin)
+ 
+ export class ActiveReaderInstanceError extends Error {
+   constructor() {
+     super('Another Bookshelf Reader instance is already active. Close it before opening this one.')
+     this.name = 'ActiveReaderInstanceError'
+   }
+ }
+ 
+ export class UnsupportedBrowserError extends Error {
+@@ -153,21 +155,26 @@ async function createDatabase(databaseName: string): Promise<ReaderDatabase> {
+     storage: wrappedValidateAjvStorage({ storage: getRxStorageOPFS() }),
+     multiInstance: false,
+   })
+ 
+   await database.addCollections({
+     appSettings: { schema: appSettingsSchema },
+     chapterCaches: { schema: chapterCacheSchema },
+     chapters: { schema: chapterSchema },
+     downloadJobs: { schema: downloadJobSchema },
+     publicationBookmarks: { schema: publicationBookmarkSchema },
+-    publications: { schema: publicationSchema },
++    publications: {
++      schema: publicationSchema,
++      migrationStrategies: {
++        1: (document) => document,
++      },
++    },
+     readerSettings: { schema: readerSettingsSchema },
+     readingHistory: { schema: readingHistorySchema },
+     readingProgress: { schema: readingProgressSchema },
+     sources: { schema: sourceSchema },
+   })
+ 
+   return database
+ }
+ 
+ async function readActiveDatabaseName(): Promise<string> {
+diff --git a/src/models/database/schemas.ts b/src/models/database/schemas.ts
+index 4249c66..b2327c4 100644
+--- a/src/models/database/schemas.ts
++++ b/src/models/database/schemas.ts
+@@ -328,19 +328,19 @@ export const DownloadJobDocumentSchema = Type.Object({
+   lastError: Type.Optional(Type.String()),
+   updatedAt: Type.String({ format: 'date-time', maxLength: 40 }),
+ }, { additionalProperties: false })
+ export type DownloadJobDocument = Static<typeof DownloadJobDocumentSchema>
+ 
+ function rxSchema<T extends TSchema>(document: T, metadata: Omit<RxJsonSchema<Static<T>>, 'properties' | 'required' | 'type' | 'additionalProperties'>): RxJsonSchema<Static<T>> {
+   return { ...document, ...metadata } as unknown as RxJsonSchema<Static<T>>
+ }
+ 
+ export const sourceSchema = rxSchema(SourceDocumentSchema, { title: 'source definition', version: 0, primaryKey: 'id', indexes: ['name', 'enabled', 'baseUrl'] })
+-export const publicationSchema = rxSchema(PublicationDocumentSchema, { title: 'publication metadata', version: 0, primaryKey: 'key', indexes: [['sourceId', 'title'], ['sourceId', 'createdAt']], attachments: {} })
++export const publicationSchema = rxSchema(PublicationDocumentSchema, { title: 'publication metadata', version: 1, primaryKey: 'key', indexes: [['sourceId', 'title'], ['sourceId', 'createdAt']], attachments: {} })
+ export const chapterSchema = rxSchema(ChapterDocumentSchema, { title: 'publication chapter index', version: 0, primaryKey: 'key', indexes: [['publicationId', 'order'], ['publicationId', 'removedFromSource']] })
+ export const publicationBookmarkSchema = rxSchema(PublicationBookmarkDocumentSchema, { title: 'publication bookmark', version: 0, primaryKey: 'id', indexes: ['publicationKey'] })
+ export const readingHistorySchema = rxSchema(ReadingHistoryDocumentSchema, { title: 'reading history', version: 0, primaryKey: 'id', indexes: [['openedAt', 'publicationKey']] })
+ export const readingProgressSchema = rxSchema(ReadingProgressDocumentSchema, { title: 'reading progress', version: 0, primaryKey: 'id', indexes: ['publicationKey', 'updatedAt'] })
+ export const readerSettingsSchema = rxSchema(ReaderSettingsDocumentSchema, { title: 'reader settings', version: 0, primaryKey: 'id', indexes: ['scope'] })
+ export const appSettingsSchema = rxSchema(AppSettingsDocumentSchema, { title: 'application settings', version: 0, primaryKey: 'id' })
+ export const chapterCacheSchema = rxSchema(ChapterCacheDocumentSchema, { title: 'chapter content cache', version: 1, primaryKey: 'key', indexes: [['publicationId', 'state'], ['state', 'lastAccessedAt'], 'state'], attachments: {} })
+ export const downloadJobSchema = rxSchema(DownloadJobDocumentSchema, { title: 'explicit chapter download job', version: 0, primaryKey: 'id', indexes: [['chapterKey', 'state'], 'state'] })
+diff --git a/src/services/library-service.check.ts b/src/services/library-service.check.ts
+new file mode 100644
+index 0000000..7b7922f
+--- /dev/null
++++ b/src/services/library-service.check.ts
+@@ -0,0 +1,59 @@
++import type { ReadingLocator, ChapterDocument, PublicationDocument } from '@models/database/schemas'
++import { toPublication } from './library-service.js'
++
++function assert(condition: unknown, message: string): asserts condition {
++  if (!condition) throw new Error(message)
++}
++
++const updatedAt = '2025-01-01T00:00:00.000Z'
++const publication: PublicationDocument = {
++  key: '6:source11:publication',
++  sourceId: 'source',
++  publicationId: 'publication',
++  title: 'Publication',
++  kind: 'book',
++  chapterIndexKnowledge: 'complete',
++  knownChapterCount: 4,
++  createdAt: updatedAt,
++  coverState: 'missing',
++}
++
++function chapter(chapterId: string, order: number, removedFromSource = false): ChapterDocument {
++  return {
++    key: `${publication.key}:${chapterId}`,
++    sourceId: publication.sourceId,
++    publicationId: publication.publicationId,
++    chapterId,
++    title: chapterId,
++    order,
++    removedFromSource,
++    updateAvailable: false,
++    updatedAt,
++  }
++}
++
++function progressFor(chapterId: string): { locator: ReadingLocator; updatedAt: string } {
++  return {
++    locator: {
++      type: 'text',
++      chapterId,
++      resourceId: 'resource',
++      characterOffset: 0,
++      quote: { exact: '' },
++      chapterPercentage: 0,
++    },
++    updatedAt,
++  }
++}
++
++const removedBeforeCurrent = [chapter('removed', 0, true), chapter('current', 1), chapter('next', 2)]
++const projection = toPublication(publication, false, undefined, progressFor('current'), undefined, removedBeforeCurrent, new Map())
++assert(projection.currentChapter?.title === 'current', 'current chapter must remain identifiable after filtering removed rows')
++assert(projection.currentChapter?.number === 1, 'current chapter number must use active source order')
++assert(projection.currentChapter?.remaining?.kind === 'exact' && projection.currentChapter.remaining.count === 3, 'removed rows before the current chapter must not reduce remaining counts')
++
++const removedCurrentProjection = toPublication(publication, false, undefined, progressFor('removed'), undefined, removedBeforeCurrent, new Map())
++assert(removedCurrentProjection.currentChapter?.title === 'removed', 'a removed current chapter must remain readable and identifiable')
++assert(!removedCurrentProjection.currentChapter?.remaining, 'a removed current chapter must omit active-source remaining arithmetic')
++
++console.log('library projection checks passed')
+diff --git a/src/services/library-service.ts b/src/services/library-service.ts
+index 231dfb3..a754408 100644
+--- a/src/services/library-service.ts
++++ b/src/services/library-service.ts
+@@ -206,36 +206,38 @@ async function prunePublication(publicationKey: string): Promise<void> {
+     database.chapterCaches.find({ selector: {} }).exec(),
+   ])
+   if (bookmark || history || progress || caches.some((cache) => cache.key.startsWith(publicationKey))) {
+     await removePublicationCoverIfUnused(publicationKey)
+     return
+   }
+   const publication = await database.publications.findOne(publicationKey).exec()
+   if (publication) await publication.remove()
+ }
+ 
+-function toPublication(document: PublicationDocument, bookmarked: boolean, historyOpenedAt: string | undefined, progressDocument: { locator: ReadingLocator; updatedAt: string } | undefined, cache: { available: boolean; partial: boolean } | undefined, chapters: ChapterDocument[], cacheStateByChapterKey: ReadonlyMap<string, CacheState>): Publication {
++export function toPublication(document: PublicationDocument, bookmarked: boolean, historyOpenedAt: string | undefined, progressDocument: { locator: ReadingLocator; updatedAt: string } | undefined, cache: { available: boolean; partial: boolean } | undefined, chapters: ChapterDocument[], cacheStateByChapterKey: ReadonlyMap<string, CacheState>): Publication {
+   const currentChapter = progressDocument ? chapters.find((chapter) => chapter.chapterId === progressDocument.locator.chapterId) : undefined
+   const currentChapterIndex = currentChapter ? chapters.indexOf(currentChapter) : -1
++  const sourceChapters = chapters.filter((chapter) => !chapter.removedFromSource)
++  const currentSourceChapterIndex = currentChapter ? sourceChapters.findIndex((chapter) => chapter.chapterId === currentChapter.chapterId) : -1
+   const remaining = calculateRemainingCount({
+-    knownRemaining: document.knownChapterCount === undefined ? Number.NaN : document.knownChapterCount - currentChapterIndex - 1,
++    knownRemaining: document.knownChapterCount === undefined || currentSourceChapterIndex < 0 ? Number.NaN : document.knownChapterCount - currentSourceChapterIndex - 1,
+     indexKnowledge: document.chapterIndexKnowledge ?? 'unknown',
+   })
+   const readyAhead = countReadyAhead(currentChapter, chapters.map((chapter) => ({
+     sourceId: chapter.sourceId,
+     publicationId: chapter.publicationId,
+     order: chapter.order,
+     cacheState: cacheStateByChapterKey.get(chapter.key),
+   })))
+   const currentChapterProjection = currentChapter ? {
+     title: currentChapter.title,
+-    number: currentChapterIndex + 1,
++    number: (currentSourceChapterIndex >= 0 ? currentSourceChapterIndex : currentChapterIndex) + 1,
+     ...(remaining.kind === 'omitted' ? {} : { remaining }),
+     ...(readyAhead > 0 ? { readyAhead } : {}),
+   } : undefined
+   return {
+     ...document,
+     bookmarked,
+     historyOpenedAt,
+     progress: progressDocument ? { locator: progressDocument.locator, updatedAt: progressDocument.updatedAt } : undefined,
+     currentChapter: currentChapterProjection,
+     availability: cache?.available ? 'available' : cache?.partial ? 'partial' : 'unavailable',

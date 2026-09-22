@@ -1,0 +1,38 @@
+.page-heading {
+  margin-bottom: 26px;
+
+  > div {
+    min-width: 0;
+  }
+
+  h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(2.2rem, 8vw, 3.1rem);
+    font-weight: 500;
+    letter-spacing: -0.055em;
+    line-height: .96;
+    margin: 5px 0 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .muted {
+    margin: 0;
+  }
+}
+
+.heading-with-action {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+
+  > .round-button {
+    flex: 0 0 44px;
+  }
+}
+
+@media (min-width: 521px) {
+  .heading-with-action {
+    align-items: center;
+  }
+}

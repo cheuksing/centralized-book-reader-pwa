@@ -1,0 +1,139 @@
+.library-tabs {
+  --tab-count: 2;
+  --tab-highlight-color: #fffdf8;
+  --tab-highlight-shadow: 0 2px 8px #17362d12;
+  background: #e5e8e0;
+  border-radius: 11px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 0 12px;
+  padding: 4px;
+
+  button {
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: #627068;
+    font-size: .85rem;
+    font-weight: 750;
+    min-height: 44px;
+    padding: 10px;
+
+    &.is-active {
+      background: transparent;
+      box-shadow: none;
+      color: #234f3e;
+    }
+  }
+}
+
+.library-panel {
+  touch-action: pan-y;
+}
+
+.library-content {
+  min-height: 260px;
+}
+
+.library-book-list,
+.library-empty {
+  animation: library-panel-enter .24s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes library-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.library-error-slot {
+  min-height: clamp(5rem, 18vw, 8rem);
+}
+
+.library-message {
+  margin: 24px 0;
+  min-height: clamp(3rem, 8vw, 4.5rem);
+}
+
+.library-empty {
+  background: #edf0e8;
+  border-radius: 14px;
+  margin-top: 18px;
+  padding: 24px;
+  text-align: center;
+
+  h2 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+    margin: 0 0 7px;
+  }
+
+  p {
+    color: #68776f;
+    font-size: .85rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+.library-book-list-virtual {
+  position: relative;
+  width: 100%;
+}
+
+.book-row {
+  align-items: center;
+  border-bottom: 1px solid #e3e0d8;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  min-height: 104px;
+  min-width: 0;
+  padding: 12px 0;
+  touch-action: manipulation;
+
+  &:focus-visible {
+    outline: 3px solid #78ae93;
+    outline-offset: 4px;
+  }
+}
+
+.book-details {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    font-size: 1rem;
+    margin: 0 0 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  p,
+  small {
+    color: #738079;
+    font-size: .79rem;
+    margin: 0;
+  }
+
+  p {
+    overflow-wrap: anywhere;
+  }
+
+  small {
+    display: block;
+    margin-top: 4px;
+  }
+
+  .ready-ahead {
+    color: #28704e;
+    font-weight: 700;
+  }
+}

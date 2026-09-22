@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { Router } from 'wouter'
 import { registerSW } from 'virtual:pwa-register'
 import './index.scss'
 import './views/shared.css'
@@ -9,6 +10,8 @@ registerSW({ immediate: true })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <Router base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+      <App />
+    </Router>
   </StrictMode>,
 )

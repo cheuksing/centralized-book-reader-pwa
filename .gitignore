@@ -25,6 +25,7 @@ dist-ssr
 *.sw?
 
 .superpowers
+.tmp
 
 # ==========================================
 # Graphify Configuration

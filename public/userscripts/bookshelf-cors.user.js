@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bookshelf CORS Bridge
 // @namespace    https://github.com/cheuksing/centralized-book-reader-pwa
-// @version      1.0.4
+// @version      1.0.5
 // @description  Fetches approved public Bookshelf sources without sending site cookies or credentials.
 // @match        https://cheuksing.github.io/centralized-book-reader-pwa/*
 // @match        http://localhost:5173/*
@@ -18,10 +18,12 @@
 
   const CHANNEL = 'bookshelf-cors-bridge'
   const PROTOCOL = 1
-  const VERSION = '1.0.4'
+  const VERSION = '1.0.5'
   const LOG_PREFIX = '[Bookshelf CORS Bridge]'
   const pageWindow = typeof unsafeWindow === 'undefined' ? window : unsafeWindow
   const REQUEST_TIMEOUT = 30_000
+  const ACCESS_PROBE_URL = 'https://example.com/'
+  const ACCESS_PROBE_TIMEOUT = 10_000
   const SAFE_HEADERS = ['content-type', 'content-length', 'etag', 'last-modified']
   const BLOCKED_HOSTNAMES = new Set([
     'host.docker.internal', 'instance-data', 'instance-data.ec2.internal', 'kubernetes.default', 'kubernetes.default.svc',
@@ -72,6 +74,8 @@
 
   function request(message) {
     if (typeof message.url !== 'string' || typeof message.accept !== 'string' || !validTarget(message.url)) {
+      const reason = typeof message.url !== 'string' ? 'invalid-url' : typeof message.accept !== 'string' ? 'invalid-accept' : 'target-not-allowed'
+      console.warn(LOG_PREFIX, 'Rejected remote request.', { requestId: message.requestId, url: message.url, code: 'target-rejected', reason })
       post({ type: 'error', requestId: message.requestId, code: 'target-rejected' })
       return
     }
@@ -83,30 +87,48 @@
         onload: (response) => {
           requests.delete(message.requestId)
           // Violentmonkey exposes finalUrl. Reject when it cannot prove no redirect occurred.
-          if (response.finalUrl !== message.url || !(response.response instanceof ArrayBuffer)) return post({ type: 'error', requestId: message.requestId, code: 'request-unavailable' })
+          const redirected = response.finalUrl !== message.url
+          const isArrayBuffer = response.response instanceof ArrayBuffer
+          if (redirected || !isArrayBuffer) {
+            console.warn(LOG_PREFIX, 'Rejected remote response.', {
+              requestId: message.requestId,
+              url: message.url,
+              code: 'request-unavailable',
+              reason: redirected ? 'redirected' : 'invalid-response-body',
+              finalUrl: response.finalUrl,
+              status: response.status,
+              responseType: Object.prototype.toString.call(response.response),
+              isArrayBuffer,
+            })
+            return post({ type: 'error', requestId: message.requestId, code: 'request-unavailable' })
+          }
           const body = response.response
           post({ type: 'response', requestId: message.requestId, status: response.status, headers: safeHeaders(response.responseHeaders), body }, [body])
         },
-        onerror: (details) => finishFailure(message.requestId, details),
-        ontimeout: () => finishFailure(message.requestId),
-        onabort: () => { requests.delete(message.requestId); post({ type: 'error', requestId: message.requestId, code: 'request-cancelled' }) },
+        onerror: (details) => finishFailure(message.requestId, message.url, details),
+        ontimeout: () => finishFailure(message.requestId, message.url, { reason: 'timeout', timeoutMs: REQUEST_TIMEOUT }),
+        onabort: () => {
+          requests.delete(message.requestId)
+          console.warn(LOG_PREFIX, 'Remote request cancelled.', { requestId: message.requestId, url: message.url, code: 'request-cancelled', reason: 'aborted' })
+          post({ type: 'error', requestId: message.requestId, code: 'request-cancelled' })
+        },
       })
       requests.set(message.requestId, handle)
     } catch (error) {
-      finishFailure(message.requestId, error)
+      finishFailure(message.requestId, message.url, error)
     }
   }
 
   function requestAccess(requestId) {
     try {
       GM_xmlhttpRequest({
-        method: 'GET', url: 'https://example.com/', anonymous: true, timeout: 10_000,
+        method: 'GET', url: ACCESS_PROBE_URL, anonymous: true, timeout: ACCESS_PROBE_TIMEOUT,
         onload: () => post({ type: 'access-result', requestId, access: 'granted' }),
-        onerror: (details) => post({ type: 'access-result', requestId, access: permissionDenied(details) ? 'denied' : 'unavailable' }),
-        ontimeout: () => post({ type: 'access-result', requestId, access: 'unavailable' }),
+        onerror: (details) => finishAccessFailure(requestId, details),
+        ontimeout: () => finishAccessFailure(requestId, { reason: 'timeout', timeoutMs: ACCESS_PROBE_TIMEOUT }),
       })
     } catch (error) {
-      post({ type: 'access-result', requestId, access: permissionDenied(error) ? 'denied' : 'unavailable' })
+      finishAccessFailure(requestId, error)
     }
   }
 
@@ -116,13 +138,31 @@
     if (handle && typeof handle.abort === 'function') handle.abort()
   }
 
-  function finishFailure(requestId, details) {
+  function finishFailure(requestId, url, details) {
     requests.delete(requestId)
-    post({ type: 'error', requestId, code: permissionDenied(details) ? 'request-permission-denied' : 'request-unavailable' })
+    const code = permissionDenied(details) ? 'request-permission-denied' : 'request-unavailable'
+    console.error(LOG_PREFIX, 'Remote request failed.', { requestId, url, code, details: safeFailureDetails(details) })
+    post({ type: 'error', requestId, code })
+  }
+
+  function finishAccessFailure(requestId, details) {
+    const access = permissionDenied(details) ? 'denied' : 'unavailable'
+    console.error(LOG_PREFIX, 'Access probe failed.', { requestId, url: ACCESS_PROBE_URL, access, details: safeFailureDetails(details) })
+    post({ type: 'access-result', requestId, access })
   }
 
   function permissionDenied(details) {
     return /permission|denied|not.permitted/i.test(String(details && (details.error || details.message || details)))
+  }
+
+  function safeFailureDetails(details) {
+    if (details == null || typeof details !== 'object') return details
+    const safe = {}
+    for (const key of ['name', 'error', 'message', 'reason', 'timeoutMs', 'status', 'statusText', 'finalUrl']) {
+      if (details[key] !== undefined) safe[key] = details[key]
+    }
+    if ('response' in details) safe.responseType = Object.prototype.toString.call(details.response)
+    return safe
   }
 
   function safeHeaders(raw) {
